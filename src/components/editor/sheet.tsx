@@ -42,6 +42,11 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "section-color": { title: "Color", subtitle: "Background of this section." },
   "product-card-style": { title: "Card Style", subtitle: "" },
   "product-card-badges": { title: "Badges & WhatsApp", subtitle: "" },
+  "categories-template": { title: "Template", subtitle: "" },
+  "brands-template": { title: "Template", subtitle: "" },
+  "banner-template": { title: "Template", subtitle: "" },
+  "about-template": { title: "Template", subtitle: "" },
+  "featured-template": { title: "Template", subtitle: "" },
 };
 
 export function Sheet() {
@@ -125,6 +130,16 @@ function SheetBody({ kind }: { kind: SheetKind }) {
       return <ProductCardStyle />;
     case "product-card-badges":
       return <ProductCardBadges />;
+    case "categories-template":
+      return section?.type === "categories" ? <CategoriesTemplate current={section.template} /> : null;
+    case "brands-template":
+      return section?.type === "brands" ? <BrandsTemplate current={section.template} /> : null;
+    case "banner-template":
+      return section?.type === "banner" ? <BannerTemplate current={section.template} /> : null;
+    case "about-template":
+      return section?.type === "about" ? <AboutTemplate current={section.template} /> : null;
+    case "featured-template":
+      return section?.type === "featured" ? <FeaturedTemplate current={section.template} /> : null;
     case "footer-style":
       return section?.type === "footer" ? (
         <FooterStyles current={section.template} text={section.text} />
@@ -207,34 +222,50 @@ function Themes() {
 }
 
 function AddList() {
+  const items: {
+    kind: "hero" | "featured" | "categories" | "brands" | "banner" | "about" | "reviews" | "newsletter";
+    title: string;
+    desc: string;
+    badge?: string;
+  }[] = [
+    { kind: "hero", title: "Hero Banner", desc: "High-impact visual banner with photo & headline." },
+    { kind: "featured", title: "Featured Products", desc: "Curated drops with direct WhatsApp checkout.", badge: "POPULAR" },
+    { kind: "categories", title: "Categories", desc: "Visual navigation tiles for product categories." },
+    { kind: "brands", title: "Brands", desc: "Authorized partner brands and logos." },
+    { kind: "banner", title: "Promo Banner", desc: "Promotional sale callout with WhatsApp action." },
+    { kind: "about", title: "About Us", desc: "Brand philosophy and authentic trust guarantees." },
+    { kind: "reviews", title: "Customer Reviews", desc: "Three quotes of social proof." },
+    { kind: "newsletter", title: "Newsletter", desc: "Email capture box for new drops." },
+  ];
+
   return (
     <div className="flex flex-col gap-2.5">
-      <button
-        type="button"
-        onClick={() => useEditor.getState().insertBlock("reviews")}
-        className="tap-smooth flex w-full items-center justify-between rounded-2xl border border-line-soft bg-surface p-3.5 text-left hover:bg-fill/70 transition-all"
-      >
-        <div>
-          <div className="text-sm font-medium">Reviews</div>
-          <div className="text-xs text-muted">Three short lines of social proof.</div>
-        </div>
-        <div className="flex size-7 items-center justify-center rounded-full bg-fill text-ink">
-          +
-        </div>
-      </button>
-      <button
-        type="button"
-        onClick={() => useEditor.getState().insertBlock("newsletter")}
-        className="tap-smooth flex w-full items-center justify-between rounded-2xl border border-line-soft bg-surface p-3.5 text-left hover:bg-fill/70 transition-all"
-      >
-        <div>
-          <div className="text-sm font-medium">Newsletter</div>
-          <div className="text-xs text-muted">Email capture banner.</div>
-        </div>
-        <div className="flex size-7 items-center justify-center rounded-full bg-fill text-ink">
-          +
-        </div>
-      </button>
+      {items.map((item) => (
+        <button
+          key={item.kind}
+          type="button"
+          onClick={() => {
+            useEditor.getState().insertSection(item.kind);
+            useEditor.getState().closeSheet();
+          }}
+          className="tap-smooth flex w-full items-center justify-between rounded-2xl border border-line-soft bg-surface p-3.5 text-left hover:bg-fill/70 transition-all hover:border-line group"
+        >
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-ink group-hover:text-accent transition-colors">{item.title}</span>
+              {item.badge && (
+                <span className="rounded-md bg-purple-500/15 px-1.5 py-0.5 text-[9px] font-bold text-purple-700 uppercase">
+                  {item.badge}
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-muted mt-0.5">{item.desc}</div>
+          </div>
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-fill text-ink group-hover:bg-accent group-hover:text-white transition-all">
+            +
+          </div>
+        </button>
+      ))}
     </div>
   );
 }
@@ -1188,6 +1219,220 @@ function BlockText({
           if (color !== text) useEditor.getState().patchSelected({ text: color });
         }}
       />
+    </div>
+  );
+}
+
+function CategoriesTemplate({ current }: { current?: "cards" | "pills" | "grid" }) {
+  const active = current ?? "cards";
+  return (
+    <div className="flex flex-col gap-3">
+      <TemplateCard
+        active={active === "cards"}
+        onClick={() => useEditor.getState().patchSelected({ template: "cards" })}
+      >
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-line-soft bg-fill/30 p-2.5">
+          <div className="aspect-[4/3] rounded-lg bg-slate-300 relative overflow-hidden flex items-end p-1.5">
+            <div className="h-2 w-10 rounded-full bg-slate-800" />
+          </div>
+          <div className="aspect-[4/3] rounded-lg bg-slate-300 relative overflow-hidden flex items-end p-1.5">
+            <div className="h-2 w-10 rounded-full bg-slate-800" />
+          </div>
+        </div>
+      </TemplateCard>
+      <TemplateCard
+        active={active === "pills"}
+        onClick={() => useEditor.getState().patchSelected({ template: "pills" })}
+      >
+        <div className="flex gap-2 rounded-xl border border-line-soft bg-fill/30 p-2.5">
+          <div className="h-7 w-20 rounded-full bg-slate-300 flex items-center px-1.5 gap-1">
+            <div className="size-4 rounded-full bg-slate-400" />
+            <div className="h-1.5 w-8 rounded-full bg-slate-700" />
+          </div>
+          <div className="h-7 w-20 rounded-full bg-slate-200 flex items-center px-1.5 gap-1">
+            <div className="size-4 rounded-full bg-slate-300" />
+            <div className="h-1.5 w-8 rounded-full bg-slate-500" />
+          </div>
+        </div>
+      </TemplateCard>
+      <TemplateCard
+        active={active === "grid"}
+        onClick={() => useEditor.getState().patchSelected({ template: "grid" })}
+      >
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-line-soft bg-fill/30 p-2.5">
+          <div className="flex flex-col items-center gap-1.5 rounded-lg bg-surface p-2">
+            <div className="size-8 rounded-full bg-slate-300" />
+            <div className="h-1.5 w-10 rounded-full bg-slate-700" />
+          </div>
+          <div className="flex flex-col items-center gap-1.5 rounded-lg bg-surface p-2">
+            <div className="size-8 rounded-full bg-slate-300" />
+            <div className="h-1.5 w-10 rounded-full bg-slate-700" />
+          </div>
+        </div>
+      </TemplateCard>
+    </div>
+  );
+}
+
+function BrandsTemplate({ current }: { current?: "row" | "grid" }) {
+  const active = current ?? "row";
+  return (
+    <div className="flex flex-col gap-3">
+      <TemplateCard
+        active={active === "row"}
+        onClick={() => useEditor.getState().patchSelected({ template: "row" })}
+      >
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-line-soft bg-fill/30 p-3">
+          <div className="h-6 w-14 rounded-lg bg-slate-300" />
+          <div className="h-6 w-14 rounded-lg bg-slate-300" />
+          <div className="h-6 w-14 rounded-lg bg-slate-300" />
+        </div>
+      </TemplateCard>
+      <TemplateCard
+        active={active === "grid"}
+        onClick={() => useEditor.getState().patchSelected({ template: "grid" })}
+      >
+        <div className="grid grid-cols-3 gap-2 rounded-xl border border-line-soft bg-fill/30 p-3">
+          <div className="h-7 rounded-lg bg-slate-300" />
+          <div className="h-7 rounded-lg bg-slate-300" />
+          <div className="h-7 rounded-lg bg-slate-300" />
+          <div className="h-7 rounded-lg bg-slate-200" />
+          <div className="h-7 rounded-lg bg-slate-200" />
+          <div className="h-7 rounded-lg bg-slate-200" />
+        </div>
+      </TemplateCard>
+    </div>
+  );
+}
+
+function BannerTemplate({ current }: { current?: "split" | "card" | "full" }) {
+  const active = current ?? "split";
+  return (
+    <div className="flex flex-col gap-3">
+      <TemplateCard
+        active={active === "split"}
+        onClick={() => useEditor.getState().patchSelected({ template: "split" })}
+      >
+        <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-line-soft bg-fill/40 p-2.5">
+          <div className="h-14 rounded-lg bg-slate-300" />
+          <div className="flex flex-col justify-center space-y-1.5">
+            <div className="h-2 w-10 rounded-full bg-emerald-500" />
+            <div className="h-2.5 w-16 rounded-full bg-slate-800" />
+            <div className="h-4 w-14 rounded-full bg-emerald-500" />
+          </div>
+        </div>
+      </TemplateCard>
+      <TemplateCard
+        active={active === "card"}
+        onClick={() => useEditor.getState().patchSelected({ template: "card" })}
+      >
+        <div className="rounded-xl border border-line-soft bg-slate-900 p-3 text-white">
+          <div className="h-2 w-10 rounded-full bg-emerald-400" />
+          <div className="mt-1.5 h-2.5 w-24 rounded-full bg-white" />
+          <div className="mt-2 h-4 w-16 rounded-full bg-emerald-500" />
+        </div>
+      </TemplateCard>
+      <TemplateCard
+        active={active === "full"}
+        onClick={() => useEditor.getState().patchSelected({ template: "full" })}
+      >
+        <div className="h-16 rounded-xl bg-slate-800 p-2.5 flex flex-col justify-end">
+          <div className="h-2.5 w-24 rounded-full bg-white" />
+          <div className="mt-1.5 h-2 w-16 rounded-full bg-white/70" />
+        </div>
+      </TemplateCard>
+    </div>
+  );
+}
+
+function AboutTemplate({ current }: { current?: "split" | "story" | "cards" }) {
+  const active = current ?? "split";
+  return (
+    <div className="flex flex-col gap-3">
+      <TemplateCard
+        active={active === "split"}
+        onClick={() => useEditor.getState().patchSelected({ template: "split" })}
+      >
+        <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-line-soft bg-fill/40 p-2.5">
+          <div className="h-16 rounded-lg bg-slate-300" />
+          <div className="flex flex-col justify-center space-y-1.5">
+            <div className="h-2 w-10 rounded-full bg-slate-400" />
+            <div className="h-2.5 w-20 rounded-full bg-slate-800" />
+            <div className="h-1.5 w-16 rounded-full bg-slate-400" />
+          </div>
+        </div>
+      </TemplateCard>
+      <TemplateCard
+        active={active === "story"}
+        onClick={() => useEditor.getState().patchSelected({ template: "story" })}
+      >
+        <div className="rounded-xl border border-line-soft bg-fill/40 p-3 flex flex-col items-center gap-1.5 text-center">
+          <div className="h-2 w-12 rounded-full bg-slate-400" />
+          <div className="h-2.5 w-32 rounded-full bg-slate-800" />
+          <div className="h-1.5 w-24 rounded-full bg-slate-400" />
+        </div>
+      </TemplateCard>
+      <TemplateCard
+        active={active === "cards"}
+        onClick={() => useEditor.getState().patchSelected({ template: "cards" })}
+      >
+        <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-line-soft bg-fill/40 p-2.5">
+          <div className="rounded-lg bg-surface p-1.5 border border-line-soft space-y-1">
+            <div className="size-3 rounded-full bg-emerald-500" />
+            <div className="h-1.5 w-8 rounded-full bg-slate-800" />
+          </div>
+          <div className="rounded-lg bg-surface p-1.5 border border-line-soft space-y-1">
+            <div className="size-3 rounded-full bg-emerald-500" />
+            <div className="h-1.5 w-8 rounded-full bg-slate-800" />
+          </div>
+          <div className="rounded-lg bg-surface p-1.5 border border-line-soft space-y-1">
+            <div className="size-3 rounded-full bg-emerald-500" />
+            <div className="h-1.5 w-8 rounded-full bg-slate-800" />
+          </div>
+        </div>
+      </TemplateCard>
+    </div>
+  );
+}
+
+function FeaturedTemplate({ current }: { current?: "grid" | "carousel" }) {
+  const active = current ?? "grid";
+  return (
+    <div className="flex flex-col gap-3">
+      <TemplateCard
+        active={active === "grid"}
+        onClick={() => useEditor.getState().patchSelected({ template: "grid" })}
+      >
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-line-soft bg-fill/30 p-2.5">
+          <div className="flex flex-col gap-1 rounded-lg border border-line-soft bg-surface p-1.5">
+            <div className="aspect-square w-full rounded-md bg-slate-200" />
+            <div className="h-2 w-10 rounded-full bg-slate-800" />
+          </div>
+          <div className="flex flex-col gap-1 rounded-lg border border-line-soft bg-surface p-1.5">
+            <div className="aspect-square w-full rounded-md bg-slate-200" />
+            <div className="h-2 w-10 rounded-full bg-slate-800" />
+          </div>
+        </div>
+      </TemplateCard>
+      <TemplateCard
+        active={active === "carousel"}
+        onClick={() => useEditor.getState().patchSelected({ template: "carousel" })}
+      >
+        <div className="flex gap-2 rounded-xl border border-line-soft bg-fill/30 p-2.5 overflow-hidden">
+          <div className="w-16 shrink-0 flex flex-col gap-1 rounded-lg border border-line-soft bg-surface p-1.5">
+            <div className="aspect-square w-full rounded-md bg-slate-200" />
+            <div className="h-2 w-10 rounded-full bg-slate-800" />
+          </div>
+          <div className="w-16 shrink-0 flex flex-col gap-1 rounded-lg border border-line-soft bg-surface p-1.5">
+            <div className="aspect-square w-full rounded-md bg-slate-200" />
+            <div className="h-2 w-10 rounded-full bg-slate-800" />
+          </div>
+          <div className="w-16 shrink-0 flex flex-col gap-1 rounded-lg border border-line-soft bg-surface p-1.5">
+            <div className="aspect-square w-full rounded-md bg-slate-200" />
+            <div className="h-2 w-10 rounded-full bg-slate-800" />
+          </div>
+        </div>
+      </TemplateCard>
     </div>
   );
 }

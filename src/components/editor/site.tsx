@@ -113,18 +113,15 @@ function SelectionChip({ id }: { id: string }) {
 
   if (!sec) return null;
 
-  const isGlobal =
-    sec.type === "navbar" ||
-    sec.type === "footer" ||
-    sec.type === "catalog" ||
-    sec.type === "grid";
+  const isFixed = sec.type === "navbar" || sec.type === "footer";
+  const isGlobal = isFixed || sec.type === "catalog" || sec.type === "grid" || sec.type === "featured";
 
   const displayName =
     sec.type === "navbar"
       ? "Header"
       : sec.type === "footer"
         ? "Footer"
-        : sec.type === "catalog" || sec.type === "grid"
+        : sec.type === "catalog" || sec.type === "grid" || sec.type === "featured"
           ? "Product Card"
           : sec.name;
 
@@ -144,46 +141,52 @@ function SelectionChip({ id }: { id: string }) {
       <span className="flex items-center gap-1.5 pr-1.5 text-[10px] font-bold tracking-wider text-purple-300 uppercase">
         <span className="size-1.5 rounded-full bg-purple-400" />
         <span>{displayName}</span>
-        {isGlobal && (
+        {isFixed && (
+          <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[8px] font-extrabold tracking-normal text-emerald-300">
+            FIXED
+          </span>
+        )}
+        {!isFixed && isGlobal && (
           <span className="rounded-full bg-purple-500/30 px-1.5 py-0.2 text-[8px] font-extrabold tracking-normal text-purple-200">
             GLOBAL
           </span>
         )}
       </span>
 
-      <div className="h-3 w-[1px] bg-slate-700/80" />
-
-      <button
-        type="button"
-        title="Move up"
-        aria-label="Move up"
-        disabled={index === 0}
-        onClick={(event) => {
-          event.stopPropagation();
-          useEditor.getState().moveSection(id, -1);
-        }}
-        className="tap-smooth flex size-6 items-center justify-center rounded-full text-slate-300 hover:bg-white/15 hover:text-white disabled:opacity-20 transition-all active:scale-90"
-      >
-        <ChevronUp className="size-3.5 stroke-[2.5]" />
-      </button>
-
-      <button
-        type="button"
-        title="Move down"
-        aria-label="Move down"
-        disabled={index === sections.length - 1}
-        onClick={(event) => {
-          event.stopPropagation();
-          useEditor.getState().moveSection(id, 1);
-        }}
-        className="tap-smooth flex size-6 items-center justify-center rounded-full text-slate-300 hover:bg-white/15 hover:text-white disabled:opacity-20 transition-all active:scale-90"
-      >
-        <ChevronDown className="size-3.5 stroke-[2.5]" />
-      </button>
-
-      {sec.type !== "navbar" && (
+      {!isFixed && (
         <>
           <div className="h-3 w-[1px] bg-slate-700/80" />
+
+          <button
+            type="button"
+            title="Move up"
+            aria-label="Move up"
+            disabled={index <= 1}
+            onClick={(event) => {
+              event.stopPropagation();
+              useEditor.getState().moveSection(id, -1);
+            }}
+            className="tap-smooth flex size-6 items-center justify-center rounded-full text-slate-300 hover:bg-white/15 hover:text-white disabled:opacity-20 transition-all active:scale-90"
+          >
+            <ChevronUp className="size-3.5 stroke-[2.5]" />
+          </button>
+
+          <button
+            type="button"
+            title="Move down"
+            aria-label="Move down"
+            disabled={index >= sections.length - 2}
+            onClick={(event) => {
+              event.stopPropagation();
+              useEditor.getState().moveSection(id, 1);
+            }}
+            className="tap-smooth flex size-6 items-center justify-center rounded-full text-slate-300 hover:bg-white/15 hover:text-white disabled:opacity-20 transition-all active:scale-90"
+          >
+            <ChevronDown className="size-3.5 stroke-[2.5]" />
+          </button>
+
+          <div className="h-3 w-[1px] bg-slate-700/80" />
+
           <button
             type="button"
             title="Delete section"
@@ -1184,6 +1187,465 @@ function SiteMenu() {
   );
 }
 
+function FeaturedView({
+  sec,
+  device,
+}: {
+  sec: Extract<Section, { type: "featured" }>;
+  device: Device;
+}) {
+  const dark = isDark(sec.background);
+  const preview = useEditor((s) => s.preview);
+  const isCarousel = sec.template === "carousel";
+  const cols =
+    device === "desktop"
+      ? "grid-cols-4"
+      : device === "tablet"
+        ? "grid-cols-3"
+        : "grid-cols-2";
+
+  const ratioClass =
+    sec.imageRatio === "3:4"
+      ? "aspect-[3/4]"
+      : sec.imageRatio === "16:9"
+        ? "aspect-video"
+        : "aspect-square";
+
+  const titleClass =
+    sec.typography === "sm"
+      ? "text-xs"
+      : sec.typography === "lg"
+        ? "text-base font-semibold"
+        : "text-sm font-medium";
+
+  const openItem = (item: (typeof sec.items)[number]) => {
+    const num = Number(item.price.replace(/[^0-9.]/g, ""));
+    const price = Number.isFinite(num) && num > 0 ? num : 149;
+    if (preview) {
+      useEditor.getState().openProduct({
+        name: item.title,
+        price,
+        img: item.image,
+      });
+    } else {
+      useEditor.getState().select(sec.id);
+    }
+  };
+
+  const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof sec.items)[number]) => {
+    if (!preview) return;
+    event.stopPropagation();
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
+    const productUrl = `${origin}/product?name=${encodeURIComponent(item.title)}`;
+    const phone = (sec.whatsappNumber || "919876543210").replace(/[^0-9]/g, "");
+    const message =
+      `Hi! I'd like to order from Ziteo:
+
+` +
+      `📦 *Product:* ${item.title}
+` +
+      `💰 *Price:* ${item.price}
+` +
+      `🔗 *Link:* ${productUrl}`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  return (
+    <SectionShell section={sec} background={sec.background} color={dark ? "#f5f5f7" : "#1d1d1f"}>
+      <div className={cn("py-10", gutter(device))}>
+        <div className="flex items-end justify-between">
+          <div>
+            <h2 className={cn("font-semibold tracking-tight", titleSize(device))}>{sec.title}</h2>
+            {sec.subtitle && (
+              <p className={cn("mt-1.5 text-sm", dark ? "text-on-ink/70" : "text-muted")}>
+                {sec.subtitle}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (preview) useEditor.getState().switchPage("shop");
+            }}
+            className={cn("tap-smooth text-xs font-semibold hover:underline", dark ? "text-purple-300" : "text-accent")}
+          >
+            View all drops →
+          </button>
+        </div>
+
+        <div
+          className={cn(
+            "mt-6",
+            isCarousel
+              ? "no-scrollbar flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory"
+              : cn("grid gap-x-4 gap-y-8", cols)
+          )}
+        >
+          {sec.items.map((item) => (
+            <article
+              key={item.id}
+              className={cn(
+                "group relative transition-all",
+                isCarousel ? "w-44 sm:w-56 shrink-0 snap-start" : "w-full"
+              )}
+            >
+              <button
+                type="button"
+                className="tap-smooth-sm block w-full text-left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openItem(item);
+                }}
+              >
+                <div className="relative overflow-hidden rounded-2xl bg-fill/50">
+                  {sec.showBadge !== false && item.badge && (
+                    <span className="absolute top-2.5 left-2.5 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+                      {item.badge}
+                    </span>
+                  )}
+                  <img
+                    src={item.image}
+                    alt=""
+                    className={cn(
+                      "w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105",
+                      ratioClass
+                    )}
+                  />
+                </div>
+                <h3 className={cn("mt-3 truncate transition-colors group-hover:text-accent", titleClass)}>
+                  {item.title}
+                </h3>
+              </button>
+              <div className="mt-2 flex items-center justify-between">
+                <div>
+                  {sec.showPrice !== false ? (
+                    <span className="text-sm font-semibold">{item.price}</span>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  title="Buy on WhatsApp"
+                  aria-label={`Buy ${item.title} on WhatsApp`}
+                  onClick={(e) => buyDirectOnWhatsApp(e, item)}
+                  className="tap-smooth inline-flex size-9 items-center justify-center rounded-full bg-[#25D366] text-white hover:bg-[#20bd5a] hover:scale-105 transition-all shadow-xs"
+                >
+                  <WhatsAppIcon className="size-4 fill-white" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+function CategoriesView({
+  sec,
+  device,
+}: {
+  sec: Extract<Section, { type: "categories" }>;
+  device: Device;
+}) {
+  const dark = isDark(sec.background);
+  const preview = useEditor((s) => s.preview);
+
+  const handleClick = (name: string) => {
+    if (preview) {
+      useEditor.getState().setCatalogFilter(name as any);
+      useEditor.getState().switchPage("shop");
+    }
+  };
+
+  const isCards = sec.template === "cards" || !sec.template;
+  const isPills = sec.template === "pills";
+  const isGrid = sec.template === "grid";
+
+  return (
+    <SectionShell section={sec} background={sec.background} color={dark ? "#f5f5f7" : "#1d1d1f"}>
+      <div className={cn("py-8", gutter(device))}>
+        <div className="flex items-baseline justify-between mb-5">
+          <div>
+            <h2 className={cn("font-semibold tracking-tight", titleSize(device))}>{sec.title}</h2>
+            {sec.subtitle && (
+              <p className={cn("mt-1 text-sm", dark ? "text-on-ink/70" : "text-muted")}>
+                {sec.subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {isPills ? (
+          <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-1">
+            {sec.items.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClick(cat.name);
+                }}
+                className={cn(
+                  "tap-smooth flex items-center gap-2.5 rounded-full border border-line-soft px-3 py-1.5 shrink-0 transition-all hover:scale-105 shadow-2xs",
+                  dark ? "bg-white/10 text-white" : "bg-surface text-ink hover:bg-fill"
+                )}
+              >
+                <img src={cat.image} alt="" className="size-6 rounded-full object-cover" />
+                <span className="text-xs font-semibold">{cat.name}</span>
+                {cat.count && <span className="text-[10px] text-muted">{cat.count}</span>}
+              </button>
+            ))}
+          </div>
+        ) : isGrid ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {sec.items.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClick(cat.name);
+                }}
+                className="group tap-smooth-sm flex flex-col items-center gap-2 rounded-2xl border border-line-soft bg-surface p-3 text-center shadow-2xs hover:border-line transition-all"
+              >
+                <div className="size-16 sm:size-20 overflow-hidden rounded-full bg-fill/50">
+                  <img
+                    src={cat.image}
+                    alt=""
+                    className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                </div>
+                <span className="text-xs font-semibold text-ink group-hover:text-accent transition-colors">
+                  {cat.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            {sec.items.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClick(cat.name);
+                }}
+                className="group tap-smooth-sm relative aspect-[4/5] sm:aspect-square overflow-hidden rounded-3xl text-left shadow-xs transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <img
+                  src={cat.image}
+                  alt=""
+                  className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3 text-white">
+                  <div className="text-sm font-bold tracking-tight">{cat.name}</div>
+                  {cat.count && (
+                    <div className="text-[11px] font-medium text-white/70">{cat.count}</div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </SectionShell>
+  );
+}
+
+function BrandsView({
+  sec,
+  device,
+}: {
+  sec: Extract<Section, { type: "brands" }>;
+  device: Device;
+}) {
+  const dark = isDark(sec.background);
+  const isGrid = sec.template === "grid";
+
+  return (
+    <SectionShell section={sec} background={sec.background} color={dark ? "#f5f5f7" : "#1d1d1f"}>
+      <div className={cn("py-8 text-center", gutter(device))}>
+        <h2 className="text-xs font-bold tracking-widest text-muted uppercase">{sec.title}</h2>
+        {sec.subtitle && (
+          <p className={cn("mt-1 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
+            {sec.subtitle}
+          </p>
+        )}
+
+        <div
+          className={cn(
+            "mt-5",
+            isGrid
+              ? "grid grid-cols-2 sm:grid-cols-3 gap-2.5"
+              : "no-scrollbar flex items-center justify-center gap-3 overflow-x-auto py-1"
+          )}
+        >
+          {sec.items.map((b) => (
+            <div
+              key={b.id}
+              className={cn(
+                "tap-smooth flex flex-col items-center justify-center rounded-2xl border border-line-soft px-5 py-3 shadow-2xs transition-all hover:scale-105",
+                dark ? "bg-white/5 border-white/10" : "bg-surface hover:bg-fill/60",
+                isGrid ? "" : "shrink-0 min-w-28"
+              )}
+            >
+              <span className="text-sm font-black tracking-widest text-ink">{b.name}</span>
+              {b.tagline && (
+                <span className="text-[9px] font-medium text-muted mt-0.5">{b.tagline}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+function BannerView({
+  sec,
+  device,
+}: {
+  sec: Extract<Section, { type: "banner" }>;
+  device: Device;
+}) {
+  const preview = useEditor((s) => s.preview);
+  const isCard = sec.template === "card";
+  const isFull = sec.template === "full";
+
+  const handleAction = (e: React.MouseEvent) => {
+    if (!preview) return;
+    e.stopPropagation();
+    if (sec.buttonAction === "whatsapp") {
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
+      const message = `Hi! I want to claim the offer: *${sec.title}* from Ziteo.\n🔗 ${origin}`;
+      window.open(`https://wa.me/919876543210?text=${encodeURIComponent(message)}`, "_blank");
+    } else {
+      useEditor.getState().switchPage("shop");
+    }
+  };
+
+  return (
+    <SectionShell section={sec} background={sec.background} color={sec.textColor}>
+      <div className={cn(gutter(device), isCard ? "py-6" : "py-10")}>
+        <div
+          className={cn(
+            "relative overflow-hidden",
+            isCard
+              ? "rounded-3xl border border-white/15 bg-slate-900 p-6 sm:p-10 text-white shadow-xl"
+              : isFull
+                ? "rounded-none"
+                : "grid grid-cols-1 sm:grid-cols-2 gap-6 items-center"
+          )}
+        >
+          {sec.image && (
+            <div
+              className={cn(
+                "overflow-hidden rounded-2xl",
+                isCard ? "mb-4 sm:mb-0 sm:absolute sm:right-6 sm:top-6 sm:bottom-6 sm:w-64" : ""
+              )}
+            >
+              <img
+                src={sec.image}
+                alt=""
+                className={cn(
+                  "size-full object-cover",
+                  isCard ? "h-36 sm:h-full rounded-2xl" : "h-56 sm:h-72 rounded-3xl"
+                )}
+              />
+            </div>
+          )}
+
+          <div className={cn(isCard ? "relative z-10 max-w-md" : "")}>
+            <span className="inline-block rounded-full bg-[#25D366]/20 px-3 py-1 text-[10px] font-bold tracking-wider text-[#25D366] uppercase">
+              {sec.tag}
+            </span>
+            <h2 className={cn("mt-2 font-bold tracking-tight", device === "mobile" ? "text-2xl" : "text-3xl")}>
+              {sec.title}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-white/80 max-w-md">
+              {sec.description}
+            </p>
+            <div className="mt-5">
+              <button
+                type="button"
+                onClick={handleAction}
+                className="tap-smooth inline-flex h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-xs font-bold text-white shadow-md shadow-[#25D366]/30 hover:bg-[#20bd5a] hover:scale-105 transition-all"
+              >
+                <WhatsAppIcon className="size-4 fill-white" />
+                <span>{sec.buttonText}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+function AboutView({
+  sec,
+  device,
+}: {
+  sec: Extract<Section, { type: "about" }>;
+  device: Device;
+}) {
+  const dark = isDark(sec.background);
+  const isSplit = sec.template === "split" || !sec.template;
+  const isCards = sec.template === "cards";
+
+  return (
+    <SectionShell section={sec} background={sec.background} color={sec.text}>
+      <div className={cn("py-12", gutter(device))}>
+        <div className={cn(isSplit ? "grid grid-cols-1 sm:grid-cols-2 gap-8 items-center" : "")}>
+          {sec.image && isSplit && (
+            <div className="overflow-hidden rounded-3xl shadow-sm">
+              <img
+                src={sec.image}
+                alt=""
+                className="aspect-square sm:aspect-[4/3] w-full object-cover transition-transform duration-700 hover:scale-105"
+              />
+            </div>
+          )}
+          <div>
+            <span className="text-xs font-bold tracking-widest text-muted uppercase">
+              {sec.kicker}
+            </span>
+            <h2 className={cn("mt-2 font-semibold tracking-tight", device === "mobile" ? "text-2xl" : "text-3xl")}>
+              {sec.title}
+            </h2>
+            <p className={cn("mt-3 text-sm leading-relaxed", dark ? "text-on-ink/80" : "text-muted")}>
+              {sec.story}
+            </p>
+
+            <div className={cn("mt-6 grid gap-3", isCards ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1")}>
+              {sec.features.map((f) => (
+                <div
+                  key={f.id}
+                  className={cn(
+                    "flex items-start gap-3 rounded-2xl p-3.5 border transition-all",
+                    dark ? "border-white/10 bg-white/5" : "border-line-soft bg-surface shadow-2xs"
+                  )}
+                >
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 font-bold text-xs">
+                    ✓
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold text-ink">{f.title}</h3>
+                    <p className="mt-0.5 text-[11px] text-muted leading-snug">{f.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
 function renderSection(sec: Section, device: Device) {
   switch (sec.type) {
     case "navbar":
@@ -1194,6 +1656,16 @@ function renderSection(sec: Section, device: Device) {
       return <IntroView key={sec.id} sec={sec} device={device} />;
     case "grid":
       return <GridView key={sec.id} sec={sec} device={device} />;
+    case "featured":
+      return <FeaturedView key={sec.id} sec={sec} device={device} />;
+    case "categories":
+      return <CategoriesView key={sec.id} sec={sec} device={device} />;
+    case "brands":
+      return <BrandsView key={sec.id} sec={sec} device={device} />;
+    case "banner":
+      return <BannerView key={sec.id} sec={sec} device={device} />;
+    case "about":
+      return <AboutView key={sec.id} sec={sec} device={device} />;
     case "catalog":
       return <CatalogView key={sec.id} sec={sec} device={device} />;
     case "product":

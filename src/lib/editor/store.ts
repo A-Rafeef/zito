@@ -1,5 +1,16 @@
 import { create } from "zustand";
-import { createBlock, createPages, isDark, paintTheme } from "@/lib/editor/defaults";
+import {
+  createAboutSection,
+  createBannerSection,
+  createBlock,
+  createBrandsSection,
+  createCategoriesSection,
+  createFeaturedSection,
+  createHeroSection,
+  createPages,
+  isDark,
+  paintTheme,
+} from "@/lib/editor/defaults";
 import { renderHtml } from "@/lib/editor/export-html";
 import type {
   BlockSection,
@@ -59,6 +70,17 @@ interface EditorState extends SavedEditor {
   moveSection: (id: string, dir: -1 | 1) => void;
   deleteSection: (id: string) => void;
   insertBlock: (kind: BlockSection["kind"]) => void;
+  insertSection: (
+    kind:
+      | "hero"
+      | "featured"
+      | "categories"
+      | "brands"
+      | "banner"
+      | "about"
+      | "reviews"
+      | "newsletter",
+  ) => void;
   applyTheme: (theme: "light" | "ink") => void;
   setPageColor: (background: string) => void;
   setHeroSlide: (index: number) => void;
@@ -389,7 +411,7 @@ export const useEditor = create<EditorState>((set, get) => {
             });
             (Object.keys(pages) as PageId[]).forEach((pId) => {
               pages[pId].sections = pages[pId].sections.map((sec) => {
-                if (sec.type === "catalog" || sec.type === "grid" || sec.type === "product") {
+                if (sec.type === "catalog" || sec.type === "grid" || sec.type === "featured" || sec.type === "product") {
                   return { ...sec, ...stylePatch } as Section;
                 }
                 return sec;
@@ -431,8 +453,15 @@ export const useEditor = create<EditorState>((set, get) => {
     moveSection: (id, dir) => {
       const page = get().pages[get().pageId];
       const index = page.sections.findIndex((sec) => sec.id === id);
+      const currentSec = page.sections[index];
+      if (!currentSec) return;
+      if (currentSec.type === "navbar" || currentSec.type === "footer") {
+        get().showToast("Header and Footer are fixed elements.");
+        return;
+      }
       const next = index + dir;
-      if (index < 0 || next < 0 || next >= page.sections.length) return;
+      // Fixed shell: cannot move above Navbar (index 0) or below Footer (last index)
+      if (next < 1 || next > page.sections.length - 2) return;
       commit(({ pages, pageId }) => {
         const arr = pages[pageId].sections;
         const [item] = arr.splice(index, 1);
@@ -444,12 +473,8 @@ export const useEditor = create<EditorState>((set, get) => {
       const page = get().pages[get().pageId];
       const sec = page.sections.find((item) => item.id === id);
       if (!sec) return;
-      if (sec.type === "navbar") {
-        get().showToast("Navigation is a global element.");
-        return;
-      }
-      if (sec.type === "footer") {
-        get().showToast("Footer is a global element.");
+      if (sec.type === "navbar" || sec.type === "footer") {
+        get().showToast(`${sec.type === "navbar" ? "Header" : "Footer"} is fixed.`);
         return;
       }
       commit(
@@ -461,16 +486,48 @@ export const useEditor = create<EditorState>((set, get) => {
     },
 
     insertBlock: (kind) => {
-      const block = createBlock(kind);
+      get().insertSection(kind);
+    },
+
+    insertSection: (kind) => {
+      let newSec: Section;
+      switch (kind) {
+        case "hero":
+          newSec = createHeroSection();
+          break;
+        case "featured":
+          newSec = createFeaturedSection();
+          break;
+        case "categories":
+          newSec = createCategoriesSection();
+          break;
+        case "brands":
+          newSec = createBrandsSection();
+          break;
+        case "banner":
+          newSec = createBannerSection();
+          break;
+        case "about":
+          newSec = createAboutSection();
+          break;
+        case "reviews":
+          newSec = createBlock("reviews");
+          break;
+        case "newsletter":
+          newSec = createBlock("newsletter");
+          break;
+      }
+
       commit(
         ({ pages, pageId }) => {
           const sections = pages[pageId].sections;
           const footerAt = sections.findIndex((sec) => sec.type === "footer");
-          if (footerAt === -1) sections.push(block);
-          else sections.splice(footerAt, 0, block);
+          if (footerAt === -1) sections.push(newSec);
+          else sections.splice(footerAt, 0, newSec);
         },
-        { selectedId: block.id, sheet: "block-text" },
+        { selectedId: newSec.id, sheet: null },
       );
+      get().showToast(`Added ${newSec.name} section.`);
     },
 
     applyTheme: (theme) => {

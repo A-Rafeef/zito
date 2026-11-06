@@ -1,6 +1,12 @@
 import type {
+  AboutSection,
+  BannerSection,
   BlockSection,
+  BrandsSection,
+  CategoriesSection,
+  FeaturedSection,
   FooterSection,
+  HeroSection,
   NavbarSection,
   PageModel,
   Pages,
@@ -48,8 +54,8 @@ export const TEXT_COLORS = [
 
 export const QUOTES = [
   { text: "I forget I'm wearing them.", name: "A. Shah" },
-  { text: "The only pair I pack.", name: "M. Okonkwo" },
-  { text: "Quiet, then you notice the comfort.", name: "L. Berg" },
+  { text: "Clean silhouette, zero fuss.", name: "M. Lindqvist" },
+  { text: "Holds up through long travel days.", name: "J. Chen" },
 ];
 
 const products: Product[] = [
@@ -78,7 +84,7 @@ const products: Product[] = [
     id: "p3",
     name: "Weatherproof Fleece",
     price: 129,
-    rating: 5,
+    rating: 4.9,
     reviews: 64,
     img: PHOTOS.fleece,
     category: "Apparel",
@@ -92,7 +98,7 @@ const products: Product[] = [
     rating: 4.7,
     reviews: 31,
     img: PHOTOS.knit,
-    category: "Apparel",
+    category: "Accessories",
   },
   {
     id: "p5",
@@ -116,7 +122,7 @@ const products: Product[] = [
   },
 ];
 
-function navbar(): NavbarSection {
+export function navbar(): NavbarSection {
   return {
     id: "navbar",
     type: "navbar",
@@ -134,7 +140,7 @@ function navbar(): NavbarSection {
   };
 }
 
-function footer(): FooterSection {
+export function footer(): FooterSection {
   return {
     id: "footer",
     type: "footer",
@@ -144,6 +150,180 @@ function footer(): FooterSection {
     copy: "© 2026 ZITEO. All rights reserved.",
     background: "#f5f5f7",
     text: "#6e6e73",
+  };
+}
+
+export function createHeroSection(): HeroSection {
+  return {
+    id: `hero-${Date.now()}`,
+    type: "hero",
+    name: "Hero",
+    template: "bleed",
+    ratio: "16:9",
+    background: "#ffffff",
+    slides: [PHOTOS.court, PHOTOS.red, PHOTOS.sport, PHOTOS.white],
+    active: 0,
+    kicker: "New Release",
+    title: "Engineered for movement.",
+    body: "Minimalist silhouettes and all-day comfort. Direct WhatsApp orders with instant confirmation.",
+  };
+}
+
+export function createFeaturedSection(): FeaturedSection {
+  return {
+    id: `featured-${Date.now()}`,
+    type: "featured",
+    name: "Featured Products",
+    title: "Featured Drops",
+    subtitle: "Our most requested silhouettes, ready to ship.",
+    background: "#ffffff",
+    template: "grid",
+    imageRatio: "1:1",
+    typography: "base",
+    showBadge: true,
+    showRating: true,
+    showPrice: true,
+    whatsappNumber: "919876543210",
+    items: [
+      {
+        id: "p1",
+        title: "Air Retro Court",
+        tag: "Footwear",
+        price: "$149",
+        image: PHOTOS.court,
+        badge: "SALE",
+      },
+      {
+        id: "p2",
+        title: "Velocity Runner",
+        tag: "Footwear",
+        price: "$165",
+        image: PHOTOS.red,
+        badge: "NEW",
+      },
+      {
+        id: "p6",
+        title: "Court Sport High",
+        tag: "Footwear",
+        price: "$175",
+        image: PHOTOS.sport,
+        badge: "HOT",
+      },
+      {
+        id: "p5",
+        title: "Leather Carry",
+        tag: "Accessories",
+        price: "$110",
+        image: PHOTOS.bag,
+      },
+    ],
+  };
+}
+
+export function createCategoriesSection(): CategoriesSection {
+  return {
+    id: `categories-${Date.now()}`,
+    type: "categories",
+    name: "Categories",
+    title: "Shop by Category",
+    subtitle: "Find exactly what your routine needs.",
+    background: "#ffffff",
+    template: "cards",
+    items: [
+      {
+        id: "cat-1",
+        name: "Footwear",
+        image: PHOTOS.court,
+        count: "24 items",
+      },
+      {
+        id: "cat-2",
+        name: "Apparel",
+        image: PHOTOS.fleece,
+        count: "18 items",
+      },
+      {
+        id: "cat-3",
+        name: "Accessories",
+        image: PHOTOS.bag,
+        count: "12 items",
+      },
+      {
+        id: "cat-4",
+        name: "Headwear",
+        image: PHOTOS.knit,
+        count: "8 items",
+      },
+    ],
+  };
+}
+
+export function createBrandsSection(): BrandsSection {
+  return {
+    id: `brands-${Date.now()}`,
+    type: "brands",
+    name: "Brands",
+    title: "Curated Brands",
+    subtitle: "Authorized stockist for global innovators.",
+    background: "#ffffff",
+    template: "row",
+    items: [
+      { id: "b1", name: "NIKE", tagline: "Performance & Innovation" },
+      { id: "b2", name: "ADIDAS", tagline: "Originals & Speed" },
+      { id: "b3", name: "NEW BALANCE", tagline: "Boston Craftsmanship" },
+      { id: "b4", name: "SALOMON", tagline: "Technical Trailwear" },
+      { id: "b5", name: "ASICS", tagline: "Sound Body & Mind" },
+      { id: "b6", name: "PUMA", tagline: "Forever Faster" },
+    ],
+  };
+}
+
+export function createBannerSection(): BannerSection {
+  return {
+    id: `banner-${Date.now()}`,
+    type: "banner",
+    name: "Banner",
+    tag: "SPECIAL OFFER",
+    title: "Mid-Season Drop · 30% Off",
+    description: "Exclusive discount on selected footwear and seasonal jackets. Limited quantity available.",
+    buttonText: "Order on WhatsApp",
+    buttonAction: "whatsapp",
+    background: "#1d1d1f",
+    textColor: "#ffffff",
+    image: PHOTOS.red,
+    template: "split",
+  };
+}
+
+export function createAboutSection(): AboutSection {
+  return {
+    id: `about-${Date.now()}`,
+    type: "about",
+    name: "About",
+    kicker: "OUR PHILOSOPHY",
+    title: "Essential uniforms for ordinary days.",
+    story: "Founded with a commitment to uncompromised craftsmanship, Ziteo delivers footwear and modular garments made to outlast seasons and trends. Direct support and bespoke sizing right on WhatsApp.",
+    image: PHOTOS.sport,
+    background: "#ffffff",
+    text: "#1d1d1f",
+    template: "split",
+    features: [
+      {
+        id: "f1",
+        title: "100% Certified Authentic",
+        description: "Direct distribution partnerships with verified source authenticity.",
+      },
+      {
+        id: "f2",
+        title: "WhatsApp Personal Care",
+        description: "Instant sizing advice, real photographs, and human order tracking.",
+      },
+      {
+        id: "f3",
+        title: "Express Dispatch",
+        description: "Secure packaging dispatched within 24 hours of confirmation.",
+      },
+    ],
   };
 }
 
@@ -169,60 +349,11 @@ export function createPages(): Pages {
           title: "Built for every routine.",
           body: "Court-ready footwear and modular layers, tuned for the hours you actually spend in them.",
         },
-        {
-          id: "intro",
-          type: "intro",
-          name: "Intro",
-          kicker: "Collections",
-          title: "A quieter uniform.",
-          body: "Filter by what the day asks for — movement, weather, or nothing in particular.",
-          kickerColor: "#6e6e73",
-          background: "#ffffff",
-          text: "#1d1d1f",
-        },
-        {
-          id: "grid",
-          type: "grid",
-          name: "Collections",
-          template: "mosaic",
-          background: "#ffffff",
-          imageRatio: "1:1",
-          typography: "base",
-          showBadge: true,
-          items: [
-            {
-              id: "p1",
-              title: "Air Retro Court",
-              tag: "Footwear",
-              price: "$149",
-              image: PHOTOS.court,
-              badge: "SALE",
-            },
-            {
-              id: "p2",
-              title: "Velocity Runner",
-              tag: "Footwear",
-              price: "$165",
-              image: PHOTOS.red,
-              badge: "NEW",
-            },
-            {
-              id: "p3",
-              title: "Weatherproof Fleece",
-              tag: "Apparel",
-              price: "$129",
-              image: PHOTOS.fleece,
-            },
-            {
-              id: "p5",
-              title: "Leather Carry",
-              tag: "Accessories",
-              price: "$110",
-              image: PHOTOS.bag,
-              badge: "HOT",
-            },
-          ],
-        },
+        createCategoriesSection(),
+        createFeaturedSection(),
+        createBannerSection(),
+        createBrandsSection(),
+        createAboutSection(),
         footer(),
       ],
     },
@@ -349,9 +480,20 @@ export function paintTheme(page: PageModel, theme: "light" | "ink"): PageModel {
       case "intro":
         return { ...sec, background: bg, text, kickerColor: muted };
       case "grid":
+      case "featured":
+      case "categories":
+      case "brands":
       case "catalog":
       case "product":
         return { ...sec, background: bg };
+      case "banner":
+        return {
+          ...sec,
+          background: dark ? "#141416" : "#1d1d1f",
+          textColor: "#ffffff",
+        };
+      case "about":
+        return { ...sec, background: bg, text };
       case "footer":
         return { ...sec, background: soft, text: muted, template: dark ? "columns" : "minimal" };
       case "block":

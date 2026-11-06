@@ -25,7 +25,7 @@ export function renderHtml(page: PageModel) {
       parts.push(
         `<section style="padding:24px 28px 8px"><p style="color:${esc(sec.kickerColor)};letter-spacing:.14em;text-transform:uppercase;font-size:12px">${esc(sec.kicker)}</p><h2 style="font-size:32px;letter-spacing:-.03em;margin:8px 0">${esc(sec.title)}</h2><p style="color:#6e6e73">${esc(sec.body)}</p></section>`,
       );
-    } else if (sec.type === "grid") {
+    } else if (sec.type === "grid" || sec.type === "featured") {
       const cards = sec.items
         .map(
           (item) =>
@@ -34,6 +34,31 @@ export function renderHtml(page: PageModel) {
         .join("");
       parts.push(
         `<section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;padding:20px 28px 40px">${cards}</section>`,
+      );
+    } else if (sec.type === "categories") {
+      const catCards = sec.items
+        .map(
+          (cat) =>
+            `<div style="text-align:center"><img src="${esc(cat.image)}" alt="${esc(cat.name)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:18px"><h3 style="margin:8px 0 0;font-size:14px">${esc(cat.name)}</h3></div>`,
+        )
+        .join("");
+      parts.push(
+        `<section style="padding:28px"><h2 style="font-size:28px">${esc(sec.title)}</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:16px">${catCards}</div></section>`,
+      );
+    } else if (sec.type === "brands") {
+      const brandPills = sec.items
+        .map((b) => `<span style="padding:8px 18px;background:#f5f5f7;border-radius:99px;font-weight:600">${esc(b.name)}</span>`)
+        .join(" ");
+      parts.push(
+        `<section style="padding:28px;text-align:center"><h2 style="font-size:24px">${esc(sec.title)}</h2><div style="display:flex;gap:12px;justify-content:center;margin-top:16px">${brandPills}</div></section>`,
+      );
+    } else if (sec.type === "banner") {
+      parts.push(
+        `<section style="padding:36px 28px;background:${esc(sec.background)};color:${esc(sec.textColor)};border-radius:24px;margin:20px 28px"><p style="font-size:12px;letter-spacing:.14em">${esc(sec.tag)}</p><h2 style="font-size:32px;margin:8px 0">${esc(sec.title)}</h2><p style="opacity:.8">${esc(sec.description)}</p></section>`,
+      );
+    } else if (sec.type === "about") {
+      parts.push(
+        `<section style="padding:36px 28px"><p style="font-size:12px;letter-spacing:.14em;color:#6e6e73">${esc(sec.kicker)}</p><h2 style="font-size:32px;margin:8px 0">${esc(sec.title)}</h2><p style="color:#6e6e73;max-width:38rem">${esc(sec.story)}</p></section>`,
       );
     } else if (sec.type === "catalog") {
       const cards = sec.products

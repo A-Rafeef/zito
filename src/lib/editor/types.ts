@@ -97,6 +97,93 @@ export interface GridSection {
   showBadge?: boolean;
 }
 
+export interface FeaturedSection {
+  id: string;
+  type: "featured";
+  name: string;
+  title: string;
+  subtitle: string;
+  background: string;
+  template: "grid" | "carousel";
+  imageRatio?: ProductImageRatio;
+  typography?: ProductTypography;
+  showBadge?: boolean;
+  showRating?: boolean;
+  showPrice?: boolean;
+  whatsappNumber?: string;
+  items: GridItem[];
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  image: string;
+  count?: string;
+}
+
+export interface CategoriesSection {
+  id: string;
+  type: "categories";
+  name: string;
+  title: string;
+  subtitle?: string;
+  background: string;
+  template: "cards" | "pills" | "grid";
+  items: CategoryItem[];
+}
+
+export interface BrandItem {
+  id: string;
+  name: string;
+  tagline?: string;
+}
+
+export interface BrandsSection {
+  id: string;
+  type: "brands";
+  name: string;
+  title: string;
+  subtitle?: string;
+  background: string;
+  template: "row" | "grid";
+  items: BrandItem[];
+}
+
+export interface BannerSection {
+  id: string;
+  type: "banner";
+  name: string;
+  tag: string;
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonAction: "shop" | "whatsapp";
+  background: string;
+  textColor: string;
+  image: string;
+  template: "card" | "full" | "split";
+}
+
+export interface AboutFeature {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface AboutSection {
+  id: string;
+  type: "about";
+  name: string;
+  kicker: string;
+  title: string;
+  story: string;
+  image: string;
+  features: AboutFeature[];
+  background: string;
+  text: string;
+  template: "split" | "story" | "cards";
+}
+
 export interface CatalogSection {
   id: string;
   type: "catalog";
@@ -167,6 +254,11 @@ export type Section =
   | HeroSection
   | IntroSection
   | GridSection
+  | FeaturedSection
+  | CategoriesSection
+  | BrandsSection
+  | BannerSection
+  | AboutSection
   | CatalogSection
   | ProductSection
   | FooterSection
@@ -209,7 +301,12 @@ export type SheetKind =
   | "product-template"
   | "block-template"
   | "product-card-style"
-  | "product-card-badges";
+  | "product-card-badges"
+  | "categories-template"
+  | "brands-template"
+  | "banner-template"
+  | "about-template"
+  | "featured-template";
 
 export interface Snapshot {
   pages: Pages;
