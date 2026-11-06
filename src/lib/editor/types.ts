@@ -10,6 +10,9 @@ export type HeroRatio = "16:9" | "21:9" | "4:3" | "3:2" | "1:1";
 export type GridTemplate = "mosaic" | "editorial";
 export type FooterTemplate = "minimal" | "columns";
 
+export type ProductImageRatio = "1:1" | "3:4" | "16:9";
+export type ProductTypography = "sm" | "base" | "lg";
+
 export interface CartItem {
   id: string;
   name: string;
@@ -24,12 +27,15 @@ export interface GridItem {
   tag: string;
   price: string;
   image: string;
+  badge?: "NEW" | "SALE" | "HOT";
 }
 
 export interface Product {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number;
+  badge?: "NEW" | "SALE" | "HOT";
   rating: number;
   reviews: number;
   img: string;
@@ -86,6 +92,9 @@ export interface GridSection {
   template: GridTemplate;
   background: string;
   items: GridItem[];
+  imageRatio?: ProductImageRatio;
+  typography?: ProductTypography;
+  showBadge?: boolean;
 }
 
 export interface CatalogSection {
@@ -98,6 +107,12 @@ export interface CatalogSection {
   background: string;
   products: Product[];
   template?: "grid" | "list";
+  imageRatio?: ProductImageRatio;
+  typography?: ProductTypography;
+  showBadge?: boolean;
+  showRating?: boolean;
+  showPrice?: boolean;
+  whatsappNumber?: string;
 }
 
 export interface ProductSection {
@@ -116,6 +131,11 @@ export interface ProductSection {
   image: string;
   background: string;
   template?: "stacked" | "split";
+  imageRatio?: ProductImageRatio;
+  typography?: ProductTypography;
+  showBadge?: boolean;
+  showRating?: boolean;
+  whatsappNumber?: string;
 }
 
 export interface FooterSection {
@@ -187,7 +207,9 @@ export type SheetKind =
   | "intro-template"
   | "catalog-template"
   | "product-template"
-  | "block-template";
+  | "block-template"
+  | "product-card-style"
+  | "product-card-badges";
 
 export interface Snapshot {
   pages: Pages;

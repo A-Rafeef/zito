@@ -24,6 +24,22 @@ import { cn } from "@/lib/cn";
 
 const FILTERS: CatalogFilter[] = ["All", "Footwear", "Apparel", "Accessories"];
 
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      stroke="currentColor"
+      strokeWidth="0"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.888 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    </svg>
+  );
+}
+
 function solid(dark: boolean) {
   return cn(
     "inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-medium",
@@ -579,6 +595,22 @@ function GridView({
         ? "grid-cols-4"
         : "grid-cols-2";
 
+  const ratioClass =
+    sec.template === "editorial"
+      ? "aspect-video"
+      : sec.imageRatio === "3:4"
+        ? "aspect-[3/4]"
+        : sec.imageRatio === "16:9"
+          ? "aspect-video"
+          : "aspect-square";
+
+  const titleClass =
+    sec.typography === "sm"
+      ? "text-xs"
+      : sec.typography === "lg"
+        ? "text-base font-semibold"
+        : "text-sm font-medium";
+
   return (
     <SectionShell section={sec} background={sec.background}>
       <div className={cn("grid gap-x-4 gap-y-8 pb-10", gutter(device), cols)}>
@@ -597,15 +629,20 @@ function GridView({
               if (preview) open();
               else useEditor.getState().select(sec.id);
             }}
-            className="group tap-smooth-sm text-left"
+            className="group tap-smooth-sm relative text-left"
           >
-            <div className="overflow-hidden rounded-2xl bg-fill/50">
+            <div className="relative overflow-hidden rounded-2xl bg-fill/50">
+              {sec.showBadge !== false && item.badge && (
+                <span className="absolute top-2.5 left-2.5 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+                  {item.badge}
+                </span>
+              )}
               <img
                 src={item.image}
                 alt=""
                 className={cn(
                   "w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105",
-                  sec.template === "editorial" ? "aspect-video" : "aspect-square",
+                  ratioClass,
                 )}
               />
             </div>
@@ -613,8 +650,8 @@ function GridView({
               <p className={cn("mt-3 text-xs", dark ? "text-on-ink/60" : "text-muted")}>{item.tag}</p>
             )}
             <div className="mt-3 flex items-baseline justify-between gap-3">
-              <span className={cn("text-sm font-medium transition-colors group-hover:text-accent", dark ? "text-on-ink" : "text-ink")}>{item.title}</span>
-              <span className={cn("text-sm font-medium", dark ? "text-on-ink/70" : "text-muted")}>{item.price}</span>
+              <span className={cn(titleClass, "transition-colors group-hover:text-accent truncate", dark ? "text-on-ink" : "text-ink")}>{item.title}</span>
+              <span className={cn("text-sm font-medium shrink-0", dark ? "text-on-ink/70" : "text-muted")}>{item.price}</span>
             </div>
           </button>
         ))}
@@ -639,6 +676,33 @@ function CatalogView({
     : device === "desktop"
       ? "grid-cols-3"
       : "grid-cols-2";
+
+  const ratioClass =
+    sec.imageRatio === "3:4"
+      ? "aspect-[3/4]"
+      : sec.imageRatio === "16:9"
+        ? "aspect-video"
+        : "aspect-square";
+
+  const titleClass =
+    sec.typography === "sm"
+      ? "text-xs"
+      : sec.typography === "lg"
+        ? "text-base font-semibold"
+        : "text-sm font-medium";
+
+  const openItem = (item: (typeof items)[number]) => {
+    if (preview) {
+      useEditor.getState().openProduct({
+        name: item.name,
+        price: item.price,
+        img: item.img,
+        rating: `${item.rating} · ${item.reviews} reviews`,
+      });
+    } else {
+      useEditor.getState().select(sec.id);
+    }
+  };
 
   return (
     <SectionShell section={sec} background={sec.background} color={dark ? "#f5f5f7" : "#1d1d1f"}>
@@ -667,7 +731,7 @@ function CatalogView({
             <article
               key={item.id}
               className={cn(
-                "group transition-all",
+                "group relative transition-all",
                 isList
                   ? "flex items-center justify-between gap-4 p-3 rounded-2xl bg-fill/40 hover:bg-fill/70 border border-line-soft/60"
                   : ""
@@ -681,61 +745,64 @@ function CatalogView({
                 )}
                 onClick={(event) => {
                   event.stopPropagation();
-                  if (preview) {
-                    useEditor.getState().openProduct({
-                      name: item.name,
-                      price: item.price,
-                      img: item.img,
-                      rating: `${item.rating} · ${item.reviews} reviews`,
-                    });
-                  } else {
-                    useEditor.getState().select(sec.id);
-                  }
+                  openItem(item);
                 }}
               >
                 <div
                   className={cn(
-                    "overflow-hidden rounded-2xl bg-fill/50",
+                    "relative overflow-hidden rounded-2xl bg-fill/50",
                     isList ? "size-20 sm:size-24 shrink-0 rounded-xl" : "w-full"
                   )}
                 >
+                  {sec.showBadge !== false && item.badge && (
+                    <span className="absolute top-2 left-2 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+                      {item.badge}
+                    </span>
+                  )}
                   <img
                     src={item.img}
                     alt=""
                     className={cn(
                       "object-cover transition-transform duration-500 ease-out group-hover:scale-105",
-                      isList ? "size-full" : "aspect-square w-full"
+                      isList ? "size-full" : cn("w-full", ratioClass)
                     )}
                   />
                 </div>
                 <div className={cn(isList ? "min-w-0 flex-1" : "")}>
-                  <h3 className="mt-3 sm:mt-2 text-sm font-medium transition-colors group-hover:text-accent truncate">
+                  <h3 className={cn("mt-3 sm:mt-2 transition-colors group-hover:text-accent truncate", titleClass)}>
                     {item.name}
                   </h3>
-                  <p className={cn("mt-1 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
-                    {item.rating} · {item.reviews} reviews
-                  </p>
-                  {isList && (
+                  {sec.showRating !== false && (
+                    <p className={cn("mt-1 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
+                      {item.rating} · {item.reviews} reviews
+                    </p>
+                  )}
+                  {isList && sec.showPrice !== false && (
                     <span className="mt-1 block text-sm font-semibold">{money(item.price)}</span>
                   )}
                 </div>
               </button>
               <div className={cn(isList ? "shrink-0" : "mt-3 flex items-center justify-between")}>
-                {!isList && <span className="text-sm font-medium">{money(item.price)}</span>}
+                {!isList && (
+                  <div>
+                    {sec.showPrice !== false ? (
+                      <span className="text-sm font-semibold">{money(item.price)}</span>
+                    ) : (
+                      <span />
+                    )}
+                  </div>
+                )}
                 <button
                   type="button"
-                  aria-label={`Add ${item.name}`}
+                  title="Buy on WhatsApp"
+                  aria-label={`Buy ${item.name} on WhatsApp`}
                   onClick={(event) => {
-                    if (!preview) return;
                     event.stopPropagation();
-                    useEditor.getState().addToCart({ name: item.name, price: item.price, img: item.img });
+                    openItem(item);
                   }}
-                  className={cn(
-                    "tap-smooth inline-flex size-11 items-center justify-center rounded-full hover:scale-105 transition-all shadow-xs",
-                    dark ? "bg-on-ink text-ink" : "bg-ink text-on-ink",
-                  )}
+                  className="tap-smooth inline-flex size-10 items-center justify-center rounded-full bg-[#25D366] text-white hover:bg-[#20bd5a] hover:scale-105 transition-all shadow-xs"
                 >
-                  <Plus className="size-4" strokeWidth={1.75} />
+                  <WhatsAppIcon className="size-4.5 fill-white" />
                 </button>
               </div>
             </article>
@@ -761,18 +828,64 @@ function ProductView({
   const dark = isDark(sec.background);
   const preview = useEditor((s) => s.preview);
   const wide = device === "desktop";
+  const isSplit = sec.template === "split";
+
+  const ratioClass =
+    sec.imageRatio === "3:4"
+      ? "aspect-[3/4]"
+      : sec.imageRatio === "16:9"
+        ? "aspect-video"
+        : "aspect-square";
+
+  const titleClass =
+    sec.typography === "sm"
+      ? "text-2xl sm:text-3xl"
+      : sec.typography === "lg"
+        ? "text-3xl sm:text-5xl font-bold"
+        : "text-2xl sm:text-4xl font-semibold";
+
+  const handleBuyOnWhatsApp = (event: React.MouseEvent) => {
+    if (!preview) return;
+    event.stopPropagation();
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
+    const productUrl = `${origin}/product?name=${encodeURIComponent(sec.productName)}`;
+    const phone = (sec.whatsappNumber || "919876543210").replace(/[^0-9]/g, "");
+    const message =
+      `Hi! I would like to order from Ziteo:
+
+` +
+      `📦 *Product:* ${sec.productName}
+` +
+      `💰 *Price:* ${money(sec.price)}
+` +
+      `🎨 *Color:* ${sec.color}
+` +
+      `📏 *Size:* ${sec.size}
+` +
+      `🔗 *Link:* ${productUrl}`;
+
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+  };
 
   const gallery = (
     <div>
-      <div className={cn("overflow-hidden bg-fill/40", wide ? "h-96 rounded-3xl" : "h-80")}>
+      <div className={cn("relative overflow-hidden bg-fill/40 rounded-3xl", wide ? "h-96" : "")}>
+        {sec.showBadge !== false && (
+          <span className="absolute top-4 left-4 z-10 rounded-md bg-ink/90 px-2.5 py-1 text-xs font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+            POPULAR
+          </span>
+        )}
         <img
           key={sec.image}
           src={sec.image}
           alt={sec.productName}
-          className="animate-fade-in h-full w-full object-cover transition-transform duration-700 ease-out hover:scale-105"
+          className={cn(
+            "animate-fade-in w-full object-cover transition-transform duration-700 ease-out hover:scale-105",
+            wide ? "h-full" : ratioClass
+          )}
         />
       </div>
-      <div className={cn("no-scrollbar mt-3 flex gap-2 overflow-x-auto", wide ? "" : "px-5")}>
+      <div className={cn("no-scrollbar mt-3 flex gap-2 overflow-x-auto", wide ? "" : "px-1")}>
         {sec.gallery.map((img) => (
           <button
             key={img}
@@ -795,16 +908,18 @@ function ProductView({
   );
 
   const info = (
-    <div className={cn(wide ? "flex flex-col justify-center" : "px-5 pt-5")}>
-      <p className={cn("text-xs", dark ? "text-on-ink/70" : "text-muted")}>{sec.rating}</p>
-      <h1 className={cn("mt-2 font-semibold tracking-tight", wide ? "text-4xl" : "text-2xl")}>{sec.productName}</h1>
-      <p className="mt-3 text-xl font-medium">{money(sec.price)}</p>
+    <div className={cn(wide || isSplit ? "flex flex-col justify-center" : "pt-6")}>
+      {sec.showRating !== false && (
+        <p className={cn("text-xs font-medium", dark ? "text-on-ink/70" : "text-muted")}>{sec.rating}</p>
+      )}
+      <h1 className={cn("mt-2 tracking-tight", titleClass)}>{sec.productName}</h1>
+      <p className="mt-3 text-2xl font-bold text-emerald-600">{money(sec.price)}</p>
       <p className={cn("mt-4 max-w-md text-sm leading-relaxed", dark ? "text-on-ink/70" : "text-muted")}>
         {sec.description}
       </p>
       <div className="mt-6">
-        <p className={cn("text-xs font-medium", dark ? "text-on-ink/70" : "text-muted")}>Color</p>
-        <div className="mt-2 flex gap-2">
+        <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>Select Color</p>
+        <div className="mt-2.5 flex gap-2.5">
           {sec.colors.map((color) => (
             <button
               key={color}
@@ -815,8 +930,8 @@ function ProductView({
                 useEditor.getState().setProductField({ color });
               }}
               className={cn(
-                "tap-smooth size-11 rounded-full border border-line transition-transform duration-200 hover:scale-110",
-                color === sec.color && "ring-2 ring-accent ring-offset-2 scale-105",
+                "tap-smooth size-10 rounded-full border border-line transition-transform duration-200 hover:scale-110",
+                color === sec.color && "ring-2 ring-emerald-500 ring-offset-2 scale-105",
               )}
               style={{ background: color }}
             />
@@ -824,8 +939,8 @@ function ProductView({
         </div>
       </div>
       <div className="mt-5">
-        <p className={cn("text-xs font-medium", dark ? "text-on-ink/70" : "text-muted")}>Size</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>Select Size</p>
+        <div className="mt-2.5 flex flex-wrap gap-2">
           {sec.sizes.map((size) => (
             <button
               key={size}
@@ -835,11 +950,9 @@ function ProductView({
                 useEditor.getState().setProductField({ size });
               }}
               className={cn(
-                "tap-smooth h-11 rounded-full border px-4 text-sm font-medium transition-all duration-200",
+                "tap-smooth h-10 rounded-full border px-4 text-xs font-semibold tracking-wide transition-all duration-200",
                 size === sec.size
-                  ? dark
-                    ? "border-on-ink bg-on-ink text-ink"
-                    : "border-ink bg-ink text-on-ink"
+                  ? "border-[#25D366] bg-[#25D366] text-white shadow-xs"
                   : "border-line bg-transparent hover:border-ink",
               )}
             >
@@ -850,25 +963,22 @@ function ProductView({
       </div>
       <button
         type="button"
-        onClick={(event) => {
-          if (!preview) return;
-          event.stopPropagation();
-          useEditor.getState().addToCart({
-            name: sec.productName,
-            price: sec.price,
-            img: sec.image,
-          });
-        }}
-        className={cn(solid(dark), "tap-smooth-sm mt-6 w-full shadow-sm hover:opacity-95")}
+        onClick={handleBuyOnWhatsApp}
+        className="tap-smooth-sm mt-6 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#25D366] text-sm font-semibold text-white shadow-lg shadow-[#25D366]/25 transition-all hover:bg-[#20bd5a] hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]"
       >
-        Add to bag · {money(sec.price)}
+        <WhatsAppIcon className="size-5 fill-white" />
+        <span>Buy on WhatsApp · {money(sec.price)}</span>
       </button>
+      <div className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-muted">
+        <span className="size-1.5 rounded-full bg-[#25D366]" />
+        <span>Instant WhatsApp confirmation & order tracking</span>
+      </div>
     </div>
   );
 
   return (
     <SectionShell section={sec} background={sec.background} color={dark ? "#f5f5f7" : "#1d1d1f"}>
-      <div className={cn(wide ? "grid grid-cols-2 gap-10 px-10 py-10" : "pb-8")}>
+      <div className={cn(wide || isSplit ? "grid grid-cols-2 gap-10 px-8 py-10" : "px-5 pb-8")}>
         {gallery}
         {info}
       </div>

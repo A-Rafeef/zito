@@ -4,21 +4,19 @@ import { HERO_PHOTOS, PAGE_COLORS, TEXT_COLORS } from "@/lib/editor/defaults";
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import { cn } from "@/lib/cn";
 import type {
-  CatalogSection,
-  GridSection,
   HeroRatio,
   HeroSection,
   IntroSection,
   NavbarSection,
   NavbarTemplate,
-  Product,
-  ProductSection,
+  ProductImageRatio,
+  ProductTypography,
   SheetKind,
 } from "@/lib/editor/types";
 import { Field, Group, PrimaryButton, TextArea, TextInput } from "@/components/editor/ui";
 
 const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
-  themes: { title: "Template", subtitle: "A light storefront, or ink." },
+  themes: { title: "Template", subtitle: "" },
   add: { title: "Add section", subtitle: "Place it above the footer." },
   "page-color": { title: "Background", subtitle: "The canvas behind every section." },
   "navbar-style": { title: "Template", subtitle: "" },
@@ -26,22 +24,24 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "navbar-color": { title: "Element color", subtitle: "Color of text, links, and icons." },
   "navbar-sticky": { title: "Sticky header", subtitle: "Pin header to top while scrolling." },
   "navbar-elements": { title: "Header elements", subtitle: "Choose what to display in the header." },
-  "hero-layout": { title: "Template", subtitle: "Choose banner aspect ratio." },
+  "hero-layout": { title: "Template", subtitle: "" },
   "hero-photo": { title: "Photo", subtitle: "Replaces the current slide." },
   "hero-text": { title: "Hero text", subtitle: "The line under the photograph." },
-  "intro-template": { title: "Template", subtitle: "Standard left-aligned or centered." },
+  "intro-template": { title: "Template", subtitle: "" },
   "intro-text": { title: "Intro", subtitle: "Headline and supporting line." },
   "kicker-color": { title: "Accent", subtitle: "The small label above the headline." },
-  "grid-layout": { title: "Template", subtitle: "Tiles, or a single column." },
-  "grid-items": { title: "Items", subtitle: "Names and prices." },
-  "catalog-template": { title: "Template", subtitle: "Grid cards or editorial list." },
-  "catalog-text": { title: "Catalog", subtitle: "Title and the pieces on sale." },
-  "product-template": { title: "Template", subtitle: "Stacked or split product layout." },
-  "product-text": { title: "Product", subtitle: "Name, price, and the short story." },
-  "footer-style": { title: "Template", subtitle: "A line, or a full close." },
-  "block-template": { title: "Template", subtitle: "Card style or minimal layout." },
+  "grid-layout": { title: "Template", subtitle: "" },
+  "grid-items": { title: "Items", subtitle: "" },
+  "catalog-template": { title: "Template", subtitle: "" },
+  "catalog-text": { title: "Catalog", subtitle: "" },
+  "product-template": { title: "Template", subtitle: "" },
+  "product-text": { title: "Product", subtitle: "" },
+  "footer-style": { title: "Template", subtitle: "" },
+  "block-template": { title: "Template", subtitle: "" },
   "block-text": { title: "Section", subtitle: "Edit the words." },
   "section-color": { title: "Color", subtitle: "Background of this section." },
+  "product-card-style": { title: "Card Style", subtitle: "" },
+  "product-card-badges": { title: "Badges & WhatsApp", subtitle: "" },
 };
 
 export function Sheet() {
@@ -117,16 +117,14 @@ function SheetBody({ kind }: { kind: SheetKind }) {
       return <KickerColors />;
     case "grid-layout":
       return section?.type === "grid" ? <GridLayouts current={section.template} /> : null;
-    case "grid-items":
-      return section?.type === "grid" ? <GridItems grid={section} /> : null;
     case "catalog-template":
       return section?.type === "catalog" ? <CatalogTemplate current={section.template} /> : null;
-    case "catalog-text":
-      return section?.type === "catalog" ? <CatalogForm catalog={section} /> : null;
     case "product-template":
       return section?.type === "product" ? <ProductTemplate current={section.template} /> : null;
-    case "product-text":
-      return section?.type === "product" ? <ProductForm product={section} /> : null;
+    case "product-card-style":
+      return <ProductCardStyle />;
+    case "product-card-badges":
+      return <ProductCardBadges />;
     case "footer-style":
       return section?.type === "footer" ? (
         <FooterStyles current={section.template} text={section.text} />
@@ -142,84 +140,102 @@ function SheetBody({ kind }: { kind: SheetKind }) {
   }
 }
 
-function Choice({
-  title,
-  detail,
+function TemplateCard({
   active,
   onClick,
   children,
 }: {
-  title: string;
-  detail: string;
-  active?: boolean;
+  active: boolean;
   onClick: () => void;
-  children?: ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "tap-smooth-sm flex w-full flex-col gap-3 px-4 py-3 text-left transition-colors hover:bg-fill/70",
-        active && "bg-surface shadow-2xs"
+        "tap-smooth flex w-full items-center gap-3.5 rounded-2xl border p-3 text-left transition-all duration-200 active:scale-[0.99]",
+        active
+          ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+          : "border-line-soft bg-surface hover:bg-fill/70 hover:border-line"
       )}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="text-sm font-medium">{title}</div>
-          <div className="text-xs text-muted">{detail}</div>
-        </div>
-        {active && <Check className="animate-scale-in size-4 shrink-0 text-accent" strokeWidth={2} />}
+      <div className="flex-1 min-w-0">{children}</div>
+      <div className="pr-1.5 shrink-0">
+        {active ? (
+          <div className="flex size-6 items-center justify-center rounded-full bg-[#53389E] text-white shadow-xs">
+            <Check className="size-3.5 stroke-[2.5]" />
+          </div>
+        ) : (
+          <div className="size-6 rounded-full border-2 border-slate-300/80" />
+        )}
       </div>
-      {children}
     </button>
   );
 }
 
 function Themes() {
+  const currentTheme = useEditor((s) => (s.pages.home.background === "#0b0b0d" ? "ink" : "light"));
   return (
-    <Group>
-      <Choice
-        title="Light"
-        detail="White page, centered navigation, photograph first."
+    <div className="flex flex-col gap-3">
+      <TemplateCard
+        active={currentTheme === "light"}
         onClick={() => useEditor.getState().applyTheme("light")}
       >
-        <div className="overflow-hidden rounded-xl border border-line-soft bg-surface">
-          <div className="flex items-center justify-between px-3 py-2 text-xs font-semibold tracking-widest">
+        <div className="overflow-hidden rounded-xl border border-line-soft bg-surface p-2 shadow-2xs">
+          <div className="flex items-center justify-between text-xs font-bold tracking-widest text-slate-800">
             ZITEO
           </div>
-          <div className="h-14 bg-fill" />
-          <div className="px-3 py-2 text-xs">Built for every routine.</div>
+          <div className="mt-1.5 h-10 rounded-md bg-slate-100" />
+          <div className="mt-2 h-2 w-2/3 rounded-full bg-slate-200" />
         </div>
-      </Choice>
-      <Choice
-        title="Ink"
-        detail="Near-black page, floating bar, split hero."
+      </TemplateCard>
+      <TemplateCard
+        active={currentTheme === "ink"}
         onClick={() => useEditor.getState().applyTheme("ink")}
       >
-        <div className="overflow-hidden rounded-xl bg-ink text-on-ink">
-          <div className="px-3 py-2 text-xs font-semibold tracking-widest">ZITEO</div>
-          <div className="mx-3 mb-3 h-14 rounded-lg bg-on-ink/10" />
+        <div className="overflow-hidden rounded-xl bg-ink p-2 text-on-ink shadow-2xs">
+          <div className="flex items-center justify-between text-xs font-bold tracking-widest text-white">
+            ZITEO
+          </div>
+          <div className="mt-1.5 h-10 rounded-md bg-white/10" />
+          <div className="mt-2 h-2 w-2/3 rounded-full bg-white/20" />
         </div>
-      </Choice>
-    </Group>
+      </TemplateCard>
+    </div>
   );
 }
 
 function AddList() {
   return (
-    <Group>
-      <Choice
-        title="Reviews"
-        detail="Three short lines of proof."
+    <div className="flex flex-col gap-2.5">
+      <button
+        type="button"
         onClick={() => useEditor.getState().insertBlock("reviews")}
-      />
-      <Choice
-        title="Newsletter"
-        detail="A single email field."
+        className="tap-smooth flex w-full items-center justify-between rounded-2xl border border-line-soft bg-surface p-3.5 text-left hover:bg-fill/70 transition-all"
+      >
+        <div>
+          <div className="text-sm font-medium">Reviews</div>
+          <div className="text-xs text-muted">Three short lines of social proof.</div>
+        </div>
+        <div className="flex size-7 items-center justify-center rounded-full bg-fill text-ink">
+          +
+        </div>
+      </button>
+      <button
+        type="button"
         onClick={() => useEditor.getState().insertBlock("newsletter")}
-      />
-    </Group>
+        className="tap-smooth flex w-full items-center justify-between rounded-2xl border border-line-soft bg-surface p-3.5 text-left hover:bg-fill/70 transition-all"
+      >
+        <div>
+          <div className="text-sm font-medium">Newsletter</div>
+          <div className="text-xs text-muted">Email capture banner.</div>
+        </div>
+        <div className="flex size-7 items-center justify-center rounded-full bg-fill text-ink">
+          +
+        </div>
+      </button>
+    </div>
   );
 }
 
@@ -361,35 +377,15 @@ function NavbarStyles({ sec }: { sec: NavbarSection }) {
 
   return (
     <div className="flex flex-col gap-3">
-      {NAV_STYLES.map((id) => {
-        const active = current === id;
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => useEditor.getState().patchSelected({ template: id })}
-            className={cn(
-              "tap-smooth flex w-full items-center gap-3.5 rounded-2xl border p-2.5 text-left transition-all duration-200 active:scale-[0.99]",
-              active
-                ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
-                : "border-line-soft bg-surface hover:bg-fill/70 hover:border-line"
-            )}
-          >
-            <div className="flex-1 min-w-0">
-              {renderPreview(id)}
-            </div>
-            <div className="pr-1.5 shrink-0">
-              {active ? (
-                <div className="flex size-6 items-center justify-center rounded-full bg-[#53389E] text-white shadow-xs">
-                  <Check className="size-3.5 stroke-[2.5]" />
-                </div>
-              ) : (
-                <div className="size-6 rounded-full border-2 border-slate-300/80" />
-              )}
-            </div>
-          </button>
-        );
-      })}
+      {NAV_STYLES.map((id) => (
+        <TemplateCard
+          key={id}
+          active={current === id}
+          onClick={() => useEditor.getState().patchSelected({ template: id })}
+        >
+          {renderPreview(id)}
+        </TemplateCard>
+      ))}
     </div>
   );
 }
@@ -414,99 +410,370 @@ function NameForm({ logo, text }: { logo: string; text: string }) {
 function IntroTemplate({ current }: { current?: "standard" | "centered" }) {
   const active = current ?? "standard";
   return (
-    <Group>
-      <Choice
-        title="Standard (Left-aligned)"
-        detail="Headline on the left, filter chips on the right."
+    <div className="flex flex-col gap-3">
+      <TemplateCard
         active={active === "standard"}
         onClick={() => useEditor.getState().patchSelected({ template: "standard" })}
-      />
-      <Choice
-        title="Centered"
-        detail="Headline and subtext centered in the middle."
+      >
+        <div className="flex flex-col gap-2 rounded-xl border border-line-soft bg-fill/40 p-3">
+          <div className="h-3 w-1/3 rounded-full bg-slate-800" />
+          <div className="h-2 w-2/3 rounded-full bg-slate-400" />
+          <div className="mt-1 flex gap-1.5">
+            <div className="h-5 w-12 rounded-full bg-slate-300" />
+            <div className="h-5 w-12 rounded-full bg-slate-200" />
+            <div className="h-5 w-12 rounded-full bg-slate-200" />
+          </div>
+        </div>
+      </TemplateCard>
+      <TemplateCard
         active={active === "centered"}
         onClick={() => useEditor.getState().patchSelected({ template: "centered" })}
-      />
-    </Group>
+      >
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-line-soft bg-fill/40 p-3 text-center">
+          <div className="h-3 w-1/2 rounded-full bg-slate-800" />
+          <div className="h-2 w-3/4 rounded-full bg-slate-400" />
+          <div className="mt-1 flex justify-center gap-1.5">
+            <div className="h-5 w-12 rounded-full bg-slate-300" />
+            <div className="h-5 w-12 rounded-full bg-slate-200" />
+          </div>
+        </div>
+      </TemplateCard>
+    </div>
   );
 }
 
 function CatalogTemplate({ current }: { current?: "grid" | "list" }) {
   const active = current ?? "grid";
   return (
-    <Group>
-      <Choice
-        title="Grid (Multi-column)"
-        detail="Standard product cards in 2 or 3 columns."
+    <div className="flex flex-col gap-3">
+      <TemplateCard
         active={active === "grid"}
         onClick={() => useEditor.getState().patchSelected({ template: "grid" })}
-      />
-      <Choice
-        title="Editorial List"
-        detail="Single column full-width product cards."
+      >
+        <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-line-soft bg-fill/30 p-2.5">
+          <div className="flex flex-col gap-1.5 rounded-lg border border-line-soft bg-surface p-2">
+            <div className="aspect-square w-full rounded-md bg-slate-200" />
+            <div className="h-2 w-3/4 rounded-full bg-slate-800" />
+            <div className="h-2 w-1/2 rounded-full bg-slate-400" />
+          </div>
+          <div className="flex flex-col gap-1.5 rounded-lg border border-line-soft bg-surface p-2">
+            <div className="aspect-square w-full rounded-md bg-slate-200" />
+            <div className="h-2 w-3/4 rounded-full bg-slate-800" />
+            <div className="h-2 w-1/2 rounded-full bg-slate-400" />
+          </div>
+        </div>
+      </TemplateCard>
+      <TemplateCard
         active={active === "list"}
         onClick={() => useEditor.getState().patchSelected({ template: "list" })}
-      />
-    </Group>
+      >
+        <div className="flex flex-col gap-2 rounded-xl border border-line-soft bg-fill/30 p-2.5">
+          <div className="flex items-center gap-2.5 rounded-lg border border-line-soft bg-surface p-2">
+            <div className="size-9 rounded-md bg-slate-200 shrink-0" />
+            <div className="flex-1 space-y-1">
+              <div className="h-2 w-2/3 rounded-full bg-slate-800" />
+              <div className="h-1.5 w-1/3 rounded-full bg-slate-400" />
+            </div>
+            <div className="h-3 w-8 rounded-full bg-emerald-500/80 shrink-0" />
+          </div>
+          <div className="flex items-center gap-2.5 rounded-lg border border-line-soft bg-surface p-2">
+            <div className="size-9 rounded-md bg-slate-200 shrink-0" />
+            <div className="flex-1 space-y-1">
+              <div className="h-2 w-2/3 rounded-full bg-slate-800" />
+              <div className="h-1.5 w-1/3 rounded-full bg-slate-400" />
+            </div>
+            <div className="h-3 w-8 rounded-full bg-emerald-500/80 shrink-0" />
+          </div>
+        </div>
+      </TemplateCard>
+    </div>
   );
 }
 
 function ProductTemplate({ current }: { current?: "stacked" | "split" }) {
   const active = current ?? "stacked";
   return (
-    <Group>
-      <Choice
-        title="Stacked"
-        detail="Large gallery image with details stacked directly beneath."
+    <div className="flex flex-col gap-3">
+      <TemplateCard
         active={active === "stacked"}
         onClick={() => useEditor.getState().patchSelected({ template: "stacked" })}
-      />
-      <Choice
-        title="Split (Side-by-side)"
-        detail="Product gallery on left with buying panel on right."
+      >
+        <div className="flex flex-col gap-2 rounded-xl border border-line-soft bg-fill/40 p-2.5">
+          <div className="h-16 w-full rounded-lg bg-slate-200" />
+          <div className="space-y-1.5 px-1">
+            <div className="h-2.5 w-1/2 rounded-full bg-slate-800" />
+            <div className="h-2 w-1/3 rounded-full bg-slate-400" />
+            <div className="h-5 w-full rounded-full bg-emerald-500" />
+          </div>
+        </div>
+      </TemplateCard>
+      <TemplateCard
         active={active === "split"}
         onClick={() => useEditor.getState().patchSelected({ template: "split" })}
-      />
-    </Group>
+      >
+        <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-line-soft bg-fill/40 p-2.5">
+          <div className="aspect-square w-full rounded-lg bg-slate-200" />
+          <div className="flex flex-col justify-center space-y-1.5">
+            <div className="h-2.5 w-3/4 rounded-full bg-slate-800" />
+            <div className="h-2 w-1/2 rounded-full bg-slate-400" />
+            <div className="h-5 w-full rounded-full bg-emerald-500" />
+          </div>
+        </div>
+      </TemplateCard>
+    </div>
   );
 }
 
 function BlockTemplate({ current }: { current?: "card" | "minimal" }) {
   const active = current ?? "card";
   return (
-    <Group>
-      <Choice
-        title="Card Style"
-        detail="Framed background cards with soft borders."
+    <div className="flex flex-col gap-3">
+      <TemplateCard
         active={active === "card"}
         onClick={() => useEditor.getState().patchSelected({ template: "card" })}
-      />
-      <Choice
-        title="Minimal"
-        detail="Clean, borderless typography-focused layout."
+      >
+        <div className="rounded-xl border border-line-soft bg-surface p-3 shadow-2xs">
+          <div className="h-2.5 w-1/3 rounded-full bg-slate-800" />
+          <div className="mt-2 h-2 w-3/4 rounded-full bg-slate-400" />
+        </div>
+      </TemplateCard>
+      <TemplateCard
         active={active === "minimal"}
         onClick={() => useEditor.getState().patchSelected({ template: "minimal" })}
-      />
-    </Group>
+      >
+        <div className="p-3">
+          <div className="h-2.5 w-1/3 rounded-full bg-slate-800" />
+          <div className="mt-2 h-2 w-3/4 rounded-full bg-slate-400" />
+        </div>
+      </TemplateCard>
+    </div>
+  );
+}
+
+function ProductCardStyle() {
+  const section = useEditor((s) => selectedSection(s));
+  const imageRatio = (section && "imageRatio" in section && section.imageRatio) || "1:1";
+  const typography = (section && "typography" in section && section.typography) || "base";
+
+  const ratios: { id: ProductImageRatio; label: string; aspect: string }[] = [
+    { id: "1:1", label: "1:1 Square", aspect: "aspect-square" },
+    { id: "3:4", label: "3:4 Portrait", aspect: "aspect-[3/4]" },
+    { id: "16:9", label: "16:9 Wide", aspect: "aspect-video" },
+  ];
+
+  const scales: { id: ProductTypography; label: string; sample: string }[] = [
+    { id: "sm", label: "Compact", sample: "text-xs" },
+    { id: "base", label: "Standard", sample: "text-sm font-medium" },
+    { id: "lg", label: "Editorial", sample: "text-base font-semibold" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Image Aspect Ratio</p>
+        <div className="grid grid-cols-3 gap-2.5">
+          {ratios.map((r) => {
+            const active = imageRatio === r.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ imageRatio: r.id })}
+                className={cn(
+                  "tap-smooth flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all",
+                  active
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <div className="flex h-16 w-full items-center justify-center rounded-lg bg-fill/80 p-1">
+                  <div className={cn("max-h-full max-w-full rounded-sm bg-slate-400/80 shadow-2xs", r.aspect, r.id === "16:9" ? "w-full" : "h-14")} />
+                </div>
+                <span className="text-xs font-medium text-ink">{r.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Typography Scale</p>
+        <div className="grid grid-cols-3 gap-2.5">
+          {scales.map((s) => {
+            const active = typography === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ typography: s.id })}
+                className={cn(
+                  "tap-smooth flex flex-col items-center justify-between gap-2 rounded-2xl border p-3 text-center transition-all",
+                  active
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <div className="flex h-12 w-full items-center justify-center">
+                  <span className={cn("truncate text-ink", s.sample)}>Air Retro</span>
+                </div>
+                <span className="text-xs font-medium text-muted">{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductCardBadges() {
+  const section = useEditor((s) => selectedSection(s));
+  const showBadge = section && "showBadge" in section ? section.showBadge !== false : true;
+  const showRating = section && "showRating" in section ? section.showRating !== false : true;
+  const showPrice = section && "showPrice" in section ? section.showPrice !== false : true;
+  const rawNumber =
+    (section && "whatsappNumber" in section && section.whatsappNumber) || "919876543210";
+  const [phone, setPhone] = useState(rawNumber);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Element Visibility</p>
+        <div className="divide-y divide-line-soft overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+          {/* Badge toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Product Badges</div>
+              <div className="text-xs text-muted">Show 'SALE', 'NEW', 'HOT' tags on card</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showBadge}
+              onClick={() => useEditor.getState().patchSelected({ showBadge: !showBadge })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showBadge ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showBadge ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Rating toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Rating & Reviews</div>
+              <div className="text-xs text-muted">Show customer stars and review count</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showRating}
+              onClick={() => useEditor.getState().patchSelected({ showRating: !showRating })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showRating ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showRating ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Price toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Price Display</div>
+              <div className="text-xs text-muted">Show pricing on product cards</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showPrice}
+              onClick={() => useEditor.getState().patchSelected({ showPrice: !showPrice })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showPrice ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showPrice ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">WhatsApp Direct Ordering</p>
+        <div className="rounded-2xl border border-line-soft bg-surface p-4 shadow-2xs">
+          <Field label="Seller WhatsApp Number (with country code)">
+            <TextInput
+              value={phone}
+              placeholder="919876543210"
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </Field>
+          <div className="mt-3 flex gap-2">
+            <PrimaryButton
+              onClick={() => {
+                useEditor.getState().patchSelected({ whatsappNumber: phone });
+                useEditor.getState().showToast("WhatsApp number updated.");
+              }}
+            >
+              Save WhatsApp Number
+            </PrimaryButton>
+          </div>
+          <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-50/60 p-3 text-xs leading-relaxed text-emerald-950">
+            <div className="flex items-center gap-1.5 font-semibold text-emerald-800">
+              <span className="size-2 rounded-full bg-emerald-500" />
+              <span>Direct Customer Ordering</span>
+            </div>
+            <p className="mt-1 text-emerald-800/80">
+              When visitors click "Buy on WhatsApp", an order message will open directly in their WhatsApp with product name, selected variant, and link.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function NavbarSticky({ current }: { current: boolean }) {
   return (
-    <Group>
-      <Choice
-        title="Sticky (Pinned)"
-        detail="Header stays fixed at the top when visitor scrolls down the page."
+    <div className="flex flex-col gap-3">
+      <TemplateCard
         active={current}
         onClick={() => useEditor.getState().patchSelected({ sticky: true })}
-      />
-      <Choice
-        title="Static (Scrollable)"
-        detail="Header scrolls out of view naturally with the page content."
+      >
+        <div className="flex items-center justify-between rounded-xl border border-line-soft bg-fill/40 p-2.5">
+          <div className="text-xs font-semibold text-slate-800">Sticky (Pinned to top)</div>
+          <div className="h-1.5 w-12 rounded-full bg-accent" />
+        </div>
+      </TemplateCard>
+      <TemplateCard
         active={!current}
         onClick={() => useEditor.getState().patchSelected({ sticky: false })}
-      />
-    </Group>
+      >
+        <div className="flex items-center justify-between rounded-xl border border-line-soft bg-fill/40 p-2.5">
+          <div className="text-xs font-semibold text-slate-800">Static (Scrollable)</div>
+          <div className="h-1.5 w-12 rounded-full bg-slate-300" />
+        </div>
+      </TemplateCard>
+    </div>
   );
 }
 
@@ -666,27 +933,28 @@ function HeroLayouts({ hero }: { hero: HeroSection }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Group>
+      <div className="flex flex-col gap-3">
         {RATIOS.map((item) => (
-          <Choice
+          <TemplateCard
             key={item.id}
-            title={item.title}
-            detail={item.detail}
             active={currentRatio === item.id}
             onClick={() => useEditor.getState().patchSelected({ ratio: item.id })}
           >
-            <div className="w-full max-w-xs overflow-hidden rounded-xl border border-line-soft bg-fill/40">
-              <div
-                className="w-full bg-cover bg-center transition-all duration-300"
-                style={{
-                  aspectRatio: item.aspect,
-                  backgroundImage: `url(${currentImg})`,
-                }}
-              />
+            <div className="flex items-center gap-3">
+              <div className="w-24 overflow-hidden rounded-lg border border-line-soft bg-fill/40 shrink-0">
+                <div
+                  className="w-full bg-cover bg-center"
+                  style={{
+                    aspectRatio: item.aspect,
+                    backgroundImage: `url(${currentImg})`,
+                  }}
+                />
+              </div>
+              <span className="text-xs font-semibold text-slate-800">{item.title}</span>
             </div>
-          </Choice>
+          </TemplateCard>
         ))}
-      </Group>
+      </div>
 
       <div>
         <p className="mb-2.5 text-xs font-medium text-muted">Slide Photos</p>
@@ -807,144 +1075,29 @@ function KickerColors() {
   );
 }
 
-function GridLayouts({ current }: { current: GridSection["template"] }) {
+function GridLayouts({ current }: { current: "mosaic" | "editorial" }) {
   return (
-    <Group>
-      <Choice
-        title="Tiles"
-        detail="Two columns on a phone, four on desktop."
+    <div className="flex flex-col gap-3">
+      <TemplateCard
         active={current === "mosaic"}
         onClick={() => useEditor.getState().patchSelected({ template: "mosaic" })}
-      />
-      <Choice
-        title="Editorial"
-        detail="Wide photographs, stacked."
+      >
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-line-soft bg-fill/30 p-2.5">
+          <div className="aspect-square rounded-md bg-slate-300" />
+          <div className="aspect-square rounded-md bg-slate-300" />
+          <div className="aspect-square rounded-md bg-slate-300" />
+          <div className="aspect-square rounded-md bg-slate-300" />
+        </div>
+      </TemplateCard>
+      <TemplateCard
         active={current === "editorial"}
         onClick={() => useEditor.getState().patchSelected({ template: "editorial" })}
-      />
-    </Group>
-  );
-}
-
-function GridItems({ grid }: { grid: GridSection }) {
-  const [items, setItems] = useState(grid.items.map((item) => ({ ...item })));
-  return (
-    <div className="flex flex-col gap-3">
-      {items.map((item, index) => (
-        <div key={item.id} className="rounded-2xl bg-fill p-3">
-          <p className="mb-2 text-xs font-medium text-muted">Item {index + 1}</p>
-          <TextInput
-            value={item.title}
-            onChange={(event) => {
-              const next = [...items];
-              const current = next[index];
-              if (!current) return;
-              next[index] = { ...current, title: event.target.value };
-              setItems(next);
-            }}
-          />
-          <TextInput
-            className="mt-2"
-            value={item.price}
-            onChange={(event) => {
-              const next = [...items];
-              const current = next[index];
-              if (!current) return;
-              next[index] = { ...current, price: event.target.value };
-              setItems(next);
-            }}
-          />
+      >
+        <div className="flex flex-col gap-2 rounded-xl border border-line-soft bg-fill/30 p-2.5">
+          <div className="h-10 w-full rounded-md bg-slate-300" />
+          <div className="h-10 w-full rounded-md bg-slate-300" />
         </div>
-      ))}
-      <PrimaryButton
-        onClick={() => {
-          useEditor.getState().patchSelected({ items });
-          useEditor.getState().closeSheet();
-        }}
-      >
-        Save items
-      </PrimaryButton>
-    </div>
-  );
-}
-
-function CatalogForm({ catalog }: { catalog: CatalogSection }) {
-  const [title, setTitle] = useState(catalog.title);
-  const [subtitle, setSubtitle] = useState(catalog.subtitle);
-  const [products, setProducts] = useState<Product[]>(catalog.products.map((item) => ({ ...item })));
-  return (
-    <div className="flex flex-col gap-3">
-      <Field label="Title">
-        <TextInput value={title} onChange={(event) => setTitle(event.target.value)} />
-      </Field>
-      <Field label="Subtitle">
-        <TextArea rows={2} value={subtitle} onChange={(event) => setSubtitle(event.target.value)} />
-      </Field>
-      {products.map((product, index) => (
-        <div key={product.id} className="grid grid-cols-[1fr_5rem] gap-2">
-          <TextInput
-            value={product.name}
-            onChange={(event) => {
-              const next = [...products];
-              const current = next[index];
-              if (!current) return;
-              next[index] = { ...current, name: event.target.value };
-              setProducts(next);
-            }}
-          />
-          <TextInput
-            value={String(product.price)}
-            onChange={(event) => {
-              const next = [...products];
-              const current = next[index];
-              if (!current) return;
-              const price = Number(event.target.value);
-              next[index] = { ...current, price: Number.isFinite(price) ? price : current.price };
-              setProducts(next);
-            }}
-          />
-        </div>
-      ))}
-      <PrimaryButton
-        onClick={() => {
-          useEditor.getState().patchSelected({ title, subtitle, products });
-          useEditor.getState().closeSheet();
-        }}
-      >
-        Save catalog
-      </PrimaryButton>
-    </div>
-  );
-}
-
-function ProductForm({ product }: { product: ProductSection }) {
-  const [productName, setProductName] = useState(product.productName);
-  const [price, setPrice] = useState(String(product.price));
-  const [description, setDescription] = useState(product.description);
-  return (
-    <div className="flex flex-col gap-3">
-      <Field label="Name">
-        <TextInput value={productName} onChange={(event) => setProductName(event.target.value)} />
-      </Field>
-      <Field label="Price">
-        <TextInput value={price} onChange={(event) => setPrice(event.target.value)} />
-      </Field>
-      <Field label="Description">
-        <TextArea rows={4} value={description} onChange={(event) => setDescription(event.target.value)} />
-      </Field>
-      <PrimaryButton
-        onClick={() => {
-          const value = Number(price);
-          useEditor.getState().patchSelected({
-            productName,
-            description,
-            price: Number.isFinite(value) ? value : product.price,
-          });
-          useEditor.getState().closeSheet();
-        }}
-      >
-        Save product
-      </PrimaryButton>
+      </TemplateCard>
     </div>
   );
 }
@@ -958,20 +1111,36 @@ function FooterStyles({
 }) {
   return (
     <div>
-      <Group>
-        <Choice
-          title="Minimal"
-          detail="Name, links, copyright."
+      <div className="flex flex-col gap-3">
+        <TemplateCard
           active={current === "minimal"}
           onClick={() => useEditor.getState().patchSelected({ template: "minimal" })}
-        />
-        <Choice
-          title="Columns"
-          detail="Shop, company, and a note field."
+        >
+          <div className="flex items-center justify-between rounded-xl border border-line-soft bg-fill/40 p-3">
+            <div className="h-2 w-16 rounded-full bg-slate-800" />
+            <div className="h-2 w-24 rounded-full bg-slate-400" />
+          </div>
+        </TemplateCard>
+        <TemplateCard
           active={current === "columns"}
           onClick={() => useEditor.getState().patchSelected({ template: "columns" })}
-        />
-      </Group>
+        >
+          <div className="grid grid-cols-3 gap-2 rounded-xl border border-line-soft bg-fill/40 p-3">
+            <div className="space-y-1">
+              <div className="h-2 w-3/4 rounded-full bg-slate-800" />
+              <div className="h-1.5 w-1/2 rounded-full bg-slate-400" />
+            </div>
+            <div className="space-y-1">
+              <div className="h-2 w-3/4 rounded-full bg-slate-800" />
+              <div className="h-1.5 w-1/2 rounded-full bg-slate-400" />
+            </div>
+            <div className="space-y-1">
+              <div className="h-2 w-3/4 rounded-full bg-slate-800" />
+              <div className="h-1.5 w-1/2 rounded-full bg-slate-400" />
+            </div>
+          </div>
+        </TemplateCard>
+      </div>
       <TextSwatches
         onPick={(color) => {
           if (color !== text) useEditor.getState().patchSelected({ text: color });

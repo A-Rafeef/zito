@@ -372,6 +372,32 @@ export const useEditor = create<EditorState>((set, get) => {
             }
           }
 
+          // Apply visual presentation styling globally across catalog, grid, and product sections!
+          const styleKeys = [
+            "imageRatio",
+            "typography",
+            "showBadge",
+            "showRating",
+            "showPrice",
+            "whatsappNumber",
+          ] as const;
+          const hasStylePatch = styleKeys.some((k) => k in patch);
+          if (hasStylePatch) {
+            const stylePatch: Record<string, unknown> = {};
+            styleKeys.forEach((k) => {
+              if (k in patch) stylePatch[k] = patch[k];
+            });
+            (Object.keys(pages) as PageId[]).forEach((pId) => {
+              pages[pId].sections = pages[pId].sections.map((sec) => {
+                if (sec.type === "catalog" || sec.type === "grid" || sec.type === "product") {
+                  return { ...sec, ...stylePatch } as Section;
+                }
+                return sec;
+              });
+            });
+            return;
+          }
+
           // Apply patch to the current section
           curPage.sections = curPage.sections.map((sec) =>
             sec.id === id ? ({ ...sec, ...patch } as Section) : sec,

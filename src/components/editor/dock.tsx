@@ -4,11 +4,13 @@ import {
   Image,
   LayoutGrid,
   LayoutTemplate,
+  MessageCircle,
   Palette,
   Pencil,
   Pin,
   PlusCircle,
   SlidersHorizontal,
+  Tag,
   Type,
 } from "lucide-react";
 import { selectedSection, useEditor } from "@/lib/editor/store";
@@ -29,14 +31,14 @@ export function Dock() {
     const open = (sheet: SheetKind) => () => useEditor.getState().openSheet(sheet);
     if (!section) {
       return [
-        { id: "template", label: "Template", icon: LayoutTemplate, action: open("themes") },
+        { id: "themes", label: "Template", icon: LayoutTemplate, action: open("themes") },
         { id: "add", label: "Add", icon: PlusCircle, action: open("add") },
-        { id: "background", label: "Background", icon: Palette, action: open("page-color") },
+        { id: "color", label: "Background", icon: Palette, action: open("page-color") },
         {
           id: "preview",
           label: "Preview",
           icon: Eye,
-          action: () => useEditor.getState().togglePreview(true),
+          action: () => useEditor.getState().togglePreview(),
         },
       ];
     }
@@ -44,8 +46,8 @@ export function Dock() {
       case "navbar":
         return [
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("navbar-style") },
-          { id: "background", label: "Background", icon: Palette, action: open("section-color") },
-          { id: "color", label: "Color", icon: Droplet, action: open("navbar-color") },
+          { id: "bg", label: "Background", icon: Droplet, action: open("section-color") },
+          { id: "color", label: "Color", icon: Palette, action: open("navbar-color") },
           { id: "sticky", label: "Sticky", icon: Pin, action: open("navbar-sticky") },
           { id: "elements", label: "Elements", icon: SlidersHorizontal, action: open("navbar-elements") },
         ];
@@ -63,19 +65,22 @@ export function Dock() {
       case "grid":
         return [
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("grid-layout") },
-          { id: "items", label: "Items", icon: Pencil, action: open("grid-items") },
+          { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
+          { id: "badges", label: "Badges", icon: Tag, action: open("product-card-badges") },
           { id: "color", label: "Color", icon: Palette, action: open("section-color") },
         ];
       case "catalog":
         return [
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("catalog-template") },
-          { id: "edit", label: "Edit", icon: Pencil, action: open("catalog-text") },
+          { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
+          { id: "badges", label: "Badges", icon: Tag, action: open("product-card-badges") },
           { id: "color", label: "Color", icon: Palette, action: open("section-color") },
         ];
       case "product":
         return [
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("product-template") },
-          { id: "edit", label: "Edit", icon: Pencil, action: open("product-text") },
+          { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
+          { id: "badges", label: "WhatsApp", icon: MessageCircle, action: open("product-card-badges") },
           { id: "color", label: "Color", icon: Palette, action: open("section-color") },
         ];
       case "footer":
@@ -109,8 +114,8 @@ export function Dock() {
                   "tap-smooth flex h-14 min-w-12 sm:min-w-16 px-1 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-ink transition-all duration-150 hover:bg-fill hover:-translate-y-0.5 active:translate-y-0",
                 )}
               >
-                <Icon className="size-5 shrink-0" strokeWidth={1.5} />
-                <span className="text-[11px] sm:text-xs font-medium text-muted truncate">{item.label}</span>
+                <Icon className="size-5 stroke-[1.75]" />
+                <span className="text-[11px] font-medium leading-none">{item.label}</span>
               </button>
             );
           })}
