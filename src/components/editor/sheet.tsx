@@ -1,5 +1,19 @@
 import { useState, type ReactNode } from "react";
-import { Check, Menu, Search, ShoppingBag, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Compass,
+  Layers,
+  Menu,
+  Plus,
+  Search,
+  Shield,
+  ShoppingBag,
+  Sliders,
+  Trash2,
+  Type,
+  X,
+} from "lucide-react";
 import { HERO_PHOTOS, PAGE_COLORS, TEXT_COLORS } from "@/lib/editor/defaults";
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import { cn } from "@/lib/cn";
@@ -7,6 +21,7 @@ import type {
   HeroRatio,
   HeroSection,
   IntroSection,
+  NavbarLink,
   NavbarSection,
   NavbarTemplate,
   ProductImageRatio,
@@ -21,9 +36,10 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "page-color": { title: "Background", subtitle: "The canvas behind every section." },
   "navbar-style": { title: "Template", subtitle: "" },
   "navbar-name": { title: "Name", subtitle: "Used in the bar and the footer." },
-  "navbar-color": { title: "Element color", subtitle: "Color of text, links, and icons." },
+  "navbar-color": { title: "Colors", subtitle: "Background, text & icon colors." },
   "navbar-sticky": { title: "Sticky header", subtitle: "Pin header to top while scrolling." },
-  "navbar-elements": { title: "Header elements", subtitle: "Choose what to display in the header." },
+  "navbar-elements": { title: "Elements", subtitle: "Toggle brand, menu, search & icons." },
+  "navbar-more": { title: "Edit More", subtitle: "Layout, borders, typography & behavior." },
   "hero-layout": { title: "Template", subtitle: "" },
   "hero-photo": { title: "Photo", subtitle: "Replaces the current slide." },
   "hero-text": { title: "Hero text", subtitle: "The line under the photograph." },
@@ -103,11 +119,13 @@ function SheetBody({ kind }: { kind: SheetKind }) {
     case "navbar-name":
       return section?.type === "navbar" ? <NameForm logo={section.logo} text={section.text} /> : null;
     case "navbar-color":
-      return section?.type === "navbar" ? <NavbarColor text={section.text} /> : null;
+      return section?.type === "navbar" ? <NavbarColor sec={section} /> : null;
     case "navbar-sticky":
       return section?.type === "navbar" ? <NavbarSticky current={section.sticky ?? true} /> : null;
     case "navbar-elements":
       return section?.type === "navbar" ? <NavbarElements sec={section} /> : null;
+    case "navbar-more":
+      return section?.type === "navbar" ? <NavbarMore sec={section} /> : null;
     case "hero-layout":
       return section?.type === "hero" ? <HeroLayouts hero={section} /> : null;
     case "hero-photo":
@@ -314,12 +332,13 @@ function TextSwatches({ onPick }: { onPick: (value: string) => void }) {
   );
 }
 
-const NAV_STYLES: NavbarTemplate[] = ["centered", "left", "minimal", "float"];
+const NAV_STYLES: NavbarTemplate[] = ["centered", "left", "minimal", "float", "expanded"];
 
 function NavbarStyles({ sec }: { sec: NavbarSection }) {
   const current = sec.template;
   const count = useEditor((s) => s.cart.reduce((sum, item) => sum + item.qty, 0));
   const logo = sec.logo || "STORE";
+  const iconColor = sec.iconColor || sec.text;
 
   const renderPreview = (id: NavbarTemplate) => {
     if (id === "minimal") {
@@ -331,7 +350,7 @@ function NavbarStyles({ sec }: { sec: NavbarSection }) {
           <div className="font-bold tracking-widest text-[11px] uppercase truncate pr-2">
             {logo}
           </div>
-          <div className="flex items-center gap-1 opacity-80 shrink-0">
+          <div className="flex items-center gap-1 shrink-0" style={{ color: iconColor }}>
             <ShoppingBag className="size-3.5" strokeWidth={1.75} />
             <span className="text-[10px] font-semibold">{count}</span>
           </div>
@@ -346,11 +365,11 @@ function NavbarStyles({ sec }: { sec: NavbarSection }) {
             className="relative flex items-center justify-between rounded-full border border-line-soft px-3 py-1.5 text-xs shadow-xs"
             style={{ background: sec.background, color: sec.text }}
           >
-            <Menu className="size-3.5 opacity-60 shrink-0" strokeWidth={1.75} />
+            <Menu className="size-3.5 shrink-0 opacity-80" strokeWidth={1.75} style={{ color: iconColor }} />
             <div className="font-bold tracking-widest text-[11px] uppercase truncate px-2">
               {logo}
             </div>
-            <div className="flex items-center gap-1.5 opacity-80 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0" style={{ color: iconColor }}>
               <Search className="size-3.5" strokeWidth={1.75} />
               <div className="flex items-center gap-0.5">
                 <ShoppingBag className="size-3.5" strokeWidth={1.75} />
@@ -369,17 +388,38 @@ function NavbarStyles({ sec }: { sec: NavbarSection }) {
           style={{ background: sec.background, color: sec.text }}
         >
           <div className="flex items-center gap-2 min-w-0 pr-2">
-            <Menu className="size-3.5 opacity-60 shrink-0" strokeWidth={1.75} />
+            <Menu className="size-3.5 shrink-0 opacity-80" strokeWidth={1.75} style={{ color: iconColor }} />
             <div className="font-bold tracking-widest text-[11px] uppercase truncate">
               {logo}
             </div>
           </div>
-          <div className="flex items-center gap-1.5 opacity-80 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0" style={{ color: iconColor }}>
             <Search className="size-3.5" strokeWidth={1.75} />
             <div className="flex items-center gap-0.5">
               <ShoppingBag className="size-3.5" strokeWidth={1.75} />
               <span className="text-[10px] font-semibold">{count}</span>
             </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (id === "expanded") {
+      return (
+        <div
+          className="flex items-center justify-between gap-2 rounded-xl border border-line-soft/80 px-3 py-2 text-xs shadow-2xs"
+          style={{ background: sec.background, color: sec.text }}
+        >
+          <div className="font-bold tracking-widest text-[11px] uppercase truncate shrink-0">
+            {logo}
+          </div>
+          <div className="flex-1 flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-200/50 dark:bg-white/10 text-[9px] text-muted truncate border border-line-soft/40">
+            <Search className="size-2.5 shrink-0" strokeWidth={1.75} style={{ color: iconColor }} />
+            <span className="truncate">Search...</span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0" style={{ color: iconColor }}>
+            <ShoppingBag className="size-3.5" strokeWidth={1.75} />
+            <span className="text-[10px] font-semibold">{count}</span>
           </div>
         </div>
       );
@@ -391,11 +431,11 @@ function NavbarStyles({ sec }: { sec: NavbarSection }) {
         className="relative flex items-center justify-between rounded-xl border border-line-soft/80 px-3 py-2 text-xs shadow-2xs"
         style={{ background: sec.background, color: sec.text }}
       >
-        <Menu className="size-3.5 opacity-60 shrink-0" strokeWidth={1.75} />
+        <Menu className="size-3.5 shrink-0 opacity-80" strokeWidth={1.75} style={{ color: iconColor }} />
         <div className="font-bold tracking-widest text-[11px] uppercase truncate px-2">
           {logo}
         </div>
-        <div className="flex items-center gap-1.5 opacity-80 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0" style={{ color: iconColor }}>
           <Search className="size-3.5" strokeWidth={1.75} />
           <div className="flex items-center gap-0.5">
             <ShoppingBag className="size-3.5" strokeWidth={1.75} />
@@ -808,60 +848,146 @@ function NavbarSticky({ current }: { current: boolean }) {
   );
 }
 
-function NavbarColor({ text }: { text: string }) {
-  const colors = [
-    { name: "Ink", value: "#1d1d1f" },
-    { name: "Gray", value: "#6e6e73" },
-    { name: "White", value: "#ffffff" },
-    { name: "Purple", value: "#53389e" },
-    { name: "Blue", value: "#0071e3" },
-    { name: "Rose", value: "#e11d48" },
-    { name: "Green", value: "#16a34a" },
-    { name: "Amber", value: "#d97706" },
+function NavbarColor({ sec, text }: { sec?: NavbarSection; text?: string }) {
+  const [tab, setTab] = useState<"background" | "text" | "iconColor">("background");
+  const currentSec = sec || { background: "#ffffff", text: text || "#1d1d1f", iconColor: text || "#1d1d1f" };
+
+  const currentColor =
+    tab === "background"
+      ? (currentSec.background || "#ffffff")
+      : tab === "text"
+      ? (currentSec.text || "#1d1d1f")
+      : (currentSec.iconColor || currentSec.text || "#1d1d1f");
+
+  const bgPalettes = [
+    { name: "Clean White", value: "#ffffff" },
+    { name: "Soft Cream", value: "#fbfbfd" },
+    { name: "Warm Linen", value: "#f7f4ed" },
+    { name: "Cool Mist", value: "#f1f5f9" },
+    { name: "Pure Ink", value: "#0b0b0d" },
+    { name: "Midnight", value: "#0f172a" },
+    { name: "Deep Navy", value: "#0a192f" },
+    { name: "Forest", value: "#064e3b" },
+    { name: "Royal Violet", value: "#2e1065" },
+    { name: "Wine Rose", value: "#4c0519" },
   ];
+
+  const textPalettes = [
+    { name: "Jet Black", value: "#111827" },
+    { name: "Slate Dark", value: "#334155" },
+    { name: "Muted Gray", value: "#64748b" },
+    { name: "Pure White", value: "#ffffff" },
+    { name: "Royal Purple", value: "#53389e" },
+    { name: "Vibrant Blue", value: "#0071e3" },
+    { name: "Emerald Green", value: "#16a34a" },
+    { name: "Crimson Red", value: "#dc2626" },
+    { name: "Warm Amber", value: "#d97706" },
+    { name: "Rose Pink", value: "#e11d48" },
+  ];
+
+  const palettes = tab === "background" ? bgPalettes : textPalettes;
+
+  const setColor = (val: string) => {
+    useEditor.getState().patchSelected({ [tab]: val });
+  };
 
   return (
     <div className="flex flex-col gap-4">
+      {/* 3 Tabs: Background, Text, Icons */}
+      <div className="flex rounded-2xl bg-fill p-1 border border-line-soft">
+        {(["background", "text", "iconColor"] as const).map((t) => {
+          const active = tab === t;
+          const label = t === "background" ? "Background" : t === "text" ? "Text" : "Icons";
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={cn(
+                "flex-1 py-2 text-xs font-semibold rounded-xl transition-all duration-150",
+                active ? "bg-surface text-ink shadow-xs border border-line/60" : "text-muted hover:text-ink"
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Interactive Color Picker & Live Hex Input */}
+      <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <label className="relative flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-2xl border-2 border-line shadow-xs overflow-hidden transition-transform active:scale-95">
+          <input
+            type="color"
+            value={currentColor.startsWith("#") && currentColor.length === 7 ? currentColor : "#ffffff"}
+            onChange={(e) => setColor(e.target.value)}
+            className="absolute inset-0 size-full opacity-0 cursor-pointer"
+          />
+          <span
+            className="size-full"
+            style={{ background: currentColor }}
+          />
+        </label>
+        <div className="flex-1 min-w-0">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+            {tab === "background" ? "Background Color" : tab === "text" ? "Text Color" : "Icon Color"}
+          </label>
+          <div className="relative mt-1 flex items-center">
+            <span className="absolute left-3 text-xs font-mono text-muted">#</span>
+            <input
+              type="text"
+              value={currentColor.replace(/^#/, "")}
+              onChange={(e) => {
+                const hex = `#${e.target.value.replace(/[^0-9A-Fa-f]/g, "").slice(0, 8)}`;
+                setColor(hex);
+              }}
+              placeholder="1d1d1f"
+              className="w-full rounded-xl border border-line-soft bg-fill/50 pl-7 pr-3 py-1.5 text-xs font-mono uppercase tracking-wider text-ink focus:border-accent focus:bg-surface focus:outline-hidden"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Preset Swatches Palette */}
       <div>
-        <p className="mb-2.5 text-xs font-medium text-muted">Element Color (Text, Links & Icons)</p>
-        <div className="grid grid-cols-4 gap-2.5">
-          {colors.map((color) => {
-            const active = text.toLowerCase() === color.value.toLowerCase();
+        <p className="mb-2 text-xs font-semibold text-muted uppercase tracking-wider">
+          Curated Palettes
+        </p>
+        <div className="grid grid-cols-5 gap-2">
+          {palettes.map((c) => {
+            const active = currentColor.toLowerCase() === c.value.toLowerCase();
             return (
               <button
-                key={color.value}
+                key={c.value}
                 type="button"
-                onClick={() => useEditor.getState().patchSelected({ text: color.value })}
+                onClick={() => setColor(c.value)}
                 className="tap-smooth group flex flex-col items-center gap-1.5 p-2 rounded-2xl border border-line-soft hover:bg-fill/70 transition-all"
               >
                 <span
                   className={cn(
-                    "size-9 rounded-full border border-line shadow-xs transition-transform group-hover:scale-105 flex items-center justify-center",
+                    "size-8 rounded-full border border-line shadow-xs transition-transform group-hover:scale-105 flex items-center justify-center",
                     active && "ring-2 ring-accent ring-offset-2"
                   )}
-                  style={{ background: color.value }}
+                  style={{ background: c.value }}
                 >
                   {active && (
                     <Check
-                      className={cn("size-4", color.value === "#ffffff" ? "text-slate-900" : "text-white")}
-                      strokeWidth={2.5}
+                      className={cn(
+                        "size-3.5 stroke-[2.5]",
+                        c.value === "#ffffff" || c.value === "#fbfbfd" || c.value === "#f7f4ed" || c.value === "#f1f5f9"
+                          ? "text-slate-900"
+                          : "text-white"
+                      )}
                     />
                   )}
                 </span>
-                <span className="text-xs text-muted group-hover:text-ink">{color.name}</span>
+                <span className="text-[10px] font-medium text-muted truncate max-w-full group-hover:text-ink">
+                  {c.name}
+                </span>
               </button>
             );
           })}
         </div>
-      </div>
-      <div>
-        <Field label="Custom Hex Color">
-          <TextInput
-            value={text}
-            placeholder="#1d1d1f"
-            onChange={(e) => useEditor.getState().patchSelected({ text: e.target.value })}
-          />
-        </Field>
       </div>
     </div>
   );
@@ -873,54 +999,71 @@ function NavbarElements({ sec }: { sec: NavbarSection }) {
   const toggles = [
     {
       key: "showLogo",
-      label: "Brand / Logo",
-      detail: "Display brand name or logo",
+      label: "Brand Logo",
+      detail: "Show logo image or monogram mark",
       enabled: sec.showLogo ?? true,
     },
     {
-      key: "showSearch",
-      label: "Search Icon",
-      detail: "Show search button",
-      enabled: sec.showSearch ?? true,
-    },
-    {
-      key: "showCart",
-      label: "Bag / Cart Icon",
-      detail: "Show shopping bag with item count",
-      enabled: sec.showCart ?? true,
+      key: "showBrandName",
+      label: "Brand Name Text",
+      detail: "Display store name in navbar",
+      enabled: sec.showBrandName ?? true,
     },
     {
       key: "showMenu",
       label: "Mobile Menu Button",
-      detail: "Show hamburger menu button on mobile",
+      detail: "Display hamburger drawer button on mobile",
       enabled: sec.showMenu ?? true,
     },
     {
+      key: "showSearch",
+      label: "Search Action",
+      detail: "Display search icon or search bar",
+      enabled: sec.showSearch ?? true,
+    },
+    {
+      key: "showCart",
+      label: "WhatsApp / Bag Icon",
+      detail: "Direct order action or cart icon",
+      enabled: sec.showCart ?? true,
+    },
+    {
       key: "showLinks",
-      label: "Navigation Links",
-      detail: "Show page navigation links on desktop",
+      label: "Page Navigation Links",
+      detail: "Show Home, Shop & Product links",
       enabled: sec.showLinks ?? true,
     },
   ] as const;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
-        <Field label="Brand / Logo Text">
-          <TextInput value={logoVal} onChange={(e) => setLogoVal(e.target.value)} />
-        </Field>
-        <PrimaryButton onClick={() => useEditor.getState().setLogo(logoVal)}>
-          Update Brand Name
-        </PrimaryButton>
+      {/* Brand Name Input */}
+      <div className="flex flex-col gap-2 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Brand Name
+        </label>
+        <input
+          type="text"
+          value={logoVal}
+          onChange={(e) => {
+            setLogoVal(e.target.value);
+            useEditor.getState().patchSelected({ logo: e.target.value });
+          }}
+          placeholder="Store Name"
+          className="rounded-xl border border-line-soft bg-fill/50 px-3 py-2 text-sm font-medium text-ink focus:border-accent focus:bg-surface focus:outline-hidden"
+        />
       </div>
 
+      {/* Elements Visibility Toggles */}
       <div>
-        <p className="mb-2 text-xs font-medium text-muted">Visible Elements</p>
+        <p className="mb-2 text-xs font-semibold text-muted uppercase tracking-wider">
+          Header Elements
+        </p>
         <div className="divide-y divide-line-soft overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
           {toggles.map((item) => (
             <div key={item.key} className="flex items-center justify-between p-3.5">
               <div className="pr-3">
-                <div className="text-sm font-medium">{item.label}</div>
+                <div className="text-sm font-semibold text-ink">{item.label}</div>
                 <div className="text-xs text-muted">{item.detail}</div>
               </div>
               <button
@@ -932,7 +1075,7 @@ function NavbarElements({ sec }: { sec: NavbarSection }) {
                 }
                 className={cn(
                   "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
-                  item.enabled ? "bg-accent" : "bg-slate-200"
+                  item.enabled ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
                 )}
               >
                 <span
@@ -945,6 +1088,454 @@ function NavbarElements({ sec }: { sec: NavbarSection }) {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function NavbarMore({ sec }: { sec: NavbarSection }) {
+  const [openSection, setOpenSection] = useState<string | null>("layout");
+
+  const toggle = (id: string) => {
+    setOpenSection((cur) => (cur === id ? null : id));
+  };
+
+  const defaultLinks: NavbarLink[] = [
+    { id: "1", label: "Home", url: "home" },
+    { id: "2", label: "Shop", url: "shop" },
+    { id: "3", label: "Product", url: "product" },
+  ];
+
+  const currentLinks = sec.links && sec.links.length > 0 ? sec.links : defaultLinks;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* 1. Layout & Shape */}
+      <div className="overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <button
+          type="button"
+          onClick={() => toggle("layout")}
+          className="flex w-full items-center justify-between p-3.5 text-left transition-colors hover:bg-fill/60"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-xl bg-fill text-ink">
+              <Sliders className="size-4" />
+            </div>
+            <span className="text-sm font-semibold text-ink">Layout & Shape</span>
+          </div>
+          <ChevronDown
+            className={cn("size-4 text-muted transition-transform duration-200", openSection === "layout" && "rotate-180")}
+          />
+        </button>
+        {openSection === "layout" && (
+          <div className="border-t border-line-soft p-3.5 space-y-4">
+            {/* Full-width vs Floating Pill */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted">Layout Mode</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => useEditor.getState().patchSelected({ isFloating: false })}
+                  className={cn(
+                    "py-2 text-xs font-semibold rounded-xl border text-center transition-all",
+                    !sec.isFloating
+                      ? "border-accent bg-accent/10 text-accent font-bold"
+                      : "border-line-soft bg-surface text-ink hover:bg-fill"
+                  )}
+                >
+                  Full Width
+                </button>
+                <button
+                  type="button"
+                  onClick={() => useEditor.getState().patchSelected({ isFloating: true })}
+                  className={cn(
+                    "py-2 text-xs font-semibold rounded-xl border text-center transition-all",
+                    sec.isFloating
+                      ? "border-accent bg-accent/10 text-accent font-bold"
+                      : "border-line-soft bg-surface text-ink hover:bg-fill"
+                  )}
+                >
+                  Floating Pill
+                </button>
+              </div>
+            </div>
+
+            {/* Height Slider */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-muted">Bar Height</span>
+                <span className="font-semibold text-ink">{sec.height || 56}px</span>
+              </div>
+              <input
+                type="range"
+                min={48}
+                max={80}
+                step={2}
+                value={sec.height || 56}
+                onChange={(e) => useEditor.getState().patchSelected({ height: Number(e.target.value) })}
+                className="accent-accent w-full cursor-pointer"
+              />
+            </div>
+
+            {/* Corner Radius Slider */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-muted">Corner Radius</span>
+                <span className="font-semibold text-ink">
+                  {sec.borderRadius === 9999 ? "Full Pill" : `${sec.borderRadius ?? (sec.isFloating ? 9999 : 0)}px`}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={0}
+                  max={40}
+                  step={2}
+                  value={sec.borderRadius === 9999 ? 40 : (sec.borderRadius ?? (sec.isFloating ? 40 : 0))}
+                  onChange={(e) => useEditor.getState().patchSelected({ borderRadius: Number(e.target.value) })}
+                  className="accent-accent flex-1 cursor-pointer"
+                />
+                <button
+                  type="button"
+                  onClick={() => useEditor.getState().patchSelected({ borderRadius: 9999 })}
+                  className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-fill hover:bg-line-soft text-ink shrink-0"
+                >
+                  Pill
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 2. Borders & Effects */}
+      <div className="overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <button
+          type="button"
+          onClick={() => toggle("borders")}
+          className="flex w-full items-center justify-between p-3.5 text-left transition-colors hover:bg-fill/60"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-xl bg-fill text-ink">
+              <Layers className="size-4" />
+            </div>
+            <span className="text-sm font-semibold text-ink">Borders & Effects</span>
+          </div>
+          <ChevronDown
+            className={cn("size-4 text-muted transition-transform duration-200", openSection === "borders" && "rotate-180")}
+          />
+        </button>
+        {openSection === "borders" && (
+          <div className="border-t border-line-soft p-3.5 space-y-4">
+            {/* Border Style */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted">Border Style</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["none", "subtle", "solid"] as const).map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => useEditor.getState().patchSelected({ borderStyle: b })}
+                    className={cn(
+                      "py-1.5 text-xs font-semibold rounded-xl border capitalize transition-all",
+                      (sec.borderStyle || "subtle") === b
+                        ? "border-accent bg-accent/10 text-accent font-bold"
+                        : "border-line-soft bg-surface text-ink hover:bg-fill"
+                    )}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Shadow */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted">Shadow Effect</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {(["none", "subtle", "float", "glass"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => useEditor.getState().patchSelected({ shadow: s })}
+                    className={cn(
+                      "py-1.5 text-xs font-semibold rounded-xl border capitalize transition-all",
+                      (sec.shadow || "none") === s
+                        ? "border-accent bg-accent/10 text-accent font-bold"
+                        : "border-line-soft bg-surface text-ink hover:bg-fill"
+                    )}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Backdrop Blur toggle */}
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <div className="text-xs font-semibold text-ink">Backdrop Blur</div>
+                <div className="text-[11px] text-muted">Frosted glass behind navbar</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={sec.backdropBlur !== false}
+                onClick={() => useEditor.getState().patchSelected({ backdropBlur: sec.backdropBlur === false ? true : false })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+                  sec.backdropBlur !== false ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200",
+                    sec.backdropBlur !== false ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3. Typography */}
+      <div className="overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <button
+          type="button"
+          onClick={() => toggle("typography")}
+          className="flex w-full items-center justify-between p-3.5 text-left transition-colors hover:bg-fill/60"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-xl bg-fill text-ink">
+              <Type className="size-4" />
+            </div>
+            <span className="text-sm font-semibold text-ink">Typography</span>
+          </div>
+          <ChevronDown
+            className={cn("size-4 text-muted transition-transform duration-200", openSection === "typography" && "rotate-180")}
+          />
+        </button>
+        {openSection === "typography" && (
+          <div className="border-t border-line-soft p-3.5 space-y-4">
+            {/* Font size */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted">Brand & Link Size</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {(["sm", "base", "lg", "xl"] as const).map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => useEditor.getState().patchSelected({ fontSize: sz })}
+                    className={cn(
+                      "py-1.5 text-xs font-semibold rounded-xl border uppercase transition-all",
+                      (sec.fontSize || "base") === sz
+                        ? "border-accent bg-accent/10 text-accent font-bold"
+                        : "border-line-soft bg-surface text-ink hover:bg-fill"
+                    )}
+                  >
+                    {sz}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Font weight */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted">Font Weight</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {(["normal", "medium", "semibold", "bold"] as const).map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => useEditor.getState().patchSelected({ fontWeight: w })}
+                    className={cn(
+                      "py-1.5 text-xs font-semibold rounded-xl border capitalize transition-all",
+                      (sec.fontWeight || "semibold") === w
+                        ? "border-accent bg-accent/10 text-accent font-bold"
+                        : "border-line-soft bg-surface text-ink hover:bg-fill"
+                    )}
+                  >
+                    {w}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Letter spacing */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted">Letter Spacing</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {(["tight", "normal", "wide", "widest"] as const).map((ls) => (
+                  <button
+                    key={ls}
+                    type="button"
+                    onClick={() => useEditor.getState().patchSelected({ letterSpacing: ls })}
+                    className={cn(
+                      "py-1.5 text-xs font-semibold rounded-xl border capitalize transition-all",
+                      (sec.letterSpacing || "normal") === ls
+                        ? "border-accent bg-accent/10 text-accent font-bold"
+                        : "border-line-soft bg-surface text-ink hover:bg-fill"
+                    )}
+                  >
+                    {ls}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Uppercase toggle */}
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <div className="text-xs font-semibold text-ink">Uppercase Brand & Links</div>
+                <div className="text-[11px] text-muted">Display text in ALL CAPS</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={sec.uppercase !== false}
+                onClick={() => useEditor.getState().patchSelected({ uppercase: sec.uppercase === false ? true : false })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+                  sec.uppercase !== false ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200",
+                    sec.uppercase !== false ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Menu Customization */}
+      <div className="overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <button
+          type="button"
+          onClick={() => toggle("menu")}
+          className="flex w-full items-center justify-between p-3.5 text-left transition-colors hover:bg-fill/60"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-xl bg-fill text-ink">
+              <Compass className="size-4" />
+            </div>
+            <span className="text-sm font-semibold text-ink">Menu Customization</span>
+          </div>
+          <ChevronDown
+            className={cn("size-4 text-muted transition-transform duration-200", openSection === "menu" && "rotate-180")}
+          />
+        </button>
+        {openSection === "menu" && (
+          <div className="border-t border-line-soft p-3.5 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-muted uppercase tracking-wider">Menu Links</label>
+              <button
+                type="button"
+                onClick={() => {
+                  const newLink: NavbarLink = {
+                    id: Date.now().toString(),
+                    label: "New Link",
+                    url: "shop",
+                  };
+                  useEditor.getState().patchSelected({ links: [...currentLinks, newLink] });
+                }}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
+              >
+                <Plus className="size-3.5" />
+                <span>Add Link</span>
+              </button>
+            </div>
+            <div className="flex flex-col gap-2">
+              {currentLinks.map((link, idx) => (
+                <div key={link.id} className="flex items-center gap-2 p-2 rounded-xl border border-line-soft bg-fill/40">
+                  <input
+                    type="text"
+                    value={link.label}
+                    onChange={(e) => {
+                      const updated = [...currentLinks];
+                      updated[idx] = { ...link, label: e.target.value };
+                      useEditor.getState().patchSelected({ links: updated });
+                    }}
+                    placeholder="Label"
+                    className="flex-1 rounded-lg border border-line-soft bg-surface px-2.5 py-1 text-xs font-medium text-ink focus:border-accent focus:outline-hidden"
+                  />
+                  <input
+                    type="text"
+                    value={link.url}
+                    onChange={(e) => {
+                      const updated = [...currentLinks];
+                      updated[idx] = { ...link, url: e.target.value };
+                      useEditor.getState().patchSelected({ links: updated });
+                    }}
+                    placeholder="URL / Page"
+                    className="w-24 rounded-lg border border-line-soft bg-surface px-2 py-1 text-xs font-mono text-muted focus:border-accent focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Remove link"
+                    onClick={() => {
+                      const updated = currentLinks.filter((_, i) => i !== idx);
+                      useEditor.getState().patchSelected({ links: updated });
+                    }}
+                    className="p-1 text-muted hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 5. Behavior */}
+      <div className="overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <button
+          type="button"
+          onClick={() => toggle("behavior")}
+          className="flex w-full items-center justify-between p-3.5 text-left transition-colors hover:bg-fill/60"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-xl bg-fill text-ink">
+              <Shield className="size-4" />
+            </div>
+            <span className="text-sm font-semibold text-ink">Behavior</span>
+          </div>
+          <ChevronDown
+            className={cn("size-4 text-muted transition-transform duration-200", openSection === "behavior" && "rotate-180")}
+          />
+        </button>
+        {openSection === "behavior" && (
+          <div className="border-t border-line-soft p-3.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-ink">Sticky Navigation</div>
+                <div className="text-xs text-muted">Keep header pinned to top when scrolling</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={sec.sticky ?? true}
+                onClick={() => useEditor.getState().patchSelected({ sticky: !(sec.sticky ?? true) })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+                  (sec.sticky ?? true) ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200",
+                    (sec.sticky ?? true) ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

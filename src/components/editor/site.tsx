@@ -16,6 +16,7 @@ import { useEditor } from "@/lib/editor/store";
 import type {
   CatalogFilter,
   Device,
+  NavbarLink,
   NavbarSection,
   PageId,
   Section,
@@ -262,7 +263,19 @@ function SectionShell({
   );
 }
 
-function LogoButton({ logo }: { logo: string }) {
+function LogoButton({
+  logo,
+  showBrandName = true,
+  showLogoImage = true,
+  logoImage,
+  className,
+}: {
+  logo: string;
+  showBrandName?: boolean;
+  showLogoImage?: boolean;
+  logoImage?: string;
+  className?: string;
+}) {
   const preview = useEditor((s) => s.preview);
   return (
     <button
@@ -272,19 +285,27 @@ function LogoButton({ logo }: { logo: string }) {
         event.stopPropagation();
         useEditor.getState().switchPage("home");
       }}
-      className="tap-smooth text-sm font-semibold tracking-widest hover:opacity-80 transition-opacity"
+      className={cn("tap-smooth inline-flex items-center gap-2 hover:opacity-80 transition-opacity", className)}
     >
-      {logo}
+      {showLogoImage && logoImage ? (
+        <img src={logoImage} alt={logo} className="size-7 rounded-full object-cover" />
+      ) : showLogoImage && !showBrandName ? (
+        <span className="flex size-7 items-center justify-center rounded-lg bg-current/10 font-black text-xs">
+          {logo.charAt(0) || "Z"}
+        </span>
+      ) : null}
+      {showBrandName && <span>{logo}</span>}
     </button>
   );
 }
 
-function BagButton({ count }: { count: number }) {
+function BagButton({ count, color }: { count: number; color?: string }) {
   const preview = useEditor((s) => s.preview);
   return (
     <button
       type="button"
       aria-label="Open bag"
+      style={color ? { color } : undefined}
       onClick={(event) => {
         if (!preview) return;
         event.stopPropagation();
@@ -298,12 +319,13 @@ function BagButton({ count }: { count: number }) {
   );
 }
 
-function SearchButton({ roomy }: { roomy: boolean }) {
+function SearchButton({ roomy, color }: { roomy: boolean; color?: string }) {
   const preview = useEditor((s) => s.preview);
   return (
     <button
       type="button"
       aria-label="Search"
+      style={color ? { color } : undefined}
       onClick={(event) => {
         if (!preview) return;
         event.stopPropagation();
@@ -320,29 +342,51 @@ function SearchButton({ roomy }: { roomy: boolean }) {
   );
 }
 
-function PageLinks({ current }: { current: PageId }) {
+function PageLinks({
+  current,
+  links,
+  caseClass,
+  color,
+}: {
+  current: PageId;
+  links?: NavbarLink[];
+  caseClass?: string;
+  color?: string;
+}) {
   const preview = useEditor((s) => s.preview);
-  const links: { id: PageId; label: string }[] = [
-    { id: "home", label: "Home" },
-    { id: "shop", label: "Shop" },
-    { id: "product", label: "Product" },
+  const defaultLinks: NavbarLink[] = [
+    { id: "home", label: "Home", url: "home" },
+    { id: "shop", label: "Shop", url: "shop" },
+    { id: "product", label: "Product", url: "product" },
   ];
+  const items = links && links.length > 0 ? links : defaultLinks;
+
   return (
     <nav className="flex items-center gap-6">
-      {links.map((link) => (
-        <button
-          key={link.id}
-          type="button"
-          onClick={(event) => {
-            if (!preview) return;
-            event.stopPropagation();
-            useEditor.getState().switchPage(link.id);
-          }}
-          className={cn("tap-smooth text-sm transition-opacity duration-150 hover:opacity-100", link.id === current ? "font-semibold opacity-100" : "opacity-60")}
-        >
-          {link.label}
-        </button>
-      ))}
+      {items.map((link) => {
+        const isCurrent = link.url === current;
+        return (
+          <button
+            key={link.id}
+            type="button"
+            onClick={(event) => {
+              if (!preview) return;
+              event.stopPropagation();
+              if (link.url === "home" || link.url === "shop" || link.url === "product") {
+                useEditor.getState().switchPage(link.url);
+              }
+            }}
+            className={cn(
+              "tap-smooth text-sm transition-opacity duration-150 hover:opacity-100",
+              caseClass,
+              isCurrent ? "font-semibold opacity-100" : "opacity-60"
+            )}
+            style={color ? { color } : undefined}
+          >
+            {link.label}
+          </button>
+        );
+      })}
     </nav>
   );
 }
@@ -354,64 +398,200 @@ function NavbarView({ sec, device }: { sec: NavbarSection; device: Device }) {
   const roomy = device !== "mobile";
 
   const showLogo = sec.showLogo ?? true;
+  const showBrandName = sec.showBrandName ?? true;
   const showSearch = sec.showSearch ?? true;
   const showCart = sec.showCart ?? true;
   const showMenu = sec.showMenu ?? true;
   const showLinks = sec.showLinks ?? true;
   const isSticky = sec.sticky ?? true;
+  const iconColor = sec.iconColor || sec.text;
+  const isFloating = sec.isFloating ?? (sec.template === "float");
 
-  const bar =
-    sec.template === "minimal" ? (
-      <div className={cn("flex items-center justify-between py-2", gutter(device))}>
-        {showLogo ? <LogoButton logo={sec.logo} /> : <div />}
-        {showCart && <BagButton count={count} />}
+  const heightStyle = sec.height ? { minHeight: `${sec.height}px` } : { minHeight: "56px" };
+  const radius =
+    sec.borderRadius !== undefined
+      ? sec.borderRadius === 9999
+        ? "9999px"
+        : `${sec.borderRadius}px`
+      : isFloating
+      ? "9999px"
+      : undefined;
+
+  const shadowClass =
+    sec.shadow === "none"
+      ? ""
+      : sec.shadow === "subtle"
+      ? "shadow-xs"
+      : sec.shadow === "glass"
+      ? "shadow-lg backdrop-blur-xl"
+      : isFloating || sec.shadow === "float"
+      ? "shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+      : "";
+
+  const blurClass = sec.backdropBlur !== false ? "backdrop-blur-md" : "";
+
+  const borderClass =
+    sec.borderStyle === "none"
+      ? "border-0"
+      : sec.borderStyle === "solid"
+      ? "border-2 border-current/20"
+      : "border border-line-soft";
+
+  // Typography styling
+  const fontClass =
+    sec.fontSize === "sm"
+      ? "text-xs"
+      : sec.fontSize === "lg"
+      ? "text-base"
+      : sec.fontSize === "xl"
+      ? "text-lg"
+      : "text-sm";
+
+  const weightClass =
+    sec.fontWeight === "normal"
+      ? "font-normal"
+      : sec.fontWeight === "medium"
+      ? "font-medium"
+      : sec.fontWeight === "bold"
+      ? "font-bold"
+      : "font-semibold";
+
+  const trackingClass =
+    sec.letterSpacing === "tight"
+      ? "tracking-tight"
+      : sec.letterSpacing === "wide"
+      ? "tracking-wide"
+      : sec.letterSpacing === "widest"
+      ? "tracking-widest"
+      : "tracking-widest";
+
+  const caseClass = sec.uppercase !== false ? "uppercase" : "normal-case";
+
+  const brandEl = (showLogo || showBrandName) ? (
+    <LogoButton
+      logo={sec.logo}
+      showBrandName={showBrandName}
+      showLogoImage={showLogo}
+      logoImage={sec.logoImage}
+      className={cn(fontClass, weightClass, trackingClass, caseClass)}
+    />
+  ) : <div />;
+
+  const menuButton = showMenu ? (
+    <button
+      type="button"
+      aria-label="Menu"
+      style={{ color: iconColor }}
+      onClick={(event) => {
+        if (!preview) return;
+        event.stopPropagation();
+        useEditor.getState().setMenuOpen(true);
+      }}
+      className="inline-flex size-11 items-center justify-center tap-smooth hover:opacity-80 transition-opacity"
+    >
+      <Menu className="size-5" strokeWidth={1.5} />
+    </button>
+  ) : (
+    <div className="size-11" />
+  );
+
+  const actionIcons = (
+    <div className="flex items-center gap-0.5">
+      {showSearch && <SearchButton roomy={false} color={iconColor} />}
+      {showCart && <BagButton count={count} color={iconColor} />}
+    </div>
+  );
+
+  let bar: React.ReactNode;
+
+  if (sec.template === "minimal") {
+    bar = (
+      <div className={cn("flex items-center justify-between py-2", gutter(device))} style={heightStyle}>
+        {brandEl}
+        {actionIcons}
       </div>
-    ) : roomy ? (
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 py-2">
-        <div className="justify-self-start">
-          {showLogo && <LogoButton logo={sec.logo} />}
+    );
+  } else if (sec.template === "expanded") {
+    bar = (
+      <div className={cn("flex items-center justify-between gap-4 py-2", gutter(device))} style={heightStyle}>
+        <div className="shrink-0">{brandEl}</div>
+        <div className="flex-1 max-w-sm hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-fill/70 border border-line-soft text-muted text-xs">
+          <Search className="size-3.5 shrink-0" style={{ color: iconColor }} />
+          <span className="truncate">Search products...</span>
         </div>
-        {showLinks ? <PageLinks current={pageId} /> : <div />}
-        <div className="flex items-center justify-end gap-1">
-          {showSearch && <SearchButton roomy />}
-          {showCart && <BagButton count={count} />}
-        </div>
-      </div>
-    ) : (
-      <div className="relative flex items-center justify-between px-1 py-1">
-        {showMenu ? (
-          <button
-            type="button"
-            aria-label="Menu"
-            onClick={(event) => {
-              if (!preview) return;
-              event.stopPropagation();
-              useEditor.getState().setMenuOpen(true);
-            }}
-            className="inline-flex size-11 items-center justify-center"
-          >
-            <Menu className="size-5" strokeWidth={1.5} />
-          </button>
-        ) : (
-          <div className="size-11" />
-        )}
-        {showLogo && (
-          sec.template === "left" ? (
-            <LogoButton logo={sec.logo} />
-          ) : (
-            <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2">
-              <LogoButton logo={sec.logo} />
-            </div>
-          )
-        )}
-        <div className="flex items-center">
-          {showSearch && <SearchButton roomy={false} />}
-          {showCart && <BagButton count={count} />}
+        <div className="flex items-center gap-1 shrink-0">
+          {showSearch && <SearchButton roomy={false} color={iconColor} />}
+          {showCart && <BagButton count={count} color={iconColor} />}
+          {!roomy && showMenu && menuButton}
         </div>
       </div>
     );
+  } else if (roomy) {
+    if (sec.template === "left") {
+      bar = (
+        <div className="flex items-center justify-between gap-6 px-6 py-2" style={heightStyle}>
+          <div className="flex items-center gap-8">
+            {brandEl}
+            {showLinks && (
+              <PageLinks
+                current={pageId}
+                links={sec.links}
+                caseClass={caseClass}
+                color={sec.text}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {showSearch && <SearchButton roomy color={iconColor} />}
+            {showCart && <BagButton count={count} color={iconColor} />}
+          </div>
+        </div>
+      );
+    } else {
+      // centered & float desktop
+      bar = (
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 py-2" style={heightStyle}>
+          <div className="justify-self-start">
+            {showLinks && (
+              <PageLinks
+                current={pageId}
+                links={sec.links}
+                caseClass={caseClass}
+                color={sec.text}
+              />
+            )}
+          </div>
+          <div className="justify-self-center">{brandEl}</div>
+          <div className="flex items-center justify-end gap-1">
+            {showSearch && <SearchButton roomy color={iconColor} />}
+            {showCart && <BagButton count={count} color={iconColor} />}
+          </div>
+        </div>
+      );
+    }
+  } else {
+    // Mobile layout
+    bar = (
+      <div className="relative flex items-center justify-between px-2 py-1" style={heightStyle}>
+        {sec.template === "left" ? (
+          <div className="flex items-center gap-2">
+            {showMenu && menuButton}
+            {brandEl}
+          </div>
+        ) : (
+          <>
+            {menuButton}
+            <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2">
+              {brandEl}
+            </div>
+          </>
+        )}
+        {actionIcons}
+      </div>
+    );
+  }
 
-  if (sec.template === "float") {
+  if (isFloating) {
     return (
       <SectionShell
         section={sec}
@@ -421,8 +601,18 @@ function NavbarView({ sec, device }: { sec: NavbarSection; device: Device }) {
       >
         <div className="px-3 pt-3 pb-1">
           <div
-            className="rounded-full border border-line-soft shadow-float backdrop-blur-md"
-            style={{ background: sec.background, color: sec.text }}
+            className={cn(
+              "overflow-hidden transition-all duration-200",
+              borderClass,
+              shadowClass,
+              blurClass
+            )}
+            style={{
+              background: sec.background,
+              color: sec.text,
+              borderRadius: radius || "9999px",
+              borderColor: sec.borderColor,
+            }}
           >
             {bar}
           </div>
@@ -436,9 +626,17 @@ function NavbarView({ sec, device }: { sec: NavbarSection; device: Device }) {
       section={sec}
       background={sec.background}
       color={sec.text}
-      className={cn(isSticky && "sticky top-0 z-20 backdrop-blur-md")}
+      className={cn(isSticky && "sticky top-0 z-20", blurClass)}
     >
-      <div className="border-b border-line-soft">{bar}</div>
+      <div
+        className={cn("transition-all duration-200 border-b", borderClass, shadowClass)}
+        style={{
+          borderRadius: radius,
+          borderColor: sec.borderColor,
+        }}
+      >
+        {bar}
+      </div>
     </SectionShell>
   );
 }

@@ -7,6 +7,7 @@ import {
   Pencil,
   Pin,
   PlusCircle,
+  Settings2,
   SlidersHorizontal,
   Tag,
 } from "lucide-react";
@@ -36,10 +37,9 @@ export function Dock() {
       case "navbar":
         return [
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("navbar-style") },
-          { id: "bg", label: "Background", icon: Droplet, action: open("section-color") },
-          { id: "color", label: "Color", icon: Palette, action: open("navbar-color") },
-          { id: "sticky", label: "Sticky", icon: Pin, action: open("navbar-sticky") },
+          { id: "colors", label: "Colors", icon: Palette, action: open("navbar-color") },
           { id: "elements", label: "Elements", icon: SlidersHorizontal, action: open("navbar-elements") },
+          { id: "more", label: "Edit More", icon: Settings2, action: open("navbar-more") },
         ];
       case "hero":
         return [

@@ -4,7 +4,7 @@ export type Tone = "light" | "dark";
 export type Category = "Footwear" | "Apparel" | "Accessories";
 export type CatalogFilter = "All" | Category;
 
-export type NavbarTemplate = "centered" | "left" | "minimal" | "float";
+export type NavbarTemplate = "centered" | "left" | "minimal" | "float" | "expanded";
 export type HeroTemplate = "bleed" | "split";
 export type HeroRatio = "16:9" | "21:9" | "4:3" | "3:2" | "1:1";
 export type GridTemplate = "mosaic" | "editorial";
@@ -42,6 +42,12 @@ export interface Product {
   category: Category;
 }
 
+export interface NavbarLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
 export interface NavbarSection {
   id: string;
   type: "navbar";
@@ -49,13 +55,28 @@ export interface NavbarSection {
   template: NavbarTemplate;
   background: string;
   text: string;
+  iconColor?: string;
   logo: string;
+  logoImage?: string;
   sticky?: boolean;
   showSearch?: boolean;
   showCart?: boolean;
   showMenu?: boolean;
   showLinks?: boolean;
   showLogo?: boolean;
+  showBrandName?: boolean;
+  isFloating?: boolean;
+  height?: number;
+  borderRadius?: number;
+  borderStyle?: "none" | "solid" | "subtle";
+  borderColor?: string;
+  shadow?: "none" | "subtle" | "float" | "glass";
+  backdropBlur?: boolean;
+  fontSize?: "sm" | "base" | "lg" | "xl";
+  fontWeight?: "normal" | "medium" | "semibold" | "bold";
+  letterSpacing?: "tight" | "normal" | "wide" | "widest";
+  uppercase?: boolean;
+  links?: NavbarLink[];
 }
 
 export interface HeroSection {
@@ -284,6 +305,7 @@ export type SheetKind =
   | "navbar-color"
   | "navbar-sticky"
   | "navbar-elements"
+  | "navbar-more"
   | "hero-layout"
   | "hero-photo"
   | "hero-text"
