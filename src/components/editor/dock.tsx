@@ -44,8 +44,9 @@ export function Dock() {
     }
     if (selectedId === "product-card") {
       return [
-        { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
-        { id: "elements", label: "Elements", icon: Tag, action: open("product-card-badges") },
+        { id: "box", label: "Card Frame", icon: Square, action: open("product-card-box") },
+        { id: "image", label: "Image", icon: Image, action: open("product-card-image") },
+        { id: "details", label: "Content", icon: Tag, action: open("product-card-details") },
         { id: "color", label: "Colors", icon: Palette, action: open("product-card-color") },
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, action: open("product-card-cta") },
       ];
@@ -87,8 +88,9 @@ export function Dock() {
         ];
       case "product-card":
         return [
-          { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
-          { id: "elements", label: "Elements", icon: Tag, action: open("product-card-badges") },
+          { id: "box", label: "Card Frame", icon: Square, action: open("product-card-box") },
+          { id: "image", label: "Image", icon: Image, action: open("product-card-image") },
+          { id: "details", label: "Content", icon: Layers, action: open("product-card-details") },
           { id: "color", label: "Colors", icon: Palette, action: open("product-card-color") },
           { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, action: open("product-card-cta") },
         ];

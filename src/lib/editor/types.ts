@@ -15,6 +15,9 @@ export type FooterTemplate = "minimal" | "columns";
 
 export type ProductImageRatio = "1:1" | "3:4" | "16:9";
 export type ProductTypography = "sm" | "base" | "lg";
+export type ProductCardShadow = "none" | "soft" | "smooth" | "float" | "deep";
+export type ProductCardDetailsLayout = "outer" | "inner";
+export type ProductCardTextAlign = "left" | "center";
 
 export interface CartItem {
   id: string;
@@ -124,8 +127,25 @@ export interface GridSection {
   background: string;
   items: GridItem[];
   imageRatio?: ProductImageRatio;
+  borderRadius?: number;
   typography?: ProductTypography;
+  borderEnabled?: boolean;
+  borderWidth?: number;
+  borderColor?: string;
+  shadowEnabled?: boolean;
+  shadowStyle?: ProductCardShadow;
+  cardBackground?: string;
+  imageInset?: boolean;
+  imageRadius?: number;
+  detailsLayout?: ProductCardDetailsLayout;
+  textAlign?: ProductCardTextAlign;
   showBadge?: boolean;
+  showRating?: boolean;
+  showPrice?: boolean;
+  showButton?: boolean;
+  whatsappNumber?: string;
+  priceColor?: string;
+  buttonColor?: string;
 }
 
 export interface FeaturedSection {
@@ -139,6 +159,16 @@ export interface FeaturedSection {
   imageRatio?: ProductImageRatio;
   borderRadius?: number;
   typography?: ProductTypography;
+  borderEnabled?: boolean;
+  borderWidth?: number;
+  borderColor?: string;
+  shadowEnabled?: boolean;
+  shadowStyle?: ProductCardShadow;
+  cardBackground?: string;
+  imageInset?: boolean;
+  imageRadius?: number;
+  detailsLayout?: ProductCardDetailsLayout;
+  textAlign?: ProductCardTextAlign;
   showBadge?: boolean;
   showRating?: boolean;
   showPrice?: boolean;
@@ -232,6 +262,16 @@ export interface CatalogSection {
   imageRatio?: ProductImageRatio;
   borderRadius?: number;
   typography?: ProductTypography;
+  borderEnabled?: boolean;
+  borderWidth?: number;
+  borderColor?: string;
+  shadowEnabled?: boolean;
+  shadowStyle?: ProductCardShadow;
+  cardBackground?: string;
+  imageInset?: boolean;
+  imageRadius?: number;
+  detailsLayout?: ProductCardDetailsLayout;
+  textAlign?: ProductCardTextAlign;
   showBadge?: boolean;
   showRating?: boolean;
   showPrice?: boolean;
@@ -308,6 +348,16 @@ export interface ProductCardSection {
   imageRatio?: ProductImageRatio;
   borderRadius?: number;
   typography?: ProductTypography;
+  borderEnabled?: boolean;
+  borderWidth?: number;
+  borderColor?: string;
+  shadowEnabled?: boolean;
+  shadowStyle?: ProductCardShadow;
+  cardBackground?: string;
+  imageInset?: boolean;
+  imageRadius?: number;
+  detailsLayout?: ProductCardDetailsLayout;
+  textAlign?: ProductCardTextAlign;
   showBadge?: boolean;
   showRating?: boolean;
   showPrice?: boolean;
@@ -386,6 +436,9 @@ export type SheetKind =
   | "product-color"
   | "product-typography"
   | "block-template"
+  | "product-card-box"
+  | "product-card-image"
+  | "product-card-details"
   | "product-card-style"
   | "product-card-badges"
   | "product-card-color"

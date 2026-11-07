@@ -29,6 +29,9 @@ import type {
   NavbarSection,
   NavbarTemplate,
   PageId,
+  ProductCardDetailsLayout,
+  ProductCardShadow,
+  ProductCardTextAlign,
   ProductImageRatio,
   ProductSection,
   ProductTypography,
@@ -78,6 +81,9 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "block-template": { title: "Template", subtitle: "" },
   "block-text": { title: "Section", subtitle: "Edit the words." },
   "section-color": { title: "Color", subtitle: "Background of this section." },
+  "product-card-box": { title: "Card Frame", subtitle: "Borders, shadows, curves & card background." },
+  "product-card-image": { title: "Image Style", subtitle: "Full-width vs inset, image curves & ratio." },
+  "product-card-details": { title: "Card Content", subtitle: "Layout, alignment, badges & buttons." },
   "product-card-style": { title: "Card Style", subtitle: "Image aspect ratio, corner curve & typography." },
   "product-card-badges": { title: "Card Elements", subtitle: "Toggle badges, ratings, prices & WhatsApp button." },
   "product-card-color": { title: "Card Colors", subtitle: "Price color and WhatsApp button styling." },
@@ -200,6 +206,12 @@ function SheetBody({ kind }: { kind: SheetKind }) {
       return section?.type === "product" ? <ProductColorSheet sec={section} /> : null;
     case "product-typography":
       return section?.type === "product" ? <ProductTypographySheet sec={section} /> : null;
+    case "product-card-box":
+      return <ProductCardBoxSheet />;
+    case "product-card-image":
+      return <ProductCardImageSheet />;
+    case "product-card-details":
+      return <ProductCardDetailsSheet />;
     case "product-card-style":
       return <ProductCardStyle />;
     case "product-card-badges":
@@ -1307,6 +1319,642 @@ function BlockTemplate({ current }: { current?: "card" | "minimal" }) {
     </div>
   );
 }
+
+function ProductCardBoxSheet() {
+  const section = useEditor((s) => selectedSection(s));
+  const borderEnabled = section && "borderEnabled" in section ? section.borderEnabled !== false : true;
+  const borderWidth = (section && "borderWidth" in section && section.borderWidth) || 1;
+  const borderColor = (section && "borderColor" in section && section.borderColor) || "#e2e8f0";
+  const shadowEnabled = section && "shadowEnabled" in section ? Boolean(section.shadowEnabled) : false;
+  const shadowStyle = (section && "shadowStyle" in section && (section.shadowStyle as ProductCardShadow)) || "soft";
+  const borderRadius = (section && "borderRadius" in section && section.borderRadius !== undefined) ? section.borderRadius : 16;
+  const cardBackground = (section && "cardBackground" in section && section.cardBackground) || "#ffffff";
+
+  const borderWidths = [
+    { label: "1px Hairline", value: 1 },
+    { label: "2px Medium", value: 2 },
+    { label: "3px Bold", value: 3 },
+    { label: "4px Thick", value: 4 },
+  ];
+
+  const borderColors = [
+    { label: "Light Slate", value: "#e2e8f0" },
+    { label: "Neutral Zinc", value: "#d4d4d8" },
+    { label: "Border Soft", value: "#cbd5e1" },
+    { label: "Dark Slate", value: "#334155" },
+    { label: "Ink Black", value: "#000000" },
+    { label: "Emerald", value: "#10b981" },
+    { label: "Purple", value: "#8b5cf6" },
+    { label: "Rose", value: "#f43f5e" },
+  ];
+
+  const shadowStyles: { id: ProductCardShadow; label: string; desc: string }[] = [
+    { id: "soft", label: "Soft Glow", desc: "Subtle clean outline" },
+    { id: "smooth", label: "Smooth", desc: "Gentle natural elevation" },
+    { id: "float", label: "Floating 3D", desc: "Raised off canvas" },
+    { id: "deep", label: "Deep Shadow", desc: "Bold dramatic depth" },
+  ];
+
+  const radiusPresets = [
+    { label: "Sharp", value: 0 },
+    { label: "Subtle", value: 8 },
+    { label: "Rounded", value: 16 },
+    { label: "Curved", value: 24 },
+    { label: "Pill", value: 32 },
+  ];
+
+  const bgColors = [
+    { label: "White", value: "#ffffff" },
+    { label: "Cream", value: "#fafaf9" },
+    { label: "Soft Grey", value: "#f8fafc" },
+    { label: "Dark Slate", value: "#1e293b" },
+    { label: "Charcoal", value: "#18181b" },
+    { label: "Midnight", value: "#09090b" },
+    { label: "Transparent", value: "transparent" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* 1. Card Border */}
+      <div>
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-xs font-semibold tracking-wider text-muted uppercase">Card Border</p>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={borderEnabled}
+            onClick={() => useEditor.getState().patchSelected({ borderEnabled: !borderEnabled })}
+            className={cn(
+              "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+              borderEnabled ? "bg-accent" : "bg-slate-200"
+            )}
+          >
+            <span
+              className={cn(
+                "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                borderEnabled ? "translate-x-5" : "translate-x-0"
+              )}
+            />
+          </button>
+        </div>
+
+        {borderEnabled && (
+          <div className="animate-fade-in flex flex-col gap-3 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+            <div>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block mb-2">Border Width</span>
+              <div className="grid grid-cols-4 gap-1.5">
+                {borderWidths.map((w) => (
+                  <button
+                    key={w.value}
+                    type="button"
+                    onClick={() => useEditor.getState().patchSelected({ borderWidth: w.value })}
+                    className={cn(
+                      "tap-smooth py-1.5 px-2 rounded-xl border text-xs font-medium text-center transition-all cursor-pointer",
+                      borderWidth === w.value
+                        ? "border-[#53389E] bg-[#EEF2FF]/60 text-[#53389E] font-semibold ring-2 ring-[#53389E]/20"
+                        : "border-line-soft bg-surface hover:bg-fill text-ink"
+                    )}
+                  >
+                    {w.value}px
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block mb-2">Border Color</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {borderColors.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    title={c.label}
+                    onClick={() => useEditor.getState().patchSelected({ borderColor: c.value })}
+                    className={cn(
+                      "size-7 rounded-full border-2 transition-all cursor-pointer hover:scale-110",
+                      borderColor.toLowerCase() === c.value.toLowerCase()
+                        ? "border-[#53389E] ring-2 ring-[#53389E]/30 scale-105"
+                        : "border-slate-300 dark:border-slate-700"
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <input
+                    type="color"
+                    value={borderColor.startsWith("#") ? borderColor : "#e2e8f0"}
+                    onChange={(e) => useEditor.getState().patchSelected({ borderColor: e.target.value })}
+                    className="size-7 rounded-lg border border-line-soft cursor-pointer bg-transparent p-0.5"
+                    title="Custom color"
+                  />
+                  <span className="text-xs font-mono text-muted">{borderColor}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 2. Card Shadow */}
+      <div>
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-xs font-semibold tracking-wider text-muted uppercase">Card Shadow</p>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={shadowEnabled}
+            onClick={() => useEditor.getState().patchSelected({ shadowEnabled: !shadowEnabled })}
+            className={cn(
+              "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+              shadowEnabled ? "bg-accent" : "bg-slate-200"
+            )}
+          >
+            <span
+              className={cn(
+                "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                shadowEnabled ? "translate-x-5" : "translate-x-0"
+              )}
+            />
+          </button>
+        </div>
+
+        {shadowEnabled && (
+          <div className="animate-fade-in grid grid-cols-2 gap-2">
+            {shadowStyles.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ shadowStyle: s.id })}
+                className={cn(
+                  "tap-smooth flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all cursor-pointer",
+                  shadowStyle === s.id
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 text-ink ring-2 ring-[#53389E]/20"
+                    : "border-line-soft bg-surface hover:bg-fill text-muted"
+                )}
+              >
+                <span className="text-xs font-semibold text-ink">{s.label}</span>
+                <span className="text-[11px] text-muted">{s.desc}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 3. Outer Corner Curve */}
+      <div>
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-xs font-semibold tracking-wider text-muted uppercase">Outer Corner Curve</p>
+          <span className="text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-200">{borderRadius}px</span>
+        </div>
+        <div className="grid grid-cols-5 gap-1.5 mb-3">
+          {radiusPresets.map((preset) => {
+            const active = borderRadius === preset.value;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ borderRadius: preset.value })}
+                className={cn(
+                  "tap-smooth flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-all cursor-pointer",
+                  active
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <div
+                  className="size-6 border-2 border-slate-400 bg-slate-200/60"
+                  style={{ borderRadius: `${preset.value / 2}px` }}
+                />
+                <span className="text-[10px] font-medium text-ink">{preset.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="40"
+          step="2"
+          value={borderRadius}
+          onChange={(e) => useEditor.getState().patchSelected({ borderRadius: Number(e.target.value) })}
+          className="w-full accent-[#53389E] cursor-pointer"
+        />
+      </div>
+
+      {/* 4. Card Background */}
+      <div>
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-xs font-semibold tracking-wider text-muted uppercase">Card Background</p>
+          <span className="text-xs font-mono text-muted">{cardBackground}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {bgColors.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ cardBackground: c.value })}
+              className={cn(
+                "tap-smooth px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer",
+                cardBackground.toLowerCase() === c.value.toLowerCase()
+                  ? "border-[#53389E] bg-[#EEF2FF]/60 text-[#53389E] font-semibold ring-2 ring-[#53389E]/20"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              <span
+                className="size-3.5 rounded-full border border-slate-300 dark:border-slate-600 inline-block"
+                style={{ backgroundColor: c.value === "transparent" ? undefined : c.value }}
+              />
+              <span>{c.label}</span>
+            </button>
+          ))}
+          <input
+            type="color"
+            value={cardBackground.startsWith("#") ? cardBackground : "#ffffff"}
+            onChange={(e) => useEditor.getState().patchSelected({ cardBackground: e.target.value })}
+            className="size-8 rounded-lg border border-line-soft cursor-pointer bg-transparent p-0.5 ml-auto"
+            title="Custom background color"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductCardImageSheet() {
+  const section = useEditor((s) => selectedSection(s));
+  const imageRatio = (section && "imageRatio" in section && section.imageRatio) || "1:1";
+  const imageInset = section && "imageInset" in section ? Boolean(section.imageInset) : false;
+  const imageRadius = (section && "imageRadius" in section && section.imageRadius !== undefined) ? section.imageRadius : 12;
+
+  const ratios: { id: ProductImageRatio; label: string; aspect: string }[] = [
+    { id: "1:1", label: "1:1 Square", aspect: "aspect-square" },
+    { id: "3:4", label: "3:4 Portrait", aspect: "aspect-[3/4]" },
+    { id: "16:9", label: "16:9 Wide", aspect: "aspect-video" },
+  ];
+
+  const imageRadiusPresets = [
+    { label: "Sharp", value: 0 },
+    { label: "Subtle", value: 6 },
+    { label: "Curved", value: 12 },
+    { label: "Round", value: 18 },
+    { label: "Max", value: 24 },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* 1. Image Width Mode: Flush vs Inset */}
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Image Width & Padding</p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ imageInset: false })}
+            className={cn(
+              "tap-smooth flex flex-col items-center gap-2 rounded-2xl border p-3.5 text-center transition-all cursor-pointer",
+              !imageInset
+                ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                : "border-line-soft bg-surface hover:bg-fill/70"
+            )}
+          >
+            <div className="h-16 w-full rounded-lg bg-slate-200/60 p-1 flex items-center justify-center">
+              <div className="h-full w-full rounded bg-slate-400" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-ink">Full-Width Flush</div>
+              <div className="text-[10px] text-muted">Edge-to-edge with card frame</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ imageInset: true })}
+            className={cn(
+              "tap-smooth flex flex-col items-center gap-2 rounded-2xl border p-3.5 text-center transition-all cursor-pointer",
+              imageInset
+                ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                : "border-line-soft bg-surface hover:bg-fill/70"
+            )}
+          >
+            <div className="h-16 w-full rounded-lg bg-slate-200/60 p-2.5 flex items-center justify-center">
+              <div className="h-full w-full rounded-lg bg-slate-400" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-ink">Inset with Margin</div>
+              <div className="text-[10px] text-muted">Surrounded by padding gap</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Image Corner Curve (when inset) */}
+      {imageInset && (
+        <div className="animate-fade-in">
+          <div className="mb-2.5 flex items-center justify-between">
+            <p className="text-xs font-semibold tracking-wider text-muted uppercase">Image Corner Curve</p>
+            <span className="text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-200">{imageRadius}px</span>
+          </div>
+          <div className="grid grid-cols-5 gap-1.5 mb-3">
+            {imageRadiusPresets.map((preset) => {
+              const active = imageRadius === preset.value;
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => useEditor.getState().patchSelected({ imageRadius: preset.value })}
+                  className={cn(
+                    "tap-smooth flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-all cursor-pointer",
+                    active
+                      ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                      : "border-line-soft bg-surface hover:bg-fill/70"
+                  )}
+                >
+                  <div
+                    className="size-6 border-2 border-slate-400 bg-slate-200/60"
+                    style={{ borderRadius: `${preset.value / 2}px` }}
+                  />
+                  <span className="text-[10px] font-medium text-ink">{preset.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="32"
+            step="2"
+            value={imageRadius}
+            onChange={(e) => useEditor.getState().patchSelected({ imageRadius: Number(e.target.value) })}
+            className="w-full accent-[#53389E] cursor-pointer"
+          />
+        </div>
+      )}
+
+      {/* 3. Image Aspect Ratio */}
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Image Aspect Ratio</p>
+        <div className="grid grid-cols-3 gap-2.5">
+          {ratios.map((r) => {
+            const active = imageRatio === r.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ imageRatio: r.id })}
+                className={cn(
+                  "tap-smooth flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all cursor-pointer",
+                  active
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <div className="flex h-16 w-full items-center justify-center rounded-lg bg-fill/80 p-1">
+                  <div className={cn("max-h-full max-w-full rounded-sm bg-slate-400/80 shadow-2xs", r.aspect, r.id === "16:9" ? "w-full" : "h-14")} />
+                </div>
+                <span className="text-xs font-medium text-ink">{r.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductCardDetailsSheet() {
+  const section = useEditor((s) => selectedSection(s));
+  const detailsLayout = (section && "detailsLayout" in section && (section.detailsLayout as ProductCardDetailsLayout)) || "outer";
+  const textAlign = (section && "textAlign" in section && (section.textAlign as ProductCardTextAlign)) || "left";
+  const showBadge = section && "showBadge" in section ? section.showBadge !== false : true;
+  const showRating = section && "showRating" in section ? section.showRating !== false : true;
+  const showPrice = section && "showPrice" in section ? section.showPrice !== false : true;
+  const showButton = section && "showButton" in section ? section.showButton !== false : true;
+  const typography = (section && "typography" in section && section.typography) || "base";
+
+  const scales: { id: ProductTypography; label: string; sample: string }[] = [
+    { id: "sm", label: "Compact", sample: "text-xs" },
+    { id: "base", label: "Standard", sample: "text-sm font-medium" },
+    { id: "lg", label: "Editorial", sample: "text-base font-semibold" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* 1. Placement: Outer vs Inner */}
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Details Layout</p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ detailsLayout: "outer" })}
+            className={cn(
+              "tap-smooth flex flex-col items-center gap-2 rounded-2xl border p-3.5 text-center transition-all cursor-pointer",
+              detailsLayout === "outer"
+                ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                : "border-line-soft bg-surface hover:bg-fill/70"
+            )}
+          >
+            <div className="flex flex-col h-16 w-full rounded-lg bg-slate-100 dark:bg-slate-800 p-1.5 overflow-hidden">
+              <div className="h-9 w-full rounded bg-slate-300 dark:bg-slate-600 mb-1" />
+              <div className="h-2 w-3/4 rounded bg-slate-400 mb-0.5" />
+              <div className="h-2 w-1/2 rounded bg-emerald-500" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-ink">Outer (Below Image)</div>
+              <div className="text-[10px] text-muted">Standard storefront style</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ detailsLayout: "inner" })}
+            className={cn(
+              "tap-smooth flex flex-col items-center gap-2 rounded-2xl border p-3.5 text-center transition-all cursor-pointer",
+              detailsLayout === "inner"
+                ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                : "border-line-soft bg-surface hover:bg-fill/70"
+            )}
+          >
+            <div className="relative h-16 w-full rounded-lg bg-slate-400 overflow-hidden">
+              <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/80 to-transparent">
+                <div className="h-2 w-3/4 rounded bg-white mb-0.5" />
+                <div className="h-2 w-1/2 rounded bg-emerald-400" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-ink">Inner (Overlay)</div>
+              <div className="text-[10px] text-muted">Floating on photo gradient</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Text Alignment: Left vs Center */}
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Text Alignment</p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ textAlign: "left" })}
+            className={cn(
+              "tap-smooth py-2.5 px-4 rounded-xl border text-xs font-medium text-center transition-all cursor-pointer",
+              textAlign === "left"
+                ? "border-[#53389E] bg-[#EEF2FF]/60 text-[#53389E] font-semibold ring-2 ring-[#53389E]/20"
+                : "border-line-soft bg-surface hover:bg-fill text-ink"
+            )}
+          >
+            Left Aligned
+          </button>
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ textAlign: "center" })}
+            className={cn(
+              "tap-smooth py-2.5 px-4 rounded-xl border text-xs font-medium text-center transition-all cursor-pointer",
+              textAlign === "center"
+                ? "border-[#53389E] bg-[#EEF2FF]/60 text-[#53389E] font-semibold ring-2 ring-[#53389E]/20"
+                : "border-line-soft bg-surface hover:bg-fill text-ink"
+            )}
+          >
+            Centered
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Elements Toggle */}
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Card Elements Visibility</p>
+        <div className="divide-y divide-line-soft overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+          {/* Badge toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Product Badges</div>
+              <div className="text-xs text-muted">Show 'SALE', 'NEW', 'HOT' tags</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showBadge}
+              onClick={() => useEditor.getState().patchSelected({ showBadge: !showBadge })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showBadge ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showBadge ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Rating toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Rating & Reviews</div>
+              <div className="text-xs text-muted">Show customer stars & reviews count</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showRating}
+              onClick={() => useEditor.getState().patchSelected({ showRating: !showRating })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showRating ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showRating ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Price toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Price Tag</div>
+              <div className="text-xs text-muted">Display product price</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showPrice}
+              onClick={() => useEditor.getState().patchSelected({ showPrice: !showPrice })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showPrice ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showPrice ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* WhatsApp Quick Buy button toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Quick WhatsApp Buy Button</div>
+              <div className="text-xs text-muted">One-tap order via WhatsApp icon</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showButton}
+              onClick={() => useEditor.getState().patchSelected({ showButton: !showButton })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showButton ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showButton ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Typography Scale */}
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Typography Scale</p>
+        <div className="grid grid-cols-3 gap-2.5">
+          {scales.map((s) => {
+            const active = typography === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ typography: s.id })}
+                className={cn(
+                  "tap-smooth flex flex-col items-center justify-between gap-2 rounded-2xl border p-3 text-center transition-all cursor-pointer",
+                  active
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <div className="flex h-12 w-full items-center justify-center">
+                  <span className={cn("truncate text-ink", s.sample)}>Air Retro</span>
+                </div>
+                <span className="text-xs font-medium text-muted">{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function ProductCardStyle() {
   const section = useEditor((s) => selectedSection(s));

@@ -291,9 +291,18 @@ export const useEditor = create<EditorState>((set, get) => {
         ) {
           // Sync card appearance across all product cards
           const cardStyleKeys = [
-            "imageRatio",
+            "borderEnabled",
+            "borderWidth",
+            "borderColor",
+            "shadowEnabled",
+            "shadowStyle",
             "borderRadius",
-            "typography",
+            "cardBackground",
+            "imageRatio",
+            "imageInset",
+            "imageRadius",
+            "detailsLayout",
+            "textAlign",
             "showBadge",
             "showRating",
             "showPrice",
@@ -301,6 +310,7 @@ export const useEditor = create<EditorState>((set, get) => {
             "whatsappNumber",
             "priceColor",
             "buttonColor",
+            "typography",
           ];
           const hasCardStylePatch = cardStyleKeys.some((k) => k in patch);
           if (

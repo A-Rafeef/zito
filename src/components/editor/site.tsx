@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
+  ArrowLeft,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -12,13 +14,16 @@ import {
   X,
 } from "lucide-react";
 import { isDark, money, QUOTES } from "@/lib/editor/defaults";
-import { useEditor } from "@/lib/editor/store";
+import { selectedSection, useEditor } from "@/lib/editor/store";
 import type {
   CatalogFilter,
   Device,
   NavbarLink,
   NavbarSection,
   PageId,
+  ProductCardDetailsLayout,
+  ProductCardShadow,
+  ProductCardTextAlign,
   ProductImageRatio,
   ProductTypography,
   Section,
@@ -845,70 +850,83 @@ function GridView({
         ? "grid-cols-4"
         : "grid-cols-2";
 
-  const ratioClass =
-    sec.template === "editorial"
-      ? "aspect-video"
-      : sec.imageRatio === "3:4"
-        ? "aspect-[3/4]"
-        : sec.imageRatio === "16:9"
-          ? "aspect-video"
-          : "aspect-square";
+  const openItem = (item: (typeof sec.items)[number]) => {
+    if (preview) {
+      useEditor.getState().openProduct({
+        name: item.title,
+        price: priceNumber(item.price),
+        img: item.image,
+      });
+    } else {
+      useEditor.getState().select("product-card");
+    }
+  };
 
-  const titleClass =
-    sec.typography === "sm"
-      ? "text-xs"
-      : sec.typography === "lg"
-        ? "text-base font-semibold"
-        : "text-sm font-medium";
+  const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof sec.items)[number]) => {
+    if (!preview) {
+      useEditor.getState().select("product-card");
+      return;
+    }
+    event.stopPropagation();
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
+    const productUrl = `${origin}/product?name=${encodeURIComponent(item.title)}`;
+    const phone = (sec.whatsappNumber || "919876543210").replace(/[^0-9]/g, "");
+    const message =
+      `Hi! I'd like to order from Ziteo:\n\n` +
+      `📦 *Product:* ${item.title}\n` +
+      `💰 *Price:* ${item.price}\n` +
+      `🔗 *Link:* ${productUrl}`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+  };
 
   return (
     <SectionShell section={sec} background={sec.background}>
       <div className={cn("grid gap-x-4 gap-y-8 pb-10", gutter(device), cols)}>
         {sec.items.map((item) => (
-          <button
+          <StoreProductCard
             key={item.id}
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              const open = () =>
-                useEditor.getState().openProduct({
-                  name: item.title,
-                  price: priceNumber(item.price),
-                  img: item.image,
-                });
-              if (preview) open();
-              else useEditor.getState().select(sec.id);
-            }}
-            className="group tap-smooth-sm relative text-left"
-          >
-            <div className="relative overflow-hidden rounded-2xl bg-fill/50">
-              {sec.showBadge !== false && item.badge && (
-                <span className="absolute top-2.5 left-2.5 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-                  {item.badge}
-                </span>
-              )}
-              <img
-                src={item.image}
-                alt=""
-                className={cn(
-                  "w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105",
-                  ratioClass,
-                )}
-              />
-            </div>
-            {sec.template === "editorial" && (
-              <p className={cn("mt-3 text-xs", dark ? "text-on-ink/60" : "text-muted")}>{item.tag}</p>
-            )}
-            <div className="mt-3 flex items-baseline justify-between gap-3">
-              <span className={cn(titleClass, "transition-colors group-hover:text-accent truncate", dark ? "text-on-ink" : "text-ink")}>{item.title}</span>
-              <span className={cn("text-sm font-medium shrink-0", dark ? "text-on-ink/70" : "text-muted")}>{item.price}</span>
-            </div>
-          </button>
+            id={item.id}
+            title={item.title}
+            price={item.price}
+            image={item.image}
+            badge={item.badge}
+            rating={sec.showRating !== false ? "4.8 · 94 reviews" : undefined}
+            dark={dark}
+            imageRatio={sec.imageRatio}
+            borderRadius={sec.borderRadius ?? 16}
+            typography={sec.typography}
+            showBadge={sec.showBadge !== false}
+            showRating={sec.showRating !== false}
+            showPrice={sec.showPrice !== false}
+            showButton={sec.showButton !== false}
+            priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
+            buttonColor={sec.buttonColor || "#25D366"}
+            borderEnabled={sec.borderEnabled}
+            borderWidth={sec.borderWidth}
+            borderColor={sec.borderColor}
+            shadowEnabled={sec.shadowEnabled}
+            shadowStyle={sec.shadowStyle}
+            cardBackground={sec.cardBackground}
+            imageInset={sec.imageInset}
+            imageRadius={sec.imageRadius}
+            detailsLayout={sec.detailsLayout}
+            textAlign={sec.textAlign}
+            onCardClick={() => openItem(item)}
+            onWhatsAppClick={(e) => buyDirectOnWhatsApp(e, item)}
+          />
         ))}
       </div>
     </SectionShell>
   );
 }
+
+const CARD_SHADOW_MAP: Record<ProductCardShadow, string> = {
+  none: "none",
+  soft: "0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 1px 4px -1px rgba(0, 0, 0, 0.04)",
+  smooth: "0 10px 25px -5px rgba(0, 0, 0, 0.10), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
+  float: "0 20px 30px -10px rgba(0, 0, 0, 0.16), 0 10px 15px -5px rgba(0, 0, 0, 0.08)",
+  deep: "0 25px 50px -12px rgba(0, 0, 0, 0.32)",
+};
 
 interface StoreProductCardProps {
   id: string;
@@ -929,6 +947,16 @@ interface StoreProductCardProps {
   buttonColor?: string;
   isList?: boolean;
   isCarousel?: boolean;
+  borderEnabled?: boolean;
+  borderWidth?: number;
+  borderColor?: string;
+  shadowEnabled?: boolean;
+  shadowStyle?: ProductCardShadow;
+  cardBackground?: string;
+  imageInset?: boolean;
+  imageRadius?: number;
+  detailsLayout?: ProductCardDetailsLayout;
+  textAlign?: ProductCardTextAlign;
   onCardClick: () => void;
   onWhatsAppClick: (e: React.MouseEvent) => void;
 }
@@ -951,6 +979,16 @@ function StoreProductCard({
   buttonColor = "#25D366",
   isList = false,
   isCarousel = false,
+  borderEnabled = true,
+  borderWidth = 1,
+  borderColor = "#e2e8f0",
+  shadowEnabled = false,
+  shadowStyle = "soft",
+  cardBackground = "#ffffff",
+  imageInset = false,
+  imageRadius,
+  detailsLayout = "outer",
+  textAlign = "left",
   onCardClick,
   onWhatsAppClick,
 }: StoreProductCardProps) {
@@ -969,86 +1007,66 @@ function StoreProductCard({
         : "text-sm font-medium";
 
   const formattedPrice = typeof price === "number" ? money(price) : price;
+  const shadowValue = shadowEnabled && shadowStyle ? CARD_SHADOW_MAP[shadowStyle] : "none";
+  const borderValue = borderEnabled ? `${borderWidth ?? 1}px solid ${borderColor || "#e2e8f0"}` : "none";
+  const bgValue = cardBackground || (dark ? "#18181b" : "#ffffff");
+  const effImageRadius = imageRadius !== undefined ? imageRadius : Math.max(0, borderRadius - (imageInset ? 6 : 0));
 
-  return (
-    <article
-      className={cn(
-        "group relative transition-all",
-        isList
-          ? "flex items-center justify-between gap-4 p-3 rounded-2xl bg-fill/40 hover:bg-fill/70 border border-line-soft/60"
-          : isCarousel
-            ? "w-44 sm:w-56 shrink-0 snap-start"
-            : "w-full"
-      )}
-    >
-      <button
-        type="button"
-        className={cn(
-          "tap-smooth-sm block text-left",
-          isList ? "flex items-center gap-3.5 flex-1 min-w-0" : "w-full"
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          onCardClick();
+  if (isList) {
+    return (
+      <article
+        className="group relative transition-all flex items-center justify-between gap-4 p-3.5"
+        style={{
+          borderRadius: `${borderRadius}px`,
+          border: borderValue,
+          boxShadow: shadowValue,
+          backgroundColor: bgValue,
         }}
       >
-        <div
-          className={cn(
-            "relative overflow-hidden bg-fill/50 transition-all",
-            isList ? "size-20 sm:size-24 shrink-0" : "w-full"
-          )}
-          style={{ borderRadius: `${borderRadius}px` }}
+        <button
+          type="button"
+          className="tap-smooth-sm flex items-center gap-3.5 flex-1 min-w-0 text-left cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCardClick();
+          }}
         >
-          {showBadge && badge && (
-            <span className="absolute top-2 left-2 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-              {badge}
-            </span>
-          )}
-          <img
-            src={image}
-            alt=""
-            className={cn(
-              "object-cover transition-transform duration-500 ease-out group-hover:scale-105",
-              isList ? "size-full" : cn("w-full", ratioClass)
+          <div
+            className="size-20 sm:size-24 shrink-0 relative overflow-hidden bg-fill/50"
+            style={{ borderRadius: `${effImageRadius}px` }}
+          >
+            {showBadge && badge && (
+              <span className="absolute top-1.5 left-1.5 z-10 rounded-md bg-ink/90 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+                {badge}
+              </span>
             )}
-          />
-        </div>
+            <img
+              src={image}
+              alt=""
+              className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            />
+          </div>
 
-        <div className={cn(isList ? "min-w-0 flex-1" : "")}>
-          <h3 className={cn("mt-2.5 transition-colors group-hover:text-accent truncate", titleClass, dark ? "text-on-ink" : "text-ink")}>
-            {title}
-          </h3>
-          {showRating && rating && (
-            <p className={cn("mt-0.5 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
-              {rating}
-            </p>
-          )}
-          {isList && showPrice && (
-            <span
-              className="mt-1 block text-sm font-semibold"
-              style={{ color: priceColor }}
-            >
-              {formattedPrice}
-            </span>
-          )}
-        </div>
-      </button>
-
-      <div className={cn(isList ? "shrink-0" : "mt-2.5 flex items-center justify-between")}>
-        {!isList && (
-          <div>
-            {showPrice ? (
+          <div className="min-w-0 flex-1">
+            <h3 className={cn("transition-colors group-hover:text-accent truncate", titleClass, dark ? "text-on-ink" : "text-ink")}>
+              {title}
+            </h3>
+            {showRating && rating && (
+              <p className={cn("mt-0.5 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
+                ★ {rating}
+              </p>
+            )}
+            {showPrice && (
               <span
-                className="text-sm font-semibold"
+                className="mt-1 block text-sm font-semibold"
                 style={{ color: priceColor }}
               >
                 {formattedPrice}
               </span>
-            ) : (
-              <span />
             )}
           </div>
-        )}
+        </button>
+
         {showButton && (
           <button
             type="button"
@@ -1058,13 +1076,157 @@ function StoreProductCard({
               e.stopPropagation();
               onWhatsAppClick(e);
             }}
-            className="tap-smooth inline-flex size-9 items-center justify-center rounded-full text-white hover:scale-105 transition-all shadow-xs"
+            className="tap-smooth inline-flex size-9 items-center justify-center rounded-full text-white hover:scale-105 transition-all shadow-xs shrink-0 cursor-pointer"
             style={{ backgroundColor: buttonColor }}
           >
             <WhatsAppIcon className="size-4 fill-white" />
           </button>
         )}
+      </article>
+    );
+  }
+
+  // Standard or Carousel Card
+  return (
+    <article
+      className={cn(
+        "group relative transition-all overflow-hidden",
+        isCarousel ? "w-44 sm:w-56 shrink-0 snap-start" : "w-full",
+        imageInset ? "p-3" : ""
+      )}
+      style={{
+        borderRadius: `${borderRadius}px`,
+        border: borderValue,
+        boxShadow: shadowValue,
+        backgroundColor: bgValue,
+      }}
+    >
+      <div
+        className={cn("relative overflow-hidden bg-fill/50 transition-all cursor-pointer", isList ? "size-20 shrink-0" : "w-full")}
+        style={{
+          borderRadius: imageInset
+            ? `${effImageRadius}px`
+            : detailsLayout === "inner"
+              ? `${borderRadius}px`
+              : `${borderRadius}px ${borderRadius}px 0 0`,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onCardClick();
+        }}
+      >
+        {showBadge && badge && (
+          <span className="absolute top-2.5 left-2.5 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+            {badge}
+          </span>
+        )}
+        <img
+          src={image}
+          alt=""
+          className={cn(
+            "w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105",
+            ratioClass
+          )}
+        />
+
+        {/* Inner Details Layout (Overlay on Image) */}
+        {detailsLayout === "inner" && (
+          <div
+            className={cn(
+              "absolute inset-x-0 bottom-0 z-10 p-3.5 pt-8 bg-gradient-to-t from-black/85 via-black/55 to-transparent text-white flex flex-col pointer-events-auto",
+              textAlign === "center" ? "items-center text-center" : "items-start text-left"
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCardClick();
+            }}
+          >
+            {showRating && rating && (
+              <p className="text-[11px] text-white/80 font-medium mb-0.5">
+                ★ {rating}
+              </p>
+            )}
+            <h3 className={cn("transition-colors font-medium truncate text-white w-full", titleClass)}>
+              {title}
+            </h3>
+            <div className={cn("mt-2 flex items-center gap-2", textAlign === "center" ? "justify-center" : "justify-between w-full")}>
+              {showPrice && (
+                <span className="text-sm font-bold text-white drop-shadow-xs">
+                  {formattedPrice}
+                </span>
+              )}
+              {showButton && (
+                <button
+                  type="button"
+                  title="Buy on WhatsApp"
+                  aria-label={`Buy ${title} on WhatsApp`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onWhatsAppClick(e);
+                  }}
+                  className="tap-smooth inline-flex size-8 items-center justify-center rounded-full text-white hover:scale-105 transition-all shadow-md shrink-0 cursor-pointer"
+                  style={{ backgroundColor: buttonColor }}
+                >
+                  <WhatsAppIcon className="size-3.5 fill-white" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Outer Details Layout (Below Image) */}
+      {detailsLayout === "outer" && (
+        <div
+          className={cn(
+            "flex flex-col",
+            imageInset ? "pt-2.5 px-0.5 pb-0.5" : "p-3.5",
+            textAlign === "center" ? "items-center text-center" : "items-start text-left"
+          )}
+        >
+          <button
+            type="button"
+            className={cn("w-full tap-smooth-sm cursor-pointer", textAlign === "center" ? "text-center" : "text-left")}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCardClick();
+            }}
+          >
+            <h3 className={cn("transition-colors group-hover:text-accent truncate", titleClass, dark ? "text-on-ink" : "text-ink")}>
+              {title}
+            </h3>
+            {showRating && rating && (
+              <p className={cn("mt-0.5 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
+                ★ {rating}
+              </p>
+            )}
+          </button>
+
+          <div className={cn("mt-2.5 flex items-center w-full", textAlign === "center" ? "justify-center gap-3" : "justify-between")}>
+            {showPrice ? (
+              <span className="text-sm font-semibold" style={{ color: priceColor }}>
+                {formattedPrice}
+              </span>
+            ) : <span />}
+
+            {showButton && (
+              <button
+                type="button"
+                title="Buy on WhatsApp"
+                aria-label={`Buy ${title} on WhatsApp`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onWhatsAppClick(e);
+                }}
+                className="tap-smooth inline-flex size-8 items-center justify-center rounded-full text-white hover:scale-105 transition-all shadow-xs shrink-0 cursor-pointer"
+                style={{ backgroundColor: buttonColor }}
+              >
+                <WhatsAppIcon className="size-3.5 fill-white" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </article>
   );
 }
@@ -1158,6 +1320,16 @@ function CatalogView({
               showButton={sec.showButton !== false}
               priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
               buttonColor={sec.buttonColor || "#25D366"}
+              borderEnabled={sec.borderEnabled}
+              borderWidth={sec.borderWidth}
+              borderColor={sec.borderColor}
+              shadowEnabled={sec.shadowEnabled}
+              shadowStyle={sec.shadowStyle}
+              cardBackground={sec.cardBackground}
+              imageInset={sec.imageInset}
+              imageRadius={sec.imageRadius}
+              detailsLayout={sec.detailsLayout}
+              textAlign={sec.textAlign}
               isList={isList}
               onCardClick={() => openItem(item)}
               onWhatsAppClick={(e) => buyDirectOnWhatsApp(e, item)}
@@ -1795,6 +1967,16 @@ function FeaturedView({
               showButton={sec.showButton !== false}
               priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
               buttonColor={sec.buttonColor || "#25D366"}
+              borderEnabled={sec.borderEnabled}
+              borderWidth={sec.borderWidth}
+              borderColor={sec.borderColor}
+              shadowEnabled={sec.shadowEnabled}
+              shadowStyle={sec.shadowStyle}
+              cardBackground={sec.cardBackground}
+              imageInset={sec.imageInset}
+              imageRadius={sec.imageRadius}
+              detailsLayout={sec.detailsLayout}
+              textAlign={sec.textAlign}
               isCarousel={isCarousel}
               onCardClick={() => openItem(item)}
               onWhatsAppClick={(e) => buyDirectOnWhatsApp(e, item)}
@@ -2148,10 +2330,178 @@ function renderSection(sec: Section, device: Device) {
   }
 }
 
+function ProductCardStudio({ device }: { device: Device }) {
+  const [backdrop, setBackdrop] = useState<"pattern" | "light" | "dark">("pattern");
+  const section = useEditor((s) => selectedSection(s));
+
+  // Extract all card settings from current section with sensible defaults
+  const cardProps = {
+    imageRatio: (section && "imageRatio" in section && section.imageRatio) || "1:1",
+    typography: (section && "typography" in section && section.typography) || "base",
+    borderRadius: (section && "borderRadius" in section && section.borderRadius !== undefined) ? section.borderRadius : 16,
+    borderEnabled: (section && "borderEnabled" in section && section.borderEnabled !== undefined) ? section.borderEnabled : true,
+    borderWidth: (section && "borderWidth" in section && section.borderWidth !== undefined) ? section.borderWidth : 1,
+    borderColor: (section && "borderColor" in section && section.borderColor) || "#e2e8f0",
+    shadowEnabled: (section && "shadowEnabled" in section && section.shadowEnabled !== undefined) ? section.shadowEnabled : false,
+    shadowStyle: (section && "shadowStyle" in section && section.shadowStyle) || "soft",
+    cardBackground: (section && "cardBackground" in section && section.cardBackground) || "#ffffff",
+    imageInset: (section && "imageInset" in section && section.imageInset !== undefined) ? section.imageInset : false,
+    imageRadius: (section && "imageRadius" in section && section.imageRadius !== undefined) ? section.imageRadius : undefined,
+    detailsLayout: (section && "detailsLayout" in section && section.detailsLayout) || "outer",
+    textAlign: (section && "textAlign" in section && section.textAlign) || "left",
+    showBadge: (section && "showBadge" in section && section.showBadge !== undefined) ? section.showBadge : true,
+    showRating: (section && "showRating" in section && section.showRating !== undefined) ? section.showRating : true,
+    showPrice: (section && "showPrice" in section && section.showPrice !== undefined) ? section.showPrice : true,
+    showButton: (section && "showButton" in section && section.showButton !== undefined) ? section.showButton : true,
+    priceColor: (section && "priceColor" in section && section.priceColor) || "#059669",
+    buttonColor: (section && "buttonColor" in section && section.buttonColor) || "#25D366",
+    whatsappNumber: (section && "whatsappNumber" in section && section.whatsappNumber) || "919876543210",
+  };
+
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const phone = cardProps.whatsappNumber.replace(/[^0-9]/g, "");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent("Hi! Testing product card order from Ziteo Studio")}`, "_blank");
+  };
+
+  return (
+    <div
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden select-none transition-colors duration-300",
+        backdrop === "pattern"
+          ? "bg-slate-100/90 text-slate-800"
+          : backdrop === "dark"
+            ? "bg-slate-950 text-slate-100"
+            : "bg-white text-slate-900"
+      )}
+      style={
+        backdrop === "pattern"
+          ? {
+              backgroundImage:
+                "radial-gradient(rgba(148, 163, 184, 0.25) 1px, transparent 1px)",
+              backgroundSize: "20px 20px",
+            }
+          : undefined
+      }
+    >
+      {/* Studio Top Control Bar */}
+      <div className="z-20 flex items-center justify-between border-b border-black/5 dark:border-white/10 px-4 py-3 backdrop-blur-md bg-white/75 dark:bg-slate-900/75 shrink-0">
+        <button
+          type="button"
+          onClick={() => useEditor.getState().deselect()}
+          className="tap-smooth inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
+        >
+          <ArrowLeft className="size-3.5" />
+          <span>Back to Store</span>
+        </button>
+
+        <div className="flex items-center gap-2 rounded-full border border-purple-200/60 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/50 px-3 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 shadow-2xs">
+          <span className="size-2 rounded-full bg-purple-500 animate-pulse" />
+          <span>Product Card Studio</span>
+        </div>
+
+        {/* Backdrop switch */}
+        <div className="flex items-center gap-1 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 p-0.5 shadow-2xs text-[11px] font-medium">
+          <button
+            type="button"
+            onClick={() => setBackdrop("pattern")}
+            className={cn(
+              "rounded-full px-2 py-0.5 transition-all cursor-pointer",
+              backdrop === "pattern" ? "bg-purple-600 text-white shadow-2xs" : "text-muted hover:text-ink"
+            )}
+          >
+            Grid
+          </button>
+          <button
+            type="button"
+            onClick={() => setBackdrop("light")}
+            className={cn(
+              "rounded-full px-2 py-0.5 transition-all cursor-pointer",
+              backdrop === "light" ? "bg-purple-600 text-white shadow-2xs" : "text-muted hover:text-ink"
+            )}
+          >
+            Light
+          </button>
+          <button
+            type="button"
+            onClick={() => setBackdrop("dark")}
+            className={cn(
+              "rounded-full px-2 py-0.5 transition-all cursor-pointer",
+              backdrop === "dark" ? "bg-purple-600 text-white shadow-2xs" : "text-muted hover:text-ink"
+            )}
+          >
+            Dark
+          </button>
+        </div>
+      </div>
+
+      {/* Main Studio Card Canvas */}
+      <div className="relative flex flex-1 flex-col items-center justify-center p-6 sm:p-10 overflow-y-auto min-h-0">
+        <div
+          className={cn(
+            "transition-all duration-300",
+            device === "mobile" ? "w-[270px]" : device === "tablet" ? "w-[300px]" : "w-[330px]"
+          )}
+        >
+          <StoreProductCard
+            id="studio-sample-card"
+            title="Air Retro Court"
+            price={149}
+            image="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=80"
+            badge="TRENDING"
+            rating="4.9 · 128 reviews"
+            dark={backdrop === "dark"}
+            imageRatio={cardProps.imageRatio}
+            borderRadius={cardProps.borderRadius}
+            typography={cardProps.typography}
+            showBadge={cardProps.showBadge}
+            showRating={cardProps.showRating}
+            showPrice={cardProps.showPrice}
+            showButton={cardProps.showButton}
+            priceColor={cardProps.priceColor}
+            buttonColor={cardProps.buttonColor}
+            borderEnabled={cardProps.borderEnabled}
+            borderWidth={cardProps.borderWidth}
+            borderColor={cardProps.borderColor}
+            shadowEnabled={cardProps.shadowEnabled}
+            shadowStyle={cardProps.shadowStyle}
+            cardBackground={cardProps.cardBackground}
+            imageInset={cardProps.imageInset}
+            imageRadius={cardProps.imageRadius}
+            detailsLayout={cardProps.detailsLayout}
+            textAlign={cardProps.textAlign}
+            onCardClick={() => {}}
+            onWhatsAppClick={handleWhatsApp}
+          />
+        </div>
+
+        <div className="mt-8 flex items-center gap-2 rounded-full border border-slate-300/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 px-3.5 py-1.5 text-xs text-muted shadow-xs">
+          <Check className="size-3.5 text-emerald-500 shrink-0" />
+          <span>Customizations reflect on all product cards across your store.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SiteFrame({ className }: { className?: string }) {
   const page = useEditor((s) => s.pages[s.pageId]);
   const pageId = useEditor((s) => s.pageId);
   const device = useEditor((s) => s.device);
+  const selectedId = useEditor((s) => s.selectedId);
+
+  if (selectedId === "product-card") {
+    return (
+      <div
+        className={cn(
+          "relative h-full overflow-hidden rounded-4xl border border-line-soft bg-surface shadow-frame transition-[background-color] duration-300",
+          className,
+        )}
+      >
+        <ProductCardStudio device={device} />
+      </div>
+    );
+  }
 
   return (
     <div

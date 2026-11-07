@@ -155,9 +155,9 @@ export function footer(): FooterSection {
   };
 }
 
-export function createHeroSection(): HeroSection {
+export function createHeroSection(id = `hero-${Date.now()}`): HeroSection {
   return {
-    id: `hero-${Date.now()}`,
+    id,
     type: "hero",
     name: "Hero",
     template: "bleed",
@@ -176,9 +176,9 @@ export function createHeroSection(): HeroSection {
   };
 }
 
-export function createFeaturedSection(): FeaturedSection {
+export function createFeaturedSection(id = `featured-${Date.now()}`): FeaturedSection {
   return {
-    id: `featured-${Date.now()}`,
+    id,
     type: "featured",
     name: "Featured Products",
     title: "Featured Drops",
@@ -188,6 +188,16 @@ export function createFeaturedSection(): FeaturedSection {
     imageRatio: "1:1",
     borderRadius: 16,
     typography: "base",
+    borderEnabled: true,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    shadowEnabled: false,
+    shadowStyle: "soft",
+    cardBackground: "#ffffff",
+    imageInset: false,
+    imageRadius: 16,
+    detailsLayout: "outer",
+    textAlign: "left",
     showBadge: true,
     showRating: true,
     showPrice: true,
@@ -231,9 +241,9 @@ export function createFeaturedSection(): FeaturedSection {
   };
 }
 
-export function createCategoriesSection(): CategoriesSection {
+export function createCategoriesSection(id = `categories-${Date.now()}`): CategoriesSection {
   return {
-    id: `categories-${Date.now()}`,
+    id,
     type: "categories",
     name: "Categories",
     title: "Shop by Category",
@@ -269,9 +279,9 @@ export function createCategoriesSection(): CategoriesSection {
   };
 }
 
-export function createBrandsSection(): BrandsSection {
+export function createBrandsSection(id = `brands-${Date.now()}`): BrandsSection {
   return {
-    id: `brands-${Date.now()}`,
+    id,
     type: "brands",
     name: "Brands",
     title: "Curated Brands",
@@ -289,9 +299,9 @@ export function createBrandsSection(): BrandsSection {
   };
 }
 
-export function createBannerSection(): BannerSection {
+export function createBannerSection(id = `banner-${Date.now()}`): BannerSection {
   return {
-    id: `banner-${Date.now()}`,
+    id,
     type: "banner",
     name: "Banner",
     tag: "SPECIAL OFFER",
@@ -306,9 +316,9 @@ export function createBannerSection(): BannerSection {
   };
 }
 
-export function createAboutSection(): AboutSection {
+export function createAboutSection(id = `about-${Date.now()}`): AboutSection {
   return {
-    id: `about-${Date.now()}`,
+    id,
     type: "about",
     name: "About",
     kicker: "OUR PHILOSOPHY",
@@ -338,9 +348,9 @@ export function createAboutSection(): AboutSection {
   };
 }
 
-export function createCatalogSection(): CatalogSection {
+export function createCatalogSection(id = `catalog-${Date.now()}`): CatalogSection {
   return {
-    id: `catalog-${Date.now()}`,
+    id,
     type: "catalog",
     name: "Catalog",
     title: "All essentials",
@@ -351,6 +361,16 @@ export function createCatalogSection(): CatalogSection {
     imageRatio: "1:1",
     borderRadius: 16,
     typography: "base",
+    borderEnabled: true,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    shadowEnabled: false,
+    shadowStyle: "soft",
+    cardBackground: "#ffffff",
+    imageInset: false,
+    imageRadius: 16,
+    detailsLayout: "outer",
+    textAlign: "left",
     showBadge: true,
     showRating: true,
     showPrice: true,
@@ -362,9 +382,9 @@ export function createCatalogSection(): CatalogSection {
   };
 }
 
-export function createProductSection(): ProductSection {
+export function createProductSection(id = `product-view-${Date.now()}`): ProductSection {
   return {
-    id: `product-view-${Date.now()}`,
+    id,
     type: "product",
     name: "Product Details",
     productName: "Air Retro Court",
@@ -415,11 +435,11 @@ export function createPages(): Pages {
           animationEffect: "slide",
           autoplay: true,
         },
-        createCategoriesSection(),
-        createFeaturedSection(),
-        createBannerSection(),
-        createBrandsSection(),
-        createAboutSection(),
+        createCategoriesSection("categories"),
+        createFeaturedSection("featured"),
+        createBannerSection("banner"),
+        createBrandsSection("brands"),
+        createAboutSection("about"),
         footer(),
       ],
     },
@@ -431,8 +451,8 @@ export function createPages(): Pages {
       tone: "light",
       sections: [
         navbar(),
-        createCatalogSection(),
-        createBannerSection(),
+        createCatalogSection("catalog"),
+        createBannerSection("shop-banner"),
         footer(),
       ],
     },
@@ -444,17 +464,17 @@ export function createPages(): Pages {
       tone: "light",
       sections: [
         navbar(),
-        createProductSection(),
-        createBlock("reviews"),
+        createProductSection("product-view"),
+        createBlock("reviews", "product-reviews"),
         {
-          ...createFeaturedSection(),
+          ...createFeaturedSection("product-related"),
           id: "product-related",
           name: "Related Products",
           title: "You May Also Like",
           subtitle: "Pair it with these handpicked essentials.",
         },
         {
-          ...createAboutSection(),
+          ...createAboutSection("product-guarantees"),
           id: "product-guarantees",
           name: "Guarantees",
           kicker: "AUTHENTICITY & CARE",
@@ -466,8 +486,7 @@ export function createPages(): Pages {
   };
 }
 
-export function createBlock(kind: BlockSection["kind"]): BlockSection {
-  const id = `block-${Date.now()}`;
+export function createBlock(kind: BlockSection["kind"], id = `block-${Date.now()}`): BlockSection {
   if (kind === "reviews") {
     return {
       id,
