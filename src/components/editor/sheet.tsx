@@ -28,6 +28,7 @@ import type {
   NavbarLink,
   NavbarSection,
   NavbarTemplate,
+  PageId,
   ProductImageRatio,
   ProductSection,
   ProductTypography,
@@ -293,24 +294,55 @@ function Themes() {
 }
 
 function AddList() {
-  const items: {
-    kind: "hero" | "featured" | "categories" | "brands" | "banner" | "about" | "reviews" | "newsletter";
+  const pageId = useEditor((s) => s.pageId);
+
+  type AddItem = {
+    kind: "hero" | "featured" | "categories" | "brands" | "banner" | "about" | "reviews" | "newsletter" | "catalog" | "product";
     title: string;
     desc: string;
     badge?: string;
-  }[] = [
+  };
+
+  const homeItems: AddItem[] = [
     { kind: "hero", title: "Hero Banner", desc: "High-impact visual banner with photo & headline." },
-    { kind: "featured", title: "Featured Products", desc: "Curated drops with direct WhatsApp checkout.", badge: "POPULAR" },
     { kind: "categories", title: "Categories", desc: "Visual navigation tiles for product categories." },
-    { kind: "brands", title: "Brands", desc: "Authorized partner brands and logos." },
+    { kind: "featured", title: "Featured Products", desc: "Curated drops with direct WhatsApp checkout.", badge: "POPULAR" },
     { kind: "banner", title: "Promo Banner", desc: "Promotional sale callout with WhatsApp action." },
+    { kind: "brands", title: "Brands", desc: "Authorized partner brands and logos." },
     { kind: "about", title: "About Us", desc: "Brand philosophy and authentic trust guarantees." },
-    { kind: "reviews", title: "Customer Reviews", desc: "Three quotes of social proof." },
+    { kind: "reviews", title: "Customer Reviews", desc: "Three quotes of social proof from happy buyers." },
     { kind: "newsletter", title: "Newsletter", desc: "Email capture box for new drops." },
   ];
 
+  const shopItems: AddItem[] = [
+    { kind: "catalog", title: "Catalog Grid", desc: "Full product catalog with category filter & search.", badge: "CORE" },
+    { kind: "banner", title: "Promo Banner", desc: "Seasonal sale or discount offer callout." },
+    { kind: "reviews", title: "Customer Reviews", desc: "Store ratings and buyer testimonials." },
+    { kind: "newsletter", title: "Newsletter", desc: "Email capture box for new drops and VIP deals." },
+  ];
+
+  const productItems: AddItem[] = [
+    { kind: "product", title: "Product Details", desc: "Main product view with gallery & WhatsApp checkout.", badge: "CORE" },
+    { kind: "reviews", title: "Customer Reviews", desc: "Verified buyer ratings and reviews for this product.", badge: "POPULAR" },
+    { kind: "featured", title: "Related Products", desc: "You May Also Like - curated recommendations." },
+    { kind: "about", title: "Trust & Guarantees", desc: "100% authentic, fast delivery & warranty guarantees." },
+    { kind: "banner", title: "Promo Banner", desc: "Limited-time bundle deal or product offer banner." },
+    { kind: "newsletter", title: "Newsletter", desc: "Email capture box for restocks and new drops." },
+  ];
+
+  const items = pageId === "home" ? homeItems : pageId === "shop" ? shopItems : productItems;
+  const pageLabel = pageId === "home" ? "Home Page" : pageId === "shop" ? "Shop Page" : "Product Page";
+
   return (
     <div className="flex flex-col gap-2.5">
+      <div className="flex items-center justify-between pb-1 px-1">
+        <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Sections for {pageLabel}
+        </span>
+        <span className="text-[11px] font-medium text-accent">
+          {items.length} available
+        </span>
+      </div>
       {items.map((item) => (
         <button
           key={item.kind}

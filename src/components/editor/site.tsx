@@ -115,16 +115,13 @@ function SelectionChip({ id }: { id: string }) {
   if (!sec) return null;
 
   const isFixed = sec.type === "navbar" || sec.type === "footer";
-  const isGlobal = isFixed || sec.type === "catalog" || sec.type === "grid" || sec.type === "featured";
 
   const displayName =
     sec.type === "navbar"
       ? "Header"
       : sec.type === "footer"
         ? "Footer"
-        : sec.type === "catalog" || sec.type === "grid" || sec.type === "featured"
-          ? "Product Card"
-          : sec.name;
+        : sec.name || sec.type;
 
   const positionClass =
     placement === "below"
@@ -144,11 +141,6 @@ function SelectionChip({ id }: { id: string }) {
         <span>{displayName}</span>
         {isFixed && (
           <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[8px] font-extrabold tracking-normal text-emerald-300">
-            FIXED
-          </span>
-        )}
-        {!isFixed && isGlobal && (
-          <span className="rounded-full bg-purple-500/30 px-1.5 py-0.2 text-[8px] font-extrabold tracking-normal text-purple-200">
             GLOBAL
           </span>
         )}

@@ -3,6 +3,7 @@ import type {
   BannerSection,
   BlockSection,
   BrandsSection,
+  CatalogSection,
   CategoriesSection,
   FeaturedSection,
   FooterSection,
@@ -11,6 +12,7 @@ import type {
   PageModel,
   Pages,
   Product,
+  ProductSection,
   Section,
 } from "@/lib/editor/types";
 
@@ -58,7 +60,7 @@ export const QUOTES = [
   { text: "Holds up through long travel days.", name: "J. Chen" },
 ];
 
-const products: Product[] = [
+export const products: Product[] = [
   {
     id: "p1",
     name: "Air Retro Court",
@@ -332,6 +334,52 @@ export function createAboutSection(): AboutSection {
   };
 }
 
+export function createCatalogSection(): CatalogSection {
+  return {
+    id: `catalog-${Date.now()}`,
+    type: "catalog",
+    name: "Catalog",
+    title: "All essentials",
+    subtitle: "Footwear, apparel, and the few things you carry.",
+    filter: "All",
+    background: "#ffffff",
+    template: "grid",
+    imageRatio: "1:1",
+    typography: "base",
+    showBadge: true,
+    showRating: true,
+    showPrice: true,
+    whatsappNumber: "919876543210",
+    products,
+  };
+}
+
+export function createProductSection(): ProductSection {
+  return {
+    id: `product-view-${Date.now()}`,
+    type: "product",
+    name: "Product Details",
+    productName: "Air Retro Court",
+    price: 149,
+    rating: "4.9 · 142 reviews",
+    description:
+      "Full-grain leather, a responsive foam bed, and a high-traction outsole for ordinary miles.",
+    colors: [...SWATCHES],
+    color: "#1d1d1f",
+    sizes: ["US 8", "US 9", "US 10", "US 11", "US 12"],
+    size: "US 10",
+    gallery: [PHOTOS.court, PHOTOS.red, PHOTOS.sport],
+    image: PHOTOS.court,
+    background: "#ffffff",
+    template: "stacked",
+    imageRatio: "1:1",
+    typography: "base",
+    showBadge: true,
+    showRating: true,
+    whatsappNumber: "919876543210",
+  };
+}
+
 export function createPages(): Pages {
   return {
     home: {
@@ -345,7 +393,7 @@ export function createPages(): Pages {
         {
           id: "hero",
           type: "hero",
-          name: "Hero",
+          name: "Hero Banner",
           template: "bleed",
           background: "transparent",
           slides: [PHOTOS.court, PHOTOS.red, PHOTOS.sport, PHOTOS.white],
@@ -375,23 +423,8 @@ export function createPages(): Pages {
       tone: "light",
       sections: [
         navbar(),
-        {
-          id: "catalog",
-          type: "catalog",
-          name: "Catalog",
-          title: "All essentials",
-          subtitle: "Footwear, apparel, and the few things you carry.",
-          filter: "All",
-          background: "#ffffff",
-          template: "grid",
-          imageRatio: "1:1",
-          typography: "base",
-          showBadge: true,
-          showRating: true,
-          showPrice: true,
-          whatsappNumber: "919876543210",
-          products,
-        },
+        createCatalogSection(),
+        createBannerSection(),
         footer(),
       ],
     },
@@ -403,28 +436,21 @@ export function createPages(): Pages {
       tone: "light",
       sections: [
         navbar(),
+        createProductSection(),
+        createBlock("reviews"),
         {
-          id: "product-view",
-          type: "product",
-          name: "Product",
-          productName: "Air Retro Court",
-          price: 149,
-          rating: "4.9 · 142 reviews",
-          description:
-            "Full-grain leather, a responsive foam bed, and a high-traction outsole for ordinary miles.",
-          colors: [...SWATCHES],
-          color: "#1d1d1f",
-          sizes: ["US 8", "US 9", "US 10", "US 11", "US 12"],
-          size: "US 10",
-          gallery: [PHOTOS.court, PHOTOS.red, PHOTOS.sport],
-          image: PHOTOS.court,
-          background: "#ffffff",
-          template: "stacked",
-          imageRatio: "1:1",
-          typography: "base",
-          showBadge: true,
-          showRating: true,
-          whatsappNumber: "919876543210",
+          ...createFeaturedSection(),
+          id: "product-related",
+          name: "Related Products",
+          title: "You May Also Like",
+          subtitle: "Pair it with these handpicked essentials.",
+        },
+        {
+          ...createAboutSection(),
+          id: "product-guarantees",
+          name: "Guarantees",
+          kicker: "AUTHENTICITY & CARE",
+          title: "Crafted for longevity.",
         },
         footer(),
       ],

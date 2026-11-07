@@ -4,10 +4,12 @@ import {
   createBannerSection,
   createBlock,
   createBrandsSection,
+  createCatalogSection,
   createCategoriesSection,
   createFeaturedSection,
   createHeroSection,
   createPages,
+  createProductSection,
   isDark,
   paintTheme,
 } from "@/lib/editor/defaults";
@@ -79,7 +81,9 @@ interface EditorState extends SavedEditor {
       | "banner"
       | "about"
       | "reviews"
-      | "newsletter",
+      | "newsletter"
+      | "catalog"
+      | "product",
   ) => void;
   applyTheme: (theme: "light" | "ink") => void;
   setPageColor: (background: string) => void;
@@ -394,33 +398,7 @@ export const useEditor = create<EditorState>((set, get) => {
             }
           }
 
-          // Apply visual presentation styling globally across catalog, grid, and product sections!
-          const styleKeys = [
-            "imageRatio",
-            "typography",
-            "showBadge",
-            "showRating",
-            "showPrice",
-            "whatsappNumber",
-          ] as const;
-          const hasStylePatch = styleKeys.some((k) => k in patch);
-          if (hasStylePatch) {
-            const stylePatch: Record<string, unknown> = {};
-            styleKeys.forEach((k) => {
-              if (k in patch) stylePatch[k] = patch[k];
-            });
-            (Object.keys(pages) as PageId[]).forEach((pId) => {
-              pages[pId].sections = pages[pId].sections.map((sec) => {
-                if (sec.type === "catalog" || sec.type === "grid" || sec.type === "featured" || sec.type === "product") {
-                  return { ...sec, ...stylePatch } as Section;
-                }
-                return sec;
-              });
-            });
-            return;
-          }
-
-          // Apply patch to the current section
+          // Apply patch to the current section (isolated per page)
           curPage.sections = curPage.sections.map((sec) =>
             sec.id === id ? ({ ...sec, ...patch } as Section) : sec,
           );
@@ -490,6 +468,7 @@ export const useEditor = create<EditorState>((set, get) => {
     },
 
     insertSection: (kind) => {
+      const pageId = get().pageId;
       let newSec: Section;
       switch (kind) {
         case "hero":
@@ -497,6 +476,12 @@ export const useEditor = create<EditorState>((set, get) => {
           break;
         case "featured":
           newSec = createFeaturedSection();
+          if (pageId === "product") {
+            newSec.id = `product-related-${Date.now()}`;
+            newSec.name = "Related Products";
+            newSec.title = "You May Also Like";
+            newSec.subtitle = "Pair it with these handpicked essentials.";
+          }
           break;
         case "categories":
           newSec = createCategoriesSection();
@@ -509,6 +494,12 @@ export const useEditor = create<EditorState>((set, get) => {
           break;
         case "about":
           newSec = createAboutSection();
+          if (pageId === "product") {
+            newSec.id = `product-guarantees-${Date.now()}`;
+            newSec.name = "Guarantees";
+            newSec.kicker = "AUTHENTICITY & CARE";
+            newSec.title = "Crafted for longevity.";
+          }
           break;
         case "reviews":
           newSec = createBlock("reviews");
@@ -516,11 +507,17 @@ export const useEditor = create<EditorState>((set, get) => {
         case "newsletter":
           newSec = createBlock("newsletter");
           break;
+        case "catalog":
+          newSec = createCatalogSection();
+          break;
+        case "product":
+          newSec = createProductSection();
+          break;
       }
 
       commit(
-        ({ pages, pageId }) => {
-          const sections = pages[pageId].sections;
+        ({ pages, pageId: pId }) => {
+          const sections = pages[pId].sections;
           const footerAt = sections.findIndex((sec) => sec.type === "footer");
           if (footerAt === -1) sections.push(newSec);
           else sections.splice(footerAt, 0, newSec);
@@ -713,7 +710,58 @@ export const useEditor = create<EditorState>((set, get) => {
       get().showToast("HTML downloaded.");
     },
 
-    hydrate: (saved) => set({ pages: saved.pages, pageId: saved.pageId, cart: saved.cart }),
+    hydrate: (saved) => {
+      const allowedTypes: Record<PageId, Section["type"][]> = {
+        home: ["navbar", "hero", "categories", "featured", "banner", "brands", "about", "block", "footer"],
+        shop: ["navbar", "catalog", "banner", "block", "footer"],
+        product: ["navbar", "product", "block", "featured", "about", "banner", "footer"],
+      };
+
+      const cleanPages = structuredClone(saved.pages);
+      (Object.keys(cleanPages) as PageId[]).forEach((pId) => {
+        const allowed = allowedTypes[pId];
+        if (allowed && Array.isArray(cleanPages[pId].sections)) {
+          cleanPages[pId].sections = cleanPages[pId].sections.filter((s) => allowed.includes(s.type));
+        }
+      });
+
+      // If product page only had minimal sections, ensure it has its companion sections
+      if (cleanPages.product && cleanPages.product.sections.length <= 3) {
+        const hasReviews = cleanPages.product.sections.some(
+          (s) => s.type === "block" && (s as BlockSection).kind === "reviews",
+        );
+        const hasRelated = cleanPages.product.sections.some(
+          (s) => s.id === "product-related" || (s.type === "featured" && s.id !== "featured"),
+        );
+        const hasGuarantees = cleanPages.product.sections.some((s) => s.id === "product-guarantees");
+        const footerIndex = cleanPages.product.sections.findIndex((s) => s.type === "footer");
+        const insertIdx = footerIndex !== -1 ? footerIndex : cleanPages.product.sections.length;
+
+        const newSections: Section[] = [];
+        if (!hasReviews) newSections.push(createBlock("reviews"));
+        if (!hasRelated) {
+          newSections.push({
+            ...createFeaturedSection(),
+            id: "product-related",
+            name: "Related Products",
+            title: "You May Also Like",
+            subtitle: "Pair it with these handpicked essentials.",
+          });
+        }
+        if (!hasGuarantees) {
+          newSections.push({
+            ...createAboutSection(),
+            id: "product-guarantees",
+            name: "Guarantees",
+            kicker: "AUTHENTICITY & CARE",
+            title: "Crafted for longevity.",
+          });
+        }
+        cleanPages.product.sections.splice(insertIdx, 0, ...newSections);
+      }
+
+      set({ pages: cleanPages, pageId: saved.pageId, cart: saved.cart });
+    },
   };
 });
 
