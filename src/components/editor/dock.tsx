@@ -112,10 +112,12 @@ export function Dock() {
         ];
       case "product":
         return [
-          { id: "template", label: "Template", icon: LayoutTemplate, action: open("product-template") },
-          { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
-          { id: "badges", label: "WhatsApp", icon: MessageCircle, action: open("product-card-badges") },
-          { id: "color", label: "Color", icon: Palette, action: open("section-color") },
+          { id: "template", label: "Layout", icon: LayoutTemplate, action: open("product-template") },
+          { id: "gallery", label: "Gallery", icon: RectangleHorizontal, action: open("product-gallery") },
+          { id: "elements", label: "Elements", icon: SlidersHorizontal, action: open("product-elements") },
+          { id: "cta", label: "WhatsApp", icon: MessageCircle, action: open("product-cta") },
+          { id: "color", label: "Colors", icon: Palette, action: open("product-color") },
+          { id: "typography", label: "Typography", icon: Type, action: open("product-typography") },
         ];
       case "footer":
         return [

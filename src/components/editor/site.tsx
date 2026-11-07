@@ -1080,6 +1080,7 @@ function ProductView({
   const preview = useEditor((s) => s.preview);
   const wide = device === "desktop";
   const isSplit = sec.template === "split";
+  const isGrid = sec.template === "grid";
 
   const ratioClass =
     sec.imageRatio === "3:4"
@@ -1088,12 +1089,35 @@ function ProductView({
         ? "aspect-video"
         : "aspect-square";
 
-  const titleClass =
-    sec.typography === "sm"
-      ? "text-2xl sm:text-3xl"
-      : sec.typography === "lg"
-        ? "text-3xl sm:text-5xl font-bold"
-        : "text-2xl sm:text-4xl font-semibold";
+  const radiusPx = sec.borderRadius !== undefined ? `${sec.borderRadius}px` : "24px";
+  const thumbRadiusPx = `${Math.max(6, Math.round((sec.borderRadius ?? 24) * 0.5))}px`;
+  const galleryStyle = sec.galleryStyle || "strip";
+
+  const titleSizeClass =
+    sec.titleFontSize === "sm"
+      ? "text-xl sm:text-2xl"
+      : sec.titleFontSize === "lg"
+        ? "text-3xl sm:text-4xl"
+        : sec.titleFontSize === "xl"
+          ? "text-3xl sm:text-5xl"
+          : sec.typography === "sm"
+            ? "text-2xl sm:text-3xl"
+            : sec.typography === "lg"
+              ? "text-3xl sm:text-5xl"
+              : "text-2xl sm:text-4xl";
+
+  const titleWeightClass =
+    sec.titleFontWeight === "normal"
+      ? "font-normal"
+      : sec.titleFontWeight === "medium"
+        ? "font-medium"
+        : sec.titleFontWeight === "bold"
+          ? "font-bold"
+          : sec.typography === "lg"
+            ? "font-bold"
+            : "font-semibold";
+
+  const titleClass = `${titleSizeClass} ${titleWeightClass}`;
 
   const handleBuyOnWhatsApp = (event: React.MouseEvent) => {
     if (!preview) return;
@@ -1102,17 +1126,11 @@ function ProductView({
     const productUrl = `${origin}/product?name=${encodeURIComponent(sec.productName)}`;
     const phone = (sec.whatsappNumber || "919876543210").replace(/[^0-9]/g, "");
     const message =
-      `Hi! I would like to order from Ziteo:
-
-` +
-      `📦 *Product:* ${sec.productName}
-` +
-      `💰 *Price:* ${money(sec.price)}
-` +
-      `🎨 *Color:* ${sec.color}
-` +
-      `📏 *Size:* ${sec.size}
-` +
+      `Hi! I would like to order from Ziteo:\n\n` +
+      `📦 *Product:* ${sec.productName}\n` +
+      `💰 *Price:* ${money(sec.price)}\n` +
+      `🎨 *Color:* ${sec.color}\n` +
+      `📏 *Size:* ${sec.size}\n` +
       `🔗 *Link:* ${productUrl}`;
 
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
@@ -1120,10 +1138,13 @@ function ProductView({
 
   const gallery = (
     <div>
-      <div className={cn("relative overflow-hidden bg-fill/40 rounded-3xl", wide ? "h-96" : "")}>
+      <div
+        style={{ borderRadius: radiusPx }}
+        className={cn("relative overflow-hidden bg-fill/40", wide ? "h-96" : "")}
+      >
         {sec.showBadge !== false && (
           <span className="absolute top-4 left-4 z-10 rounded-md bg-ink/90 px-2.5 py-1 text-xs font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-            POPULAR
+            {sec.badgeText || "POPULAR"}
           </span>
         )}
         <img
@@ -1136,103 +1157,237 @@ function ProductView({
           )}
         />
       </div>
-      <div className={cn("no-scrollbar mt-3 flex gap-2 overflow-x-auto", wide ? "" : "px-1")}>
-        {sec.gallery.map((img) => (
-          <button
-            key={img}
-            type="button"
-            aria-label="Show photo"
-            onClick={(event) => {
-              event.stopPropagation();
-              useEditor.getState().setProductField({ image: img });
-            }}
-            className={cn(
-              "tap-smooth size-16 shrink-0 overflow-hidden rounded-xl transition-all duration-200",
-              img === sec.image ? "ring-2 ring-accent scale-105" : "opacity-80 hover:opacity-100 hover:scale-102",
-            )}
-          >
-            <img src={img} alt="" className="h-full w-full object-cover" />
-          </button>
-        ))}
-      </div>
+
+      {galleryStyle === "dots" ? (
+        <div className="mt-3.5 flex items-center justify-center gap-2">
+          {sec.gallery.map((img) => (
+            <button
+              key={img}
+              type="button"
+              aria-label="Photo dot"
+              onClick={(e) => {
+                e.stopPropagation();
+                useEditor.getState().setProductField({ image: img });
+              }}
+              className={cn(
+                "tap-smooth rounded-full transition-all duration-200",
+                img === sec.image
+                  ? "h-2 w-6 bg-accent"
+                  : "size-2 bg-slate-300 dark:bg-zinc-600 hover:bg-slate-400"
+              )}
+            />
+          ))}
+        </div>
+      ) : galleryStyle === "grid" ? (
+        <div className="mt-3.5 grid grid-cols-4 gap-2">
+          {sec.gallery.map((img) => (
+            <button
+              key={img}
+              type="button"
+              aria-label="Show photo"
+              onClick={(event) => {
+                event.stopPropagation();
+                useEditor.getState().setProductField({ image: img });
+              }}
+              style={{ borderRadius: thumbRadiusPx }}
+              className={cn(
+                "tap-smooth aspect-square overflow-hidden transition-all duration-200",
+                img === sec.image
+                  ? "ring-2 ring-accent scale-102 shadow-xs"
+                  : "opacity-80 hover:opacity-100 hover:scale-102"
+              )}
+            >
+              <img src={img} alt="" className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className={cn("no-scrollbar mt-3.5 flex gap-2 overflow-x-auto", wide ? "" : "px-1")}>
+          {sec.gallery.map((img) => (
+            <button
+              key={img}
+              type="button"
+              aria-label="Show photo"
+              onClick={(event) => {
+                event.stopPropagation();
+                useEditor.getState().setProductField({ image: img });
+              }}
+              style={{ borderRadius: thumbRadiusPx }}
+              className={cn(
+                "tap-smooth size-16 shrink-0 overflow-hidden transition-all duration-200",
+                img === sec.image
+                  ? "ring-2 ring-accent scale-105 shadow-xs"
+                  : "opacity-80 hover:opacity-100 hover:scale-102"
+              )}
+            >
+              <img src={img} alt="" className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 
   const info = (
     <div className={cn(wide || isSplit ? "flex flex-col justify-center" : "pt-6")}>
       {sec.showRating !== false && (
-        <p className={cn("text-xs font-medium", dark ? "text-on-ink/70" : "text-muted")}>{sec.rating}</p>
+        <p className={cn("text-xs font-medium", dark ? "text-on-ink/70" : "text-muted")}>
+          {sec.rating}
+        </p>
       )}
       <h1 className={cn("mt-2 tracking-tight", titleClass)}>{sec.productName}</h1>
-      <p className="mt-3 text-2xl font-bold text-emerald-600">{money(sec.price)}</p>
-      <p className={cn("mt-4 max-w-md text-sm leading-relaxed", dark ? "text-on-ink/70" : "text-muted")}>
-        {sec.description}
+      <p
+        className="mt-3 text-2xl font-bold"
+        style={{ color: sec.priceColor || (dark ? "#34d399" : "#059669") }}
+      >
+        {money(sec.price)}
       </p>
-      <div className="mt-6">
-        <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>Select Color</p>
-        <div className="mt-2.5 flex gap-2.5">
-          {sec.colors.map((color) => (
-            <button
-              key={color}
-              type="button"
-              aria-label={`Color ${color}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                useEditor.getState().setProductField({ color });
-              }}
-              className={cn(
-                "tap-smooth size-10 rounded-full border border-line transition-transform duration-200 hover:scale-110",
-                color === sec.color && "ring-2 ring-emerald-500 ring-offset-2 scale-105",
-              )}
-              style={{ background: color }}
-            />
-          ))}
+
+      {sec.showDescription !== false && (
+        <p className={cn("mt-4 max-w-md text-sm leading-relaxed", dark ? "text-on-ink/70" : "text-muted")}>
+          {sec.description}
+        </p>
+      )}
+
+      {sec.showColors !== false && sec.colors && sec.colors.length > 0 && (
+        <div className="mt-6">
+          <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>
+            Select Color
+          </p>
+          <div className="mt-2.5 flex gap-2.5">
+            {sec.colors.map((color) => (
+              <button
+                key={color}
+                type="button"
+                aria-label={`Color ${color}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  useEditor.getState().setProductField({ color });
+                }}
+                className={cn(
+                  "tap-smooth size-10 rounded-full border border-line transition-transform duration-200 hover:scale-110",
+                  color === sec.color && "ring-2 ring-emerald-500 ring-offset-2 scale-105"
+                )}
+                style={{ background: color }}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="mt-5">
-        <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>Select Size</p>
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          {sec.sizes.map((size) => (
-            <button
-              key={size}
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                useEditor.getState().setProductField({ size });
-              }}
-              className={cn(
-                "tap-smooth h-10 rounded-full border px-4 text-xs font-semibold tracking-wide transition-all duration-200",
-                size === sec.size
-                  ? "border-[#25D366] bg-[#25D366] text-white shadow-xs"
-                  : "border-line bg-transparent hover:border-ink",
-              )}
-            >
-              {size}
-            </button>
-          ))}
+      )}
+
+      {sec.showSizes !== false && sec.sizes && sec.sizes.length > 0 && (
+        <div className="mt-5">
+          <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>
+            Select Size
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {sec.sizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  useEditor.getState().setProductField({ size });
+                }}
+                className={cn(
+                  "tap-smooth h-10 rounded-full border px-4 text-xs font-semibold tracking-wide transition-all duration-200",
+                  size === sec.size
+                    ? "border-[#25D366] bg-[#25D366] text-white shadow-xs"
+                    : "border-line bg-transparent hover:border-ink"
+                )}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
       <button
         type="button"
         onClick={handleBuyOnWhatsApp}
-        className="tap-smooth-sm mt-6 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#25D366] text-sm font-semibold text-white shadow-lg shadow-[#25D366]/25 transition-all hover:bg-[#20bd5a] hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]"
+        style={{ backgroundColor: sec.buttonColor || "#25D366" }}
+        className="tap-smooth-sm mt-6 flex h-13 w-full items-center justify-center gap-2.5 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:opacity-95 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]"
       >
         <WhatsAppIcon className="size-5 fill-white" />
-        <span>Buy on WhatsApp · {money(sec.price)}</span>
+        <span>{(sec.buttonText || "Buy on WhatsApp")} · {money(sec.price)}</span>
       </button>
-      <div className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-muted">
-        <span className="size-1.5 rounded-full bg-[#25D366]" />
-        <span>Instant WhatsApp confirmation & order tracking</span>
-      </div>
+
+      {sec.showTrustBadges !== false && (
+        <div className="mt-3 flex items-center justify-center gap-2 text-xs text-muted">
+          <span className="size-1.5 rounded-full" style={{ backgroundColor: sec.buttonColor || "#25D366" }} />
+          <span>Instant WhatsApp confirmation & order tracking</span>
+        </div>
+      )}
     </div>
   );
 
   return (
     <SectionShell section={sec} background={sec.background} color={dark ? "#f5f5f7" : "#1d1d1f"}>
-      <div className={cn(wide || isSplit ? "grid grid-cols-2 gap-10 px-8 py-10" : "px-5 pb-8")}>
-        {gallery}
-        {info}
-      </div>
+      {isGrid && wide ? (
+        <div className="grid grid-cols-12 gap-8 px-8 py-10">
+          <div className="col-span-7">
+            <div className="grid grid-cols-2 gap-3">
+              {sec.gallery.map((img, idx) => (
+                <div
+                  key={img}
+                  style={{ borderRadius: radiusPx }}
+                  className={cn(
+                    "relative overflow-hidden bg-fill/40 cursor-pointer transition-transform hover:scale-[1.01]",
+                    idx === 0 ? "col-span-2 aspect-[4/3]" : "aspect-square"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    useEditor.getState().setProductField({ image: img });
+                  }}
+                >
+                  {idx === 0 && sec.showBadge !== false && (
+                    <span className="absolute top-4 left-4 z-10 rounded-md bg-ink/90 px-2.5 py-1 text-xs font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+                      {sec.badgeText || "POPULAR"}
+                    </span>
+                  )}
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="col-span-5">
+            <div className="sticky top-24">
+              {info}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className={cn(wide || isSplit ? "grid grid-cols-2 gap-10 px-8 py-10" : "px-5 pb-8")}>
+          {gallery}
+          {info}
+        </div>
+      )}
+
+      {sec.stickyButton && !wide && (
+        <div className="fixed bottom-18 left-0 right-0 z-30 px-4 py-2 pointer-events-none">
+          <div className="pointer-events-auto mx-auto max-w-md rounded-2xl border border-slate-200/80 bg-surface/95 p-2 shadow-xl backdrop-blur-xl flex items-center justify-between gap-3">
+            <div className="pl-2 min-w-0">
+              <div className="text-xs font-semibold text-ink truncate">{sec.productName}</div>
+              <div
+                className="text-xs font-bold"
+                style={{ color: sec.priceColor || (dark ? "#34d399" : "#059669") }}
+              >
+                {money(sec.price)}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleBuyOnWhatsApp}
+              style={{ backgroundColor: sec.buttonColor || "#25D366" }}
+              className="tap-smooth shrink-0 flex h-10 px-4 items-center justify-center gap-2 rounded-xl text-xs font-semibold text-white shadow-sm hover:opacity-95"
+            >
+              <WhatsAppIcon className="size-4 fill-white" />
+              <span>{sec.buttonText || "Buy on WhatsApp"}</span>
+            </button>
+          </div>
+        </div>
+      )}
     </SectionShell>
   );
 }

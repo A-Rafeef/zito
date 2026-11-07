@@ -15,7 +15,7 @@ import {
   Type,
   X,
 } from "lucide-react";
-import { HERO_PHOTOS, PAGE_COLORS, TEXT_COLORS } from "@/lib/editor/defaults";
+import { HERO_PHOTOS, PAGE_COLORS, TEXT_COLORS, isDark } from "@/lib/editor/defaults";
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import { cn } from "@/lib/cn";
 import type {
@@ -29,6 +29,7 @@ import type {
   NavbarSection,
   NavbarTemplate,
   ProductImageRatio,
+  ProductSection,
   ProductTypography,
   SheetKind,
 } from "@/lib/editor/types";
@@ -65,7 +66,12 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "grid-items": { title: "Items", subtitle: "" },
   "catalog-template": { title: "Template", subtitle: "" },
   "catalog-text": { title: "Catalog", subtitle: "" },
-  "product-template": { title: "Template", subtitle: "" },
+  "product-template": { title: "Product Layout", subtitle: "Stacked, split or editorial grid." },
+  "product-gallery": { title: "Gallery & Ratio", subtitle: "Aspect ratio, radius & thumbnails." },
+  "product-elements": { title: "Elements", subtitle: "Toggle badges, ratings, colors & sizes." },
+  "product-cta": { title: "WhatsApp CTA", subtitle: "Phone number, button text & styling." },
+  "product-color": { title: "Product Colors", subtitle: "Background & price styling." },
+  "product-typography": { title: "Typography", subtitle: "Title sizing & font weights." },
   "product-text": { title: "Product", subtitle: "" },
   "footer-style": { title: "Template", subtitle: "" },
   "block-template": { title: "Template", subtitle: "" },
@@ -181,6 +187,16 @@ function SheetBody({ kind }: { kind: SheetKind }) {
       return section?.type === "catalog" ? <CatalogTemplate current={section.template} /> : null;
     case "product-template":
       return section?.type === "product" ? <ProductTemplate current={section.template} /> : null;
+    case "product-gallery":
+      return section?.type === "product" ? <ProductGallerySheet sec={section} /> : null;
+    case "product-elements":
+      return section?.type === "product" ? <ProductElementsSheet sec={section} /> : null;
+    case "product-cta":
+      return section?.type === "product" ? <ProductCtaSheet sec={section} /> : null;
+    case "product-color":
+      return section?.type === "product" ? <ProductColorSheet sec={section} /> : null;
+    case "product-typography":
+      return section?.type === "product" ? <ProductTypographySheet sec={section} /> : null;
     case "product-card-style":
       return <ProductCardStyle />;
     case "product-card-badges":
@@ -598,7 +614,7 @@ function CatalogTemplate({ current }: { current?: "grid" | "list" }) {
   );
 }
 
-function ProductTemplate({ current }: { current?: "stacked" | "split" }) {
+function ProductTemplate({ current }: { current?: "stacked" | "split" | "grid" }) {
   const active = current ?? "stacked";
   return (
     <div className="flex flex-col gap-3">
@@ -606,28 +622,624 @@ function ProductTemplate({ current }: { current?: "stacked" | "split" }) {
         active={active === "stacked"}
         onClick={() => useEditor.getState().patchSelected({ template: "stacked" })}
       >
-        <div className="flex flex-col gap-2 rounded-xl border border-line-soft bg-fill/40 p-2.5">
-          <div className="h-16 w-full rounded-lg bg-slate-200" />
-          <div className="space-y-1.5 px-1">
-            <div className="h-2.5 w-1/2 rounded-full bg-slate-800" />
-            <div className="h-2 w-1/3 rounded-full bg-slate-400" />
-            <div className="h-5 w-full rounded-full bg-emerald-500" />
+        <div className="flex items-center gap-3.5 w-full">
+          <div className="w-24 shrink-0 flex flex-col gap-1.5 rounded-xl border border-line-soft bg-fill/40 p-2">
+            <div className="h-10 w-full rounded-md bg-slate-300 dark:bg-zinc-600" />
+            <div className="space-y-1">
+              <div className="h-1.5 w-3/4 rounded-full bg-slate-800 dark:bg-zinc-200" />
+              <div className="h-1.5 w-1/2 rounded-full bg-slate-400 dark:bg-zinc-400" />
+              <div className="h-3 w-full rounded-full bg-emerald-500" />
+            </div>
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-ink">Stacked Classic</div>
+            <div className="text-xs text-muted">Full-width photo gallery on top with details & CTA below. Best for mobile conversions.</div>
           </div>
         </div>
       </TemplateCard>
+
       <TemplateCard
         active={active === "split"}
         onClick={() => useEditor.getState().patchSelected({ template: "split" })}
       >
-        <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-line-soft bg-fill/40 p-2.5">
-          <div className="aspect-square w-full rounded-lg bg-slate-200" />
-          <div className="flex flex-col justify-center space-y-1.5">
-            <div className="h-2.5 w-3/4 rounded-full bg-slate-800" />
-            <div className="h-2 w-1/2 rounded-full bg-slate-400" />
-            <div className="h-5 w-full rounded-full bg-emerald-500" />
+        <div className="flex items-center gap-3.5 w-full">
+          <div className="w-24 shrink-0 grid grid-cols-2 gap-1 rounded-xl border border-line-soft bg-fill/40 p-1.5">
+            <div className="aspect-square w-full rounded-md bg-slate-300 dark:bg-zinc-600" />
+            <div className="flex flex-col justify-center space-y-1">
+              <div className="h-1.5 w-full rounded-full bg-slate-800 dark:bg-zinc-200" />
+              <div className="h-1.5 w-3/4 rounded-full bg-slate-400 dark:bg-zinc-400" />
+              <div className="h-2.5 w-full rounded-full bg-emerald-500" />
+            </div>
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-ink">Split Balanced</div>
+            <div className="text-xs text-muted">50/50 side-by-side gallery and product details. Balanced, desktop and tablet friendly.</div>
           </div>
         </div>
       </TemplateCard>
+
+      <TemplateCard
+        active={active === "grid"}
+        onClick={() => useEditor.getState().patchSelected({ template: "grid" })}
+      >
+        <div className="flex items-center gap-3.5 w-full">
+          <div className="w-24 shrink-0 grid grid-cols-2 gap-1 rounded-xl border border-line-soft bg-fill/40 p-1.5">
+            <div className="aspect-square w-full rounded-md bg-slate-300 dark:bg-zinc-600" />
+            <div className="aspect-square w-full rounded-md bg-slate-200 dark:bg-zinc-700" />
+            <div className="aspect-square w-full rounded-md bg-slate-200 dark:bg-zinc-700" />
+            <div className="aspect-square w-full rounded-md bg-slate-300 dark:bg-zinc-600" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-ink">Editorial Multi-Photo</div>
+            <div className="text-xs text-muted">Multi-photo gallery with a sticky purchase column. Premium boutique catalog look.</div>
+          </div>
+        </div>
+      </TemplateCard>
+    </div>
+  );
+}
+
+function ProductGallerySheet({ sec }: { sec: ProductSection }) {
+  const currentRatio = sec.imageRatio ?? "1:1";
+  const currentRadius = sec.borderRadius ?? 24;
+  const currentStyle = sec.galleryStyle ?? "strip";
+
+  const ratios: { label: string; ratio: ProductImageRatio; icon: string; desc: string }[] = [
+    { label: "1:1 Square", ratio: "1:1", icon: "aspect-square", desc: "Balanced standard" },
+    { label: "3:4 Portrait", ratio: "3:4", icon: "aspect-[3/4]", desc: "Fashion & clothing" },
+    { label: "16:9 Wide", ratio: "16:9", icon: "aspect-video", desc: "Cinematic wide" },
+  ];
+
+  const presets = [
+    { label: "Sharp", value: 0 },
+    { label: "Subtle", value: 8 },
+    { label: "Rounded", value: 16 },
+    { label: "Curved", value: 24 },
+    { label: "Extra", value: 32 },
+  ];
+
+  const galleryStyles: { id: "strip" | "dots" | "grid"; label: string; desc: string }[] = [
+    { id: "strip", label: "Horizontal Strip", desc: "Scrollable thumbnail strip under photo" },
+    { id: "dots", label: "Pagination Dots", desc: "Minimalist dot indicator" },
+    { id: "grid", label: "Thumbnail Grid", desc: "4-column compact photo grid" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Aspect Ratio */}
+      <div className="flex flex-col gap-2.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Aspect Ratio
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {ratios.map((item) => (
+            <button
+              key={item.ratio}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ imageRatio: item.ratio })}
+              className={cn(
+                "tap-smooth flex flex-col items-center justify-center p-3 rounded-2xl border transition-all text-center",
+                currentRatio === item.ratio
+                  ? "border-[#53389E] bg-[#EEF2FF]/60 text-ink ring-2 ring-[#53389E]/25 shadow-xs"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              <div className={cn("w-8 rounded border border-line mb-2 bg-fill/80", item.icon)} />
+              <span className="text-xs font-semibold">{item.label}</span>
+              <span className="text-[10px] text-muted">{item.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Corner Curve / Radius */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-line-soft bg-surface p-4 shadow-2xs">
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+            Corner Curve
+          </span>
+          <span className="text-xs font-bold text-accent font-mono bg-accent/10 px-2.5 py-1 rounded-lg">
+            {currentRadius}px
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={32}
+          step={2}
+          value={currentRadius}
+          onChange={(e) =>
+            useEditor.getState().patchSelected({ borderRadius: Number(e.target.value) })
+          }
+          className="w-full accent-accent cursor-pointer"
+        />
+        <div className="grid grid-cols-5 gap-1.5 pt-1">
+          {presets.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ borderRadius: p.value })}
+              className={cn(
+                "tap-smooth py-1 px-1 rounded-xl text-center text-xs font-medium border transition-all",
+                currentRadius === p.value
+                  ? "border-accent bg-accent/10 text-accent font-semibold"
+                  : "border-line-soft bg-fill/40 text-muted hover:text-ink"
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Thumbnail Navigation Style */}
+      <div className="flex flex-col gap-2.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Thumbnail Style
+        </label>
+        <div className="divide-y divide-line-soft overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+          {galleryStyles.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ galleryStyle: item.id })}
+              className={cn(
+                "tap-smooth flex w-full items-center justify-between p-3.5 text-left transition-all",
+                currentStyle === item.id
+                  ? "bg-accent/10 text-accent font-semibold"
+                  : "text-ink hover:bg-fill"
+              )}
+            >
+              <div>
+                <div className="text-sm font-semibold">{item.label}</div>
+                <div className="text-xs text-muted">{item.desc}</div>
+              </div>
+              {currentStyle === item.id && <Check className="size-4 text-accent" strokeWidth={2.5} />}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductElementsSheet({ sec }: { sec: ProductSection }) {
+  const [badgeVal, setBadgeVal] = useState(sec.badgeText || "POPULAR");
+
+  const toggles = [
+    {
+      key: "showBadge",
+      label: "Highlight Badge",
+      detail: "Badge label on top corner of product photo",
+      enabled: sec.showBadge !== false,
+    },
+    {
+      key: "showRating",
+      label: "Star Rating & Reviews",
+      detail: "Product star rating score (e.g. ★ 4.9)",
+      enabled: sec.showRating !== false,
+    },
+    {
+      key: "showDescription",
+      label: "Product Description",
+      detail: "Product summary paragraph and details",
+      enabled: sec.showDescription !== false,
+    },
+    {
+      key: "showColors",
+      label: "Color Swatches Selector",
+      detail: "Color variant swatches selector",
+      enabled: sec.showColors !== false,
+    },
+    {
+      key: "showSizes",
+      label: "Size Selector Pills",
+      detail: "Size option selector buttons (S, M, L, XL)",
+      enabled: sec.showSizes !== false,
+    },
+    {
+      key: "showTrustBadges",
+      label: "Trust & Delivery Guarantees",
+      detail: "Instant confirmation & delivery guarantee badges",
+      enabled: sec.showTrustBadges !== false,
+    },
+  ] as const;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Badge Text Input */}
+      {sec.showBadge !== false && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+          <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+            Badge Text
+          </label>
+          <input
+            type="text"
+            value={badgeVal}
+            onChange={(e) => {
+              setBadgeVal(e.target.value);
+              useEditor.getState().patchSelected({ badgeText: e.target.value });
+            }}
+            placeholder="e.g. POPULAR, NEW, BESTSELLER, 20% OFF"
+            className="rounded-xl border border-line-soft bg-fill/50 px-3 py-2 text-sm font-medium text-ink focus:border-accent focus:bg-surface focus:outline-hidden"
+          />
+        </div>
+      )}
+
+      {/* Elements Visibility Toggles */}
+      <div>
+        <p className="mb-2 text-xs font-semibold text-muted uppercase tracking-wider">
+          Visible Elements
+        </p>
+        <div className="divide-y divide-line-soft overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+          {toggles.map((item) => (
+            <div key={item.key} className="flex items-center justify-between p-3.5">
+              <div className="pr-3">
+                <div className="text-sm font-semibold text-ink">{item.label}</div>
+                <div className="text-xs text-muted">{item.detail}</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={item.enabled}
+                onClick={() =>
+                  useEditor.getState().patchSelected({ [item.key]: !item.enabled })
+                }
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+                  item.enabled ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
+                    item.enabled ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductCtaSheet({ sec }: { sec: ProductSection }) {
+  const [phone, setPhone] = useState(sec.whatsappNumber || "919876543210");
+  const [btnText, setBtnText] = useState(sec.buttonText || "Buy on WhatsApp");
+  const currentColor = sec.buttonColor || "#25D366";
+  const sticky = sec.stickyButton ?? false;
+
+  const colorPresets = [
+    { name: "WhatsApp Green", value: "#25D366" },
+    { name: "Luxe Black", value: "#111827" },
+    { name: "Brand Purple", value: "#53389E" },
+    { name: "Apple Blue", value: "#0071E3" },
+    { name: "Crimson Red", value: "#DC2626" },
+    { name: "Warm Amber", value: "#D97706" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* WhatsApp Phone Number */}
+      <div className="flex flex-col gap-2 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          WhatsApp Phone Number
+        </label>
+        <input
+          type="text"
+          value={phone}
+          onChange={(e) => {
+            setPhone(e.target.value);
+            useEditor.getState().patchSelected({ whatsappNumber: e.target.value });
+          }}
+          placeholder="e.g. 919876543210"
+          className="rounded-xl border border-line-soft bg-fill/50 px-3 py-2 text-sm font-medium text-ink focus:border-accent focus:bg-surface focus:outline-hidden"
+        />
+        <p className="text-[11px] text-muted">Include country code without + or spaces (e.g. 919876543210).</p>
+      </div>
+
+      {/* Button Label */}
+      <div className="flex flex-col gap-2 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Button Label
+        </label>
+        <input
+          type="text"
+          value={btnText}
+          onChange={(e) => {
+            setBtnText(e.target.value);
+            useEditor.getState().patchSelected({ buttonText: e.target.value });
+          }}
+          placeholder="Buy on WhatsApp"
+          className="rounded-xl border border-line-soft bg-fill/50 px-3 py-2 text-sm font-medium text-ink focus:border-accent focus:bg-surface focus:outline-hidden"
+        />
+      </div>
+
+      {/* Button Color */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Button Color
+        </label>
+        <div className="grid grid-cols-6 gap-2">
+          {colorPresets.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              aria-label={c.name}
+              onClick={() => useEditor.getState().patchSelected({ buttonColor: c.value })}
+              className={cn(
+                "tap-smooth size-10 rounded-xl border flex items-center justify-center transition-all",
+                currentColor === c.value
+                  ? "ring-2 ring-accent scale-105 border-white shadow-xs"
+                  : "border-black/10 hover:scale-105"
+              )}
+              style={{ backgroundColor: c.value }}
+            >
+              {currentColor === c.value && <Check className="size-4 text-white" strokeWidth={2.5} />}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <label className="relative flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-line overflow-hidden">
+            <input
+              type="color"
+              value={currentColor.startsWith("#") ? currentColor : "#25D366"}
+              onChange={(e) => useEditor.getState().patchSelected({ buttonColor: e.target.value })}
+              className="absolute inset-0 size-full opacity-0 cursor-pointer"
+            />
+            <span className="size-full" style={{ background: currentColor }} />
+          </label>
+          <span className="text-xs font-mono text-muted uppercase">{currentColor}</span>
+        </div>
+      </div>
+
+      {/* Sticky Mobile CTA Bar Toggle */}
+      <div className="flex items-center justify-between rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+        <div className="pr-3">
+          <div className="text-sm font-semibold text-ink">Sticky Mobile CTA Bar</div>
+          <div className="text-xs text-muted">Fixed WhatsApp quick-order bar at bottom of mobile screens while scrolling</div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={sticky}
+          onClick={() => useEditor.getState().patchSelected({ stickyButton: !sticky })}
+          className={cn(
+            "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+            sticky ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
+              sticky ? "translate-x-5" : "translate-x-0"
+            )}
+          />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ProductColorSheet({ sec }: { sec: ProductSection }) {
+  const currentBg = sec.background || "transparent";
+  const isTransparent = currentBg === "transparent";
+  const currentPriceColor = sec.priceColor || "#059669";
+
+  const bgPalettes = [
+    { name: "Clean White", value: "#ffffff" },
+    { name: "Soft Gray", value: "#f8fafc" },
+    { name: "Warm Linen", value: "#fbfbfd" },
+    { name: "Dark Ink", value: "#0b0b0d" },
+    { name: "Midnight", value: "#0f172a" },
+    { name: "Deep Cream", value: "#fdfbf7" },
+  ];
+
+  const pricePalettes = [
+    { name: "Emerald", value: "#059669" },
+    { name: "Pure Ink", value: "#111827" },
+    { name: "Indigo", value: "#4f46e5" },
+    { name: "Rose", value: "#e11d48" },
+    { name: "Amber", value: "#d97706" },
+    { name: "Royal Blue", value: "#2563eb" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Background Color */}
+      <div className="flex flex-col gap-3">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Section Background
+        </label>
+
+        {/* Transparent Toggle */}
+        <button
+          type="button"
+          onClick={() => useEditor.getState().patchSelected({ background: "transparent" })}
+          className={cn(
+            "tap-smooth flex items-center justify-between p-3 rounded-2xl border transition-all",
+            isTransparent
+              ? "border-accent bg-accent/10 text-accent font-semibold ring-2 ring-accent/20"
+              : "border-line-soft bg-surface text-ink hover:bg-fill"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="size-7 rounded-full border border-dashed border-slate-400 bg-linear-to-tr from-slate-200 to-transparent flex items-center justify-center">
+              <span className="text-[10px] font-bold text-muted">∅</span>
+            </div>
+            <div className="text-sm font-semibold">Transparent (Default Store Canvas)</div>
+          </div>
+          {isTransparent && <Check className="size-4 text-accent" strokeWidth={2.5} />}
+        </button>
+
+        {/* Preset Palette */}
+        <div className="grid grid-cols-6 gap-2">
+          {bgPalettes.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              aria-label={c.name}
+              onClick={() => useEditor.getState().patchSelected({ background: c.value })}
+              className={cn(
+                "tap-smooth size-10 rounded-xl border flex items-center justify-center transition-all",
+                currentBg === c.value
+                  ? "ring-2 ring-accent scale-105 border-slate-900 shadow-xs"
+                  : "border-black/10 hover:scale-105"
+              )}
+              style={{ backgroundColor: c.value }}
+            >
+              {currentBg === c.value && (
+                <Check
+                  className={cn("size-4", isDark(c.value) ? "text-white" : "text-slate-900")}
+                  strokeWidth={2.5}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom Color Input */}
+        <div className="flex items-center gap-3 p-3 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+          <label className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-line overflow-hidden">
+            <input
+              type="color"
+              value={currentBg.startsWith("#") ? currentBg : "#ffffff"}
+              onChange={(e) => useEditor.getState().patchSelected({ background: e.target.value })}
+              className="absolute inset-0 size-full opacity-0 cursor-pointer"
+            />
+            <span className="size-full" style={{ background: isTransparent ? "transparent" : currentBg }} />
+          </label>
+          <div className="flex-1">
+            <span className="text-xs font-semibold text-ink">Custom Background Color</span>
+            <div className="text-[11px] text-muted font-mono">{isTransparent ? "transparent" : currentBg}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Price Color */}
+      <div className="flex flex-col gap-3">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Price Text Color
+        </label>
+        <div className="grid grid-cols-6 gap-2">
+          {pricePalettes.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              aria-label={c.name}
+              onClick={() => useEditor.getState().patchSelected({ priceColor: c.value })}
+              className={cn(
+                "tap-smooth size-10 rounded-xl border flex items-center justify-center transition-all",
+                currentPriceColor === c.value
+                  ? "ring-2 ring-accent scale-105 border-slate-900 shadow-xs"
+                  : "border-black/10 hover:scale-105"
+              )}
+              style={{ backgroundColor: c.value }}
+            >
+              {currentPriceColor === c.value && (
+                <Check className="size-4 text-white" strokeWidth={2.5} />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom Price Color Input */}
+        <div className="flex items-center gap-3 p-3 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+          <label className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-line overflow-hidden">
+            <input
+              type="color"
+              value={currentPriceColor.startsWith("#") ? currentPriceColor : "#059669"}
+              onChange={(e) => useEditor.getState().patchSelected({ priceColor: e.target.value })}
+              className="absolute inset-0 size-full opacity-0 cursor-pointer"
+            />
+            <span className="size-full" style={{ background: currentPriceColor }} />
+          </label>
+          <div className="flex-1">
+            <span className="text-xs font-semibold text-ink">Custom Price Color</span>
+            <div className="text-[11px] text-muted font-mono">{currentPriceColor}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductTypographySheet({ sec }: { sec: ProductSection }) {
+  const currentSize =
+    sec.titleFontSize ?? (sec.typography === "sm" ? "sm" : sec.typography === "lg" ? "xl" : "base");
+  const currentWeight = sec.titleFontWeight ?? "semibold";
+
+  const sizes: { id: "sm" | "base" | "lg" | "xl"; label: string; desc: string }[] = [
+    { id: "sm", label: "Compact", desc: "20px - 24px tight title" },
+    { id: "base", label: "Regular", desc: "24px - 28px standard title" },
+    { id: "lg", label: "Large", desc: "28px - 34px prominent title" },
+    { id: "xl", label: "Display", desc: "32px - 44px bold hero title" },
+  ];
+
+  const weights: { id: "normal" | "medium" | "semibold" | "bold"; label: string; desc: string }[] = [
+    { id: "normal", label: "Regular", desc: "400 normal weight" },
+    { id: "medium", label: "Medium", desc: "500 balanced weight" },
+    { id: "semibold", label: "Semi-Bold", desc: "600 refined emphasis" },
+    { id: "bold", label: "Bold", desc: "700 high impact" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Title Font Size */}
+      <div className="flex flex-col gap-2.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Product Title Size
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {sizes.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() =>
+                useEditor.getState().patchSelected({ titleFontSize: s.id })
+              }
+              className={cn(
+                "tap-smooth flex flex-col p-3 rounded-2xl border text-left transition-all",
+                currentSize === s.id
+                  ? "border-accent bg-accent/10 text-accent font-semibold ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              <span className="text-sm font-semibold">{s.label}</span>
+              <span className="text-xs text-muted mt-0.5">{s.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Title Font Weight */}
+      <div className="flex flex-col gap-2.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Title Font Weight
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {weights.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() =>
+                useEditor.getState().patchSelected({ titleFontWeight: w.id })
+              }
+              className={cn(
+                "tap-smooth flex flex-col p-3 rounded-2xl border text-left transition-all",
+                currentWeight === w.id
+                  ? "border-accent bg-accent/10 text-accent font-semibold ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              <span className="text-sm font-semibold">{w.label}</span>
+              <span className="text-xs text-muted mt-0.5">{w.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

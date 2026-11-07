@@ -248,12 +248,25 @@ export interface ProductSection {
   gallery: string[];
   image: string;
   background: string;
-  template?: "stacked" | "split";
+  template?: "stacked" | "split" | "grid";
   imageRatio?: ProductImageRatio;
   typography?: ProductTypography;
+  borderRadius?: number;
+  galleryStyle?: "strip" | "dots" | "grid";
   showBadge?: boolean;
+  badgeText?: string;
   showRating?: boolean;
+  showDescription?: boolean;
+  showColors?: boolean;
+  showSizes?: boolean;
+  showTrustBadges?: boolean;
   whatsappNumber?: string;
+  buttonText?: string;
+  buttonColor?: string;
+  stickyButton?: boolean;
+  priceColor?: string;
+  titleFontSize?: "sm" | "base" | "lg" | "xl";
+  titleFontWeight?: "normal" | "medium" | "semibold" | "bold";
 }
 
 export interface FooterSection {
@@ -342,6 +355,11 @@ export type SheetKind =
   | "intro-template"
   | "catalog-template"
   | "product-template"
+  | "product-gallery"
+  | "product-elements"
+  | "product-cta"
+  | "product-color"
+  | "product-typography"
   | "block-template"
   | "product-card-style"
   | "product-card-badges"
