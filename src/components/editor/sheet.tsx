@@ -87,7 +87,7 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "product-card-style": { title: "Card Style", subtitle: "Image aspect ratio, corner curve & typography." },
   "product-card-badges": { title: "Card Elements", subtitle: "Toggle badges, ratings, prices & WhatsApp button." },
   "product-card-color": { title: "Card Colors", subtitle: "Price color and WhatsApp button styling." },
-  "product-card-cta": { title: "WhatsApp Direct Buy", subtitle: "Phone number and direct WhatsApp ordering." },
+  "product-card-cta": { title: "WhatsApp & Currency", subtitle: "Seller WhatsApp number and store currency." },
   "categories-template": { title: "Template", subtitle: "" },
   "brands-template": { title: "Template", subtitle: "" },
   "banner-template": { title: "Template", subtitle: "" },
@@ -2261,18 +2261,46 @@ function ProductCardColor() {
   );
 }
 
+const CURRENCY_PRESETS = [
+  { code: "₹", label: "₹ INR (India)" },
+  { code: "$", label: "$ USD (Global)" },
+  { code: "AED", label: "AED (UAE)" },
+  { code: "SAR", label: "SAR (Saudi)" },
+  { code: "£", label: "£ GBP (UK)" },
+  { code: "€", label: "€ EUR (Europe)" },
+  { code: "QAR", label: "QAR (Qatar)" },
+  { code: "KWD", label: "KWD (Kuwait)" },
+];
+
 function ProductCardCta() {
   const section = useEditor((s) => selectedSection(s));
   const rawNumber =
     (section && "whatsappNumber" in section && section.whatsappNumber) || "919876543210";
+  const rawCurrency =
+    (section && "currency" in section && section.currency) || "$";
+
   const [phone, setPhone] = useState(rawNumber);
+  const [currency, setCurrency] = useState(rawCurrency);
 
   useEffect(() => {
     setPhone(rawNumber);
   }, [rawNumber]);
 
+  useEffect(() => {
+    setCurrency(rawCurrency);
+  }, [rawCurrency]);
+
+  const handleSave = () => {
+    useEditor.getState().patchSelected({
+      whatsappNumber: phone,
+      currency,
+    });
+    useEditor.getState().showToast("Store WhatsApp & Currency synced to all pages.");
+  };
+
   return (
     <div className="flex flex-col gap-5">
+      {/* WhatsApp Number Section */}
       <div>
         <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Seller WhatsApp Number</p>
         <div className="rounded-2xl border border-line-soft bg-surface p-4 shadow-2xs">
@@ -2283,26 +2311,65 @@ function ProductCardCta() {
               onChange={(e) => setPhone(e.target.value)}
             />
           </Field>
-          <div className="mt-3 flex gap-2">
-            <PrimaryButton
-              onClick={() => {
-                useEditor.getState().patchSelected({ whatsappNumber: phone });
-                useEditor.getState().showToast("WhatsApp number updated.");
-              }}
-            >
-              Save WhatsApp Number
-            </PrimaryButton>
-          </div>
           <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-50/60 p-3 text-xs leading-relaxed text-emerald-950">
             <div className="flex items-center gap-1.5 font-semibold text-emerald-800">
               <span className="size-2 rounded-full bg-emerald-500" />
-              <span>Direct Customer Ordering</span>
+              <span>Direct WhatsApp Ordering</span>
             </div>
             <p className="mt-1 text-emerald-800/80">
-              When shoppers tap the WhatsApp button on any product card, an instant order message pre-fills in their WhatsApp with product name, price, and storefront link.
+              When shoppers tap the WhatsApp button on any product card, an instant pre-filled order message opens directly with the product details and price.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Currency Section */}
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Store Currency</p>
+        <div className="rounded-2xl border border-line-soft bg-surface p-4 shadow-2xs">
+          <div className="mb-3 grid grid-cols-2 gap-2">
+            {CURRENCY_PRESETS.map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => {
+                  setCurrency(c.code);
+                  useEditor.getState().patchSelected({ currency: c.code });
+                }}
+                className={cn(
+                  "tap-smooth flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-medium transition-all cursor-pointer",
+                  currency === c.code
+                    ? "border-purple-600 bg-purple-50 text-purple-900 font-semibold shadow-2xs"
+                    : "border-line-soft bg-surface hover:bg-fill/60 text-ink"
+                )}
+              >
+                <span>{c.label}</span>
+                <span className="font-bold text-sm text-purple-700">{c.code}</span>
+              </button>
+            ))}
+          </div>
+
+          <Field label="Custom Currency Symbol or Code">
+            <TextInput
+              value={currency}
+              placeholder="e.g. ₹, $, AED, SAR"
+              onChange={(e) => {
+                setCurrency(e.target.value);
+                useEditor.getState().patchSelected({ currency: e.target.value });
+              }}
+            />
+          </Field>
+
+          <p className="mt-2.5 text-[11px] text-muted">
+            Changing store currency dynamically updates all prices across Home, Shop, Product Details, and Card Studio.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <PrimaryButton onClick={handleSave}>
+          Save Store Details
+        </PrimaryButton>
       </div>
     </div>
   );

@@ -246,6 +246,16 @@ export const useEditor = create<EditorState>((set, get) => {
               if (sec.type === "catalog" || sec.type === "featured" || sec.type === "grid") {
                 return { ...sec, ...patch } as Section;
               }
+              if (sec.type === "product") {
+                const prodPatch: Record<string, unknown> = {};
+                if ("whatsappNumber" in patch) prodPatch.whatsappNumber = patch.whatsappNumber;
+                if ("currency" in patch) prodPatch.currency = patch.currency;
+                if ("buttonColor" in patch) prodPatch.buttonColor = patch.buttonColor;
+                if ("priceColor" in patch) prodPatch.priceColor = patch.priceColor;
+                if (Object.keys(prodPatch).length > 0) {
+                  return { ...sec, ...prodPatch } as Section;
+                }
+              }
               return sec;
             });
           });
@@ -308,6 +318,7 @@ export const useEditor = create<EditorState>((set, get) => {
             "showPrice",
             "showButton",
             "whatsappNumber",
+            "currency",
             "priceColor",
             "buttonColor",
             "typography",

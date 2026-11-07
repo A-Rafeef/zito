@@ -902,6 +902,7 @@ function GridView({
             showButton={sec.showButton !== false}
             priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
             buttonColor={sec.buttonColor || "#25D366"}
+            currency={sec.currency || "$"}
             borderEnabled={sec.borderEnabled}
             borderWidth={sec.borderWidth}
             borderColor={sec.borderColor}
@@ -958,6 +959,7 @@ interface StoreProductCardProps {
   imageRadius?: number;
   detailsLayout?: ProductCardDetailsLayout;
   textAlign?: ProductCardTextAlign;
+  currency?: string;
   onCardClick: () => void;
   onWhatsAppClick: (e: React.MouseEvent) => void;
 }
@@ -979,6 +981,7 @@ function StoreProductCard({
   showButton = true,
   priceColor = "#059669",
   buttonColor = "#25D366",
+  currency = "$",
   isList = false,
   isCarousel = false,
   borderEnabled = true,
@@ -1008,7 +1011,12 @@ function StoreProductCard({
         ? "text-base font-semibold"
         : "text-sm font-medium";
 
-  const formattedPrice = typeof price === "number" ? money(price) : price;
+  const formattedPrice =
+    typeof price === "number"
+      ? money(price, currency)
+      : typeof price === "string" && price.startsWith("$")
+        ? `${currency}${price.slice(1)}`
+        : price;
   const shadowValue = shadowEnabled && shadowStyle ? CARD_SHADOW_MAP[shadowStyle] : "none";
   const borderValue = borderEnabled ? `${borderWidth ?? 1}px solid ${borderColor || "#e2e8f0"}` : "none";
   const bgValue = cardBackground || (dark ? "#18181b" : "#ffffff");
@@ -1262,7 +1270,7 @@ function CatalogView({
     const message =
       `Hi! I'd like to order from Ziteo:\n\n` +
       `📦 *Product:* ${item.name}\n` +
-      `💰 *Price:* ${money(item.price)}\n` +
+      `💰 *Price:* ${money(item.price, sec.currency || "$")}\n` +
       `🔗 *Link:* ${productUrl}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
@@ -1307,6 +1315,7 @@ function CatalogView({
               showButton={sec.showButton !== false}
               priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
               buttonColor={sec.buttonColor || "#25D366"}
+              currency={sec.currency || "$"}
               borderEnabled={sec.borderEnabled}
               borderWidth={sec.borderWidth}
               borderColor={sec.borderColor}
@@ -1393,7 +1402,7 @@ function ProductView({
     const message =
       `Hi! I would like to order from Ziteo:\n\n` +
       `📦 *Product:* ${sec.productName}\n` +
-      `💰 *Price:* ${money(sec.price)}\n` +
+      `💰 *Price:* ${money(sec.price, sec.currency || "$")}\n` +
       `🎨 *Color:* ${sec.color}\n` +
       `📏 *Size:* ${sec.size}\n` +
       `🔗 *Link:* ${productUrl}`;
@@ -1505,7 +1514,7 @@ function ProductView({
         className="mt-3 text-2xl font-bold"
         style={{ color: sec.priceColor || (dark ? "#34d399" : "#059669") }}
       >
-        {money(sec.price)}
+        {money(sec.price, sec.currency || "$")}
       </p>
 
       {sec.showDescription !== false && (
@@ -1575,7 +1584,7 @@ function ProductView({
         className="tap-smooth-sm mt-6 flex h-13 w-full items-center justify-center gap-2.5 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:opacity-95 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]"
       >
         <WhatsAppIcon className="size-5 fill-white" />
-        <span>{(sec.buttonText || "Buy on WhatsApp")} · {money(sec.price)}</span>
+        <span>{(sec.buttonText || "Buy on WhatsApp")} · {money(sec.price, sec.currency || "$")}</span>
       </button>
 
       {sec.showTrustBadges !== false && (
@@ -1952,6 +1961,7 @@ function FeaturedView({
               showButton={sec.showButton !== false}
               priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
               buttonColor={sec.buttonColor || "#25D366"}
+              currency={sec.currency || "$"}
               borderEnabled={sec.borderEnabled}
               borderWidth={sec.borderWidth}
               borderColor={sec.borderColor}
@@ -2341,6 +2351,7 @@ function ProductCardStudio({ device }: { device: Device }) {
     priceColor: (section && "priceColor" in section && section.priceColor) || "#059669",
     buttonColor: (section && "buttonColor" in section && section.buttonColor) || "#25D366",
     whatsappNumber: (section && "whatsappNumber" in section && section.whatsappNumber) || "919876543210",
+    currency: (section && "currency" in section && section.currency) || "$",
   };
 
   const handleWhatsApp = (e: React.MouseEvent) => {
@@ -2467,6 +2478,7 @@ function ProductCardStudio({ device }: { device: Device }) {
               showBadge={cardProps.showBadge}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
+              currency={cardProps.currency}
               priceColor={cardProps.priceColor}
               buttonColor={cardProps.buttonColor}
               borderEnabled={cardProps.borderEnabled}
@@ -2499,6 +2511,7 @@ function ProductCardStudio({ device }: { device: Device }) {
               showBadge={cardProps.showBadge}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
+              currency={cardProps.currency}
               priceColor={cardProps.priceColor}
               buttonColor={cardProps.buttonColor}
               borderEnabled={cardProps.borderEnabled}
@@ -2527,6 +2540,7 @@ function ProductCardStudio({ device }: { device: Device }) {
               showBadge={cardProps.showBadge}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
+              currency={cardProps.currency}
               priceColor={cardProps.priceColor}
               buttonColor={cardProps.buttonColor}
               borderEnabled={cardProps.borderEnabled}

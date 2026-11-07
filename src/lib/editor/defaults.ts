@@ -577,6 +577,11 @@ export function paintTheme(page: PageModel, theme: "light" | "ink"): PageModel {
   };
 }
 
-export function money(n: number) {
-  return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
+export function money(n: number, currency = "$") {
+  const formatted = Number.isInteger(n) ? `${n}` : n.toFixed(2);
+  const cur = currency || "$";
+  if (cur.length > 1 && !["₹", "$", "€", "£", "¥"].includes(cur)) {
+    return `${cur} ${formatted}`;
+  }
+  return `${cur}${formatted}`;
 }

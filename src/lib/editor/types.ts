@@ -144,6 +144,7 @@ export interface GridSection {
   showPrice?: boolean;
   showButton?: boolean;
   whatsappNumber?: string;
+  currency?: string;
   priceColor?: string;
   buttonColor?: string;
 }
@@ -174,6 +175,7 @@ export interface FeaturedSection {
   showPrice?: boolean;
   showButton?: boolean;
   whatsappNumber?: string;
+  currency?: string;
   priceColor?: string;
   buttonColor?: string;
   items: GridItem[];
@@ -277,6 +279,7 @@ export interface CatalogSection {
   showPrice?: boolean;
   showButton?: boolean;
   whatsappNumber?: string;
+  currency?: string;
   priceColor?: string;
   buttonColor?: string;
 }
@@ -309,6 +312,7 @@ export interface ProductSection {
   showSizes?: boolean;
   showTrustBadges?: boolean;
   whatsappNumber?: string;
+  currency?: string;
   buttonText?: string;
   buttonColor?: string;
   stickyButton?: boolean;
@@ -363,6 +367,7 @@ export interface ProductCardSection {
   showPrice?: boolean;
   showButton?: boolean;
   whatsappNumber?: string;
+  currency?: string;
   priceColor?: string;
   buttonColor?: string;
 }
