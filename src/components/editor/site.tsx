@@ -6,10 +6,13 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Columns2,
+  LayoutGrid,
   Menu,
   Plus,
   Search,
   ShoppingBag,
+  Square,
   Trash2,
   X,
 } from "lucide-react";
@@ -962,6 +965,7 @@ interface StoreProductCardProps {
 }
 
 function StoreProductCard({
+  id,
   title,
   price,
   image,
@@ -1015,6 +1019,7 @@ function StoreProductCard({
   if (isList) {
     return (
       <article
+        id={id}
         className="group relative transition-all flex items-center justify-between gap-4 p-3.5"
         style={{
           borderRadius: `${borderRadius}px`,
@@ -1089,10 +1094,11 @@ function StoreProductCard({
   // Standard or Carousel Card
   return (
     <article
+      id={id}
       className={cn(
         "group relative transition-all overflow-hidden",
         isCarousel ? "w-44 sm:w-56 shrink-0 snap-start" : "w-full",
-        imageInset ? "p-3" : ""
+        imageInset ? "p-2.5 sm:p-3" : ""
       )}
       style={{
         borderRadius: `${borderRadius}px`,
@@ -1180,7 +1186,7 @@ function StoreProductCard({
         <div
           className={cn(
             "flex flex-col",
-            imageInset ? "pt-2.5 px-0.5 pb-0.5" : "p-3.5",
+            imageInset ? "pt-2 px-0.5 pb-0.5" : "p-3 sm:p-3.5",
             textAlign === "center" ? "items-center text-center" : "items-start text-left"
           )}
         >
@@ -1196,15 +1202,15 @@ function StoreProductCard({
               {title}
             </h3>
             {showRating && rating && (
-              <p className={cn("mt-0.5 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
+              <p className={cn("mt-0.5 text-xs truncate", dark ? "text-on-ink/60" : "text-muted")}>
                 ★ {rating}
               </p>
             )}
           </button>
 
-          <div className={cn("mt-2.5 flex items-center w-full", textAlign === "center" ? "justify-center gap-3" : "justify-between")}>
+          <div className={cn("mt-2 sm:mt-2.5 flex items-center w-full", textAlign === "center" ? "justify-center gap-3" : "justify-between")}>
             {showPrice ? (
-              <span className="text-sm font-semibold" style={{ color: priceColor }}>
+              <span className="text-sm font-semibold truncate" style={{ color: priceColor }}>
                 {formattedPrice}
               </span>
             ) : <span />}
@@ -1218,7 +1224,7 @@ function StoreProductCard({
                   e.stopPropagation();
                   onWhatsAppClick(e);
                 }}
-                className="tap-smooth inline-flex size-8 items-center justify-center rounded-full text-white hover:scale-105 transition-all shadow-xs shrink-0 cursor-pointer"
+                className="tap-smooth inline-flex size-7.5 sm:size-8 items-center justify-center rounded-full text-white hover:scale-105 transition-all shadow-xs shrink-0 cursor-pointer"
                 style={{ backgroundColor: buttonColor }}
               >
                 <WhatsAppIcon className="size-3.5 fill-white" />
@@ -2332,6 +2338,7 @@ function renderSection(sec: Section, device: Device) {
 
 function ProductCardStudio({ device }: { device: Device }) {
   const [backdrop, setBackdrop] = useState<"pattern" | "light" | "dark">("pattern");
+  const [cardView, setCardView] = useState<"1" | "2">("1");
   const section = useEditor((s) => selectedSection(s));
 
   // Extract all card settings from current section with sensible defaults
@@ -2385,20 +2392,45 @@ function ProductCardStudio({ device }: { device: Device }) {
       }
     >
       {/* Studio Top Control Bar */}
-      <div className="z-20 flex items-center justify-between gap-1.5 sm:gap-2 border-b border-black/5 dark:border-white/10 px-2.5 sm:px-4 py-2 sm:py-2.5 backdrop-blur-md bg-white/85 dark:bg-slate-900/85 shrink-0">
+      <div className="z-20 flex items-center justify-between gap-1 sm:gap-2 border-b border-black/5 dark:border-white/10 px-2 sm:px-3 py-2 sm:py-2.5 backdrop-blur-md bg-white/90 dark:bg-slate-900/90 shrink-0">
         <button
           type="button"
           onClick={() => useEditor.getState().deselect()}
-          className="tap-smooth inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95"
+          className="tap-smooth inline-flex items-center gap-1 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95"
         >
           <ArrowLeft className="size-3.5" />
           <span className="hidden sm:inline">Back to Store</span>
           <span className="sm:hidden">Back</span>
         </button>
 
-        <div className="flex items-center gap-1.5 rounded-full border border-purple-200/60 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/50 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 dark:text-purple-300 shadow-2xs shrink-0 whitespace-nowrap">
-          <span className="size-1.5 sm:size-2 rounded-full bg-purple-500 animate-pulse" />
-          <span>Card Studio</span>
+        {/* 1 View vs 2 View Toggle */}
+        <div className="flex items-center gap-0.5 rounded-full border border-purple-200 dark:border-purple-800/80 bg-purple-50/80 dark:bg-purple-950/60 p-0.5 shadow-2xs text-[11px] font-medium shrink-0">
+          <button
+            type="button"
+            onClick={() => setCardView("1")}
+            className={cn(
+              "rounded-full px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 font-semibold",
+              cardView === "1"
+                ? "bg-purple-600 text-white shadow-2xs"
+                : "text-purple-700 dark:text-purple-300 hover:bg-purple-100/60 dark:hover:bg-purple-900/40"
+            )}
+          >
+            <Square className="size-3" />
+            <span>1 View</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setCardView("2")}
+            className={cn(
+              "rounded-full px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 font-semibold",
+              cardView === "2"
+                ? "bg-purple-600 text-white shadow-2xs"
+                : "text-purple-700 dark:text-purple-300 hover:bg-purple-100/60 dark:hover:bg-purple-900/40"
+            )}
+          >
+            <Columns2 className="size-3" />
+            <span>2 View</span>
+          </button>
         </div>
 
         {/* Backdrop switch */}
@@ -2406,19 +2438,21 @@ function ProductCardStudio({ device }: { device: Device }) {
           <button
             type="button"
             onClick={() => setBackdrop("pattern")}
+            title="Dot grid pattern background"
             className={cn(
               "rounded-full px-2 py-0.5 transition-all cursor-pointer whitespace-nowrap",
-              backdrop === "pattern" ? "bg-purple-600 text-white shadow-2xs font-semibold" : "text-muted hover:text-ink"
+              backdrop === "pattern" ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-2xs font-semibold" : "text-muted hover:text-ink"
             )}
           >
-            Grid
+            Dots
           </button>
           <button
             type="button"
             onClick={() => setBackdrop("light")}
+            title="Light background"
             className={cn(
               "rounded-full px-2 py-0.5 transition-all cursor-pointer whitespace-nowrap",
-              backdrop === "light" ? "bg-purple-600 text-white shadow-2xs font-semibold" : "text-muted hover:text-ink"
+              backdrop === "light" ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-2xs font-semibold" : "text-muted hover:text-ink"
             )}
           >
             Light
@@ -2426,9 +2460,10 @@ function ProductCardStudio({ device }: { device: Device }) {
           <button
             type="button"
             onClick={() => setBackdrop("dark")}
+            title="Dark background"
             className={cn(
               "rounded-full px-2 py-0.5 transition-all cursor-pointer whitespace-nowrap",
-              backdrop === "dark" ? "bg-purple-600 text-white shadow-2xs font-semibold" : "text-muted hover:text-ink"
+              backdrop === "dark" ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-2xs font-semibold" : "text-muted hover:text-ink"
             )}
           >
             Dark
@@ -2437,47 +2472,112 @@ function ProductCardStudio({ device }: { device: Device }) {
       </div>
 
       {/* Main Studio Card Canvas */}
-      <div className="relative flex flex-1 flex-col items-center justify-start sm:justify-center px-4 sm:px-8 pt-4 sm:pt-8 pb-32 sm:pb-36 overflow-y-auto min-h-0 no-scrollbar overscroll-contain">
-        <div
-          className={cn(
-            "w-full max-w-[270px] sm:max-w-[310px] md:max-w-[330px] transition-all duration-300",
-          )}
-        >
-          <StoreProductCard
-            id="studio-sample-card"
-            title="Air Retro Court"
-            price={149}
-            image="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=80"
-            badge="TRENDING"
-            rating="4.9 · 128 reviews"
-            dark={backdrop === "dark"}
-            imageRatio={cardProps.imageRatio}
-            borderRadius={cardProps.borderRadius}
-            typography={cardProps.typography}
-            showBadge={cardProps.showBadge}
-            showRating={cardProps.showRating}
-            showPrice={cardProps.showPrice}
-            showButton={cardProps.showButton}
-            priceColor={cardProps.priceColor}
-            buttonColor={cardProps.buttonColor}
-            borderEnabled={cardProps.borderEnabled}
-            borderWidth={cardProps.borderWidth}
-            borderColor={cardProps.borderColor}
-            shadowEnabled={cardProps.shadowEnabled}
-            shadowStyle={cardProps.shadowStyle}
-            cardBackground={cardProps.cardBackground}
-            imageInset={cardProps.imageInset}
-            imageRadius={cardProps.imageRadius}
-            detailsLayout={cardProps.detailsLayout}
-            textAlign={cardProps.textAlign}
-            onCardClick={() => {}}
-            onWhatsAppClick={handleWhatsApp}
-          />
-        </div>
+      <div className="relative flex flex-1 flex-col items-center justify-start sm:justify-center px-3 sm:px-6 pt-4 sm:pt-6 pb-32 sm:pb-36 overflow-y-auto min-h-0 no-scrollbar overscroll-contain">
+        {cardView === "1" ? (
+          /* 1 View: Single Card - compact & realistic size */
+          <div className="w-full max-w-[200px] sm:max-w-[230px] transition-all duration-300 animate-in fade-in zoom-in-95">
+            <StoreProductCard
+              id="studio-sample-card-1"
+              title="Air Retro Court"
+              price={149}
+              image="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=80"
+              badge="TRENDING"
+              rating="4.9 · 128 reviews"
+              dark={backdrop === "dark"}
+              imageRatio={cardProps.imageRatio}
+              borderRadius={cardProps.borderRadius}
+              typography={cardProps.typography}
+              showBadge={cardProps.showBadge}
+              showRating={cardProps.showRating}
+              showPrice={cardProps.showPrice}
+              showButton={cardProps.showButton}
+              priceColor={cardProps.priceColor}
+              buttonColor={cardProps.buttonColor}
+              borderEnabled={cardProps.borderEnabled}
+              borderWidth={cardProps.borderWidth}
+              borderColor={cardProps.borderColor}
+              shadowEnabled={cardProps.shadowEnabled}
+              shadowStyle={cardProps.shadowStyle}
+              cardBackground={cardProps.cardBackground}
+              imageInset={cardProps.imageInset}
+              imageRadius={cardProps.imageRadius}
+              detailsLayout={cardProps.detailsLayout}
+              textAlign={cardProps.textAlign}
+              onCardClick={() => {}}
+              onWhatsAppClick={handleWhatsApp}
+            />
+          </div>
+        ) : (
+          /* 2 View: 2 Cards Side-by-Side in Grid */
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 w-full max-w-[340px] sm:max-w-[420px] transition-all duration-300 animate-in fade-in zoom-in-95">
+            <StoreProductCard
+              id="studio-sample-card-1"
+              title="Air Retro Court"
+              price={149}
+              image="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=80"
+              badge="TRENDING"
+              rating="4.9 · 128 reviews"
+              dark={backdrop === "dark"}
+              imageRatio={cardProps.imageRatio}
+              borderRadius={cardProps.borderRadius}
+              typography={cardProps.typography}
+              showBadge={cardProps.showBadge}
+              showRating={cardProps.showRating}
+              showPrice={cardProps.showPrice}
+              showButton={cardProps.showButton}
+              priceColor={cardProps.priceColor}
+              buttonColor={cardProps.buttonColor}
+              borderEnabled={cardProps.borderEnabled}
+              borderWidth={cardProps.borderWidth}
+              borderColor={cardProps.borderColor}
+              shadowEnabled={cardProps.shadowEnabled}
+              shadowStyle={cardProps.shadowStyle}
+              cardBackground={cardProps.cardBackground}
+              imageInset={cardProps.imageInset}
+              imageRadius={cardProps.imageRadius}
+              detailsLayout={cardProps.detailsLayout}
+              textAlign={cardProps.textAlign}
+              onCardClick={() => {}}
+              onWhatsAppClick={handleWhatsApp}
+            />
+            <StoreProductCard
+              id="studio-sample-card-2"
+              title="Weather Fleece"
+              price={129}
+              image="https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&w=800&q=80"
+              badge="NEW"
+              rating="4.8 · 96 reviews"
+              dark={backdrop === "dark"}
+              imageRatio={cardProps.imageRatio}
+              borderRadius={cardProps.borderRadius}
+              typography={cardProps.typography}
+              showBadge={cardProps.showBadge}
+              showRating={cardProps.showRating}
+              showPrice={cardProps.showPrice}
+              showButton={cardProps.showButton}
+              priceColor={cardProps.priceColor}
+              buttonColor={cardProps.buttonColor}
+              borderEnabled={cardProps.borderEnabled}
+              borderWidth={cardProps.borderWidth}
+              borderColor={cardProps.borderColor}
+              shadowEnabled={cardProps.shadowEnabled}
+              shadowStyle={cardProps.shadowStyle}
+              cardBackground={cardProps.cardBackground}
+              imageInset={cardProps.imageInset}
+              imageRadius={cardProps.imageRadius}
+              detailsLayout={cardProps.detailsLayout}
+              textAlign={cardProps.textAlign}
+              onCardClick={() => {}}
+              onWhatsAppClick={handleWhatsApp}
+            />
+          </div>
+        )}
 
-        <div className="mt-5 sm:mt-7 flex items-center gap-1.5 sm:gap-2 rounded-full border border-slate-300/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 px-3 py-1.5 text-[11px] sm:text-xs text-muted shadow-xs max-w-full text-center">
+        <div className="mt-4 sm:mt-5 flex items-center gap-1.5 sm:gap-2 rounded-full border border-slate-300/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 px-3 py-1.5 text-[11px] sm:text-xs text-muted shadow-2xs max-w-full text-center">
           <Check className="size-3.5 text-emerald-500 shrink-0" />
-          <span className="truncate">Syncs automatically to all store pages</span>
+          <span className="truncate">
+            {cardView === "1" ? "Single card view · Syncs to all pages" : "2-Column grid preview · Syncs to all pages"}
+          </span>
         </div>
       </div>
     </div>
