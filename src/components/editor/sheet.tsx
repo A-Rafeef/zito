@@ -2,15 +2,22 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   Check,
   ChevronDown,
+  ChevronUp,
   Compass,
   Image,
   Layers,
+  LayoutGrid,
   Menu,
+  PanelBottom,
+  PanelTop,
+  Pin,
   Plus,
   Search,
   Shield,
   ShoppingBag,
   Sliders,
+  Sparkles,
+  Tag,
   Trash2,
   Type,
   X,
@@ -35,11 +42,13 @@ import type {
   ProductImageRatio,
   ProductSection,
   ProductTypography,
+  Section,
   SheetKind,
 } from "@/lib/editor/types";
 import { Field, Group, PrimaryButton, TextArea, TextInput } from "@/components/editor/ui";
 
 const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
+  arrange: { title: "Arrange Sections", subtitle: "Reorder page sections up and down. Header is fixed at the top." },
   themes: { title: "Template", subtitle: "" },
   add: { title: "Add section", subtitle: "Place it above the footer." },
   "page-color": { title: "Background", subtitle: "The canvas behind every section." },
@@ -85,7 +94,7 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "product-card-image": { title: "Image Style", subtitle: "Full-width vs inset, image curves & ratio." },
   "product-card-details": { title: "Card Content", subtitle: "Layout, alignment, badges & buttons." },
   "product-card-style": { title: "Card Style", subtitle: "Image aspect ratio, corner curve & typography." },
-  "product-card-badges": { title: "Card Elements", subtitle: "Toggle badges, ratings, prices & WhatsApp button." },
+  "product-card-badges": { title: "Card Elements", subtitle: "Toggle badges, price, and WhatsApp button." },
   "product-card-color": { title: "Card Colors", subtitle: "Price color and WhatsApp button styling." },
   "product-card-cta": { title: "WhatsApp & Currency", subtitle: "Seller WhatsApp number and store currency." },
   "categories-template": { title: "Template", subtitle: "" },
@@ -137,6 +146,8 @@ export function Sheet() {
 function SheetBody({ kind }: { kind: SheetKind }) {
   const section = useEditor((s) => selectedSection(s));
   switch (kind) {
+    case "arrange":
+      return <ArrangeSectionsSheet />;
     case "themes":
       return <Themes />;
     case "add":
@@ -276,6 +287,169 @@ function TemplateCard({
         )}
       </div>
     </button>
+  );
+}
+
+function ArrangeSectionsSheet() {
+  const pageId = useEditor((s) => s.pageId);
+  const page = useEditor((s) => s.pages[s.pageId]);
+  const selectedId = useEditor((s) => s.selectedId);
+  const sections = page?.sections || [];
+
+  const getSectionMeta = (sec: Section) => {
+    switch (sec.type) {
+      case "navbar":
+        return { label: "Header (Navigation)", desc: "Logo, search, menu & bag", icon: PanelTop };
+      case "hero":
+        return { label: "Hero Banner", desc: "Main hero showcase & slides", icon: Image };
+      case "grid":
+        return { label: "Product Grid", desc: "Mosaic or editorial product layout", icon: LayoutGrid };
+      case "catalog":
+        return { label: "Product Catalog", desc: "Full catalog with filter & search", icon: ShoppingBag };
+      case "featured":
+        return { label: sec.title || "Featured Products", desc: "Curated product recommendations", icon: Sparkles };
+      case "categories":
+        return { label: sec.title || "Categories", desc: "Category cards and shortcuts", icon: Tag };
+      case "brands":
+        return { label: sec.title || "Brands Showcase", desc: "Partner brands and logos", icon: Sparkles };
+      case "banner":
+        return { label: sec.title || "Promo Banner", desc: "Seasonal deal or announcement", icon: Sparkles };
+      case "about":
+        return { label: sec.title || "Trust & Guarantees", desc: "Store guarantees and story", icon: Shield };
+      case "product":
+        return { label: "Product Details", desc: "Hero view, gallery & buy CTA", icon: ShoppingBag };
+      case "footer":
+        return { label: "Footer", desc: "Store brand, copyright & links", icon: PanelBottom };
+      case "block":
+        return { label: sec.name || "Custom Block", desc: sec.title || "Content section", icon: Layers };
+      default:
+        return { label: "Store Section", desc: "Storefront section", icon: Layers };
+    }
+  };
+
+  const hasFooter = sections.length > 0 && sections[sections.length - 1].type === "footer";
+  const lastMoveableIndex = hasFooter ? sections.length - 2 : sections.length - 1;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Information Header Pill */}
+      <div className="flex items-center gap-2 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/80 dark:bg-purple-950/40 p-3 text-xs text-purple-900 dark:text-purple-200 shadow-2xs">
+        <Pin className="size-4 text-purple-600 shrink-0" />
+        <span className="leading-snug">
+          <strong>Header is fixed</strong> at the top. Use the up and down arrows to arrange other sections.
+        </span>
+      </div>
+
+      {/* Sections List */}
+      <div className="flex flex-col gap-2">
+        {sections.map((sec, index) => {
+          const meta = getSectionMeta(sec);
+          const Icon = meta.icon;
+          const isHeader = sec.type === "navbar";
+          const isFooter = sec.type === "footer";
+          const isFixed = isHeader || isFooter;
+          const canMoveUp = !isFixed && index > 1;
+          const canMoveDown = !isFixed && index < lastMoveableIndex;
+          const isSelected = selectedId === sec.id;
+
+          return (
+            <div
+              key={sec.id}
+              onClick={() => {
+                if (!isFixed) {
+                  useEditor.getState().select(sec.id);
+                }
+              }}
+              className={cn(
+                "group flex items-center justify-between gap-3 rounded-2xl border p-3.5 transition-all select-none",
+                isHeader
+                  ? "border-purple-300 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/30 shadow-2xs"
+                  : isFooter
+                    ? "border-slate-300/80 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40"
+                    : isSelected
+                      ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/50 shadow-xs ring-1 ring-purple-500"
+                      : "border-line-soft bg-surface hover:border-slate-300 dark:hover:border-slate-700 hover:bg-fill/40 shadow-2xs cursor-pointer"
+              )}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span
+                  className={cn(
+                    "flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
+                    isHeader
+                      ? "bg-purple-600 text-white"
+                      : isFooter
+                        ? "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  )}
+                >
+                  {index + 1}
+                </span>
+
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  <Icon className="size-4.5" />
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-ink truncate">{meta.label}</h4>
+                  </div>
+                  <p className="text-xs text-muted truncate">{meta.desc}</p>
+                </div>
+              </div>
+
+              {/* Action Controls */}
+              <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                {isHeader ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 dark:border-purple-800 bg-purple-100/70 dark:bg-purple-900/60 px-2.5 py-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider shadow-2xs">
+                    <Pin className="size-3" />
+                    <span>Fixed Top</span>
+                  </span>
+                ) : isFooter ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-200/70 dark:bg-slate-800 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider shadow-2xs">
+                    <Pin className="size-3" />
+                    <span>Fixed Bottom</span>
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={!canMoveUp}
+                      onClick={() => useEditor.getState().moveSection(sec.id, -1)}
+                      title="Move section up"
+                      aria-label={`Move ${meta.label} up`}
+                      className={cn(
+                        "tap-smooth flex size-8 items-center justify-center rounded-lg border transition-all",
+                        !canMoveUp
+                          ? "border-transparent text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-30"
+                          : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 shadow-2xs cursor-pointer active:scale-90"
+                      )}
+                    >
+                      <ChevronUp className="size-4" strokeWidth={2.5} />
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={!canMoveDown}
+                      onClick={() => useEditor.getState().moveSection(sec.id, 1)}
+                      title="Move section down"
+                      aria-label={`Move ${meta.label} down`}
+                      className={cn(
+                        "tap-smooth flex size-8 items-center justify-center rounded-lg border transition-all",
+                        !canMoveDown
+                          ? "border-transparent text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-30"
+                          : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 shadow-2xs cursor-pointer active:scale-90"
+                      )}
+                    >
+                      <ChevronDown className="size-4" strokeWidth={2.5} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -1725,7 +1899,6 @@ function ProductCardDetailsSheet() {
   const detailsLayout = (section && "detailsLayout" in section && (section.detailsLayout as ProductCardDetailsLayout)) || "outer";
   const textAlign = (section && "textAlign" in section && (section.textAlign as ProductCardTextAlign)) || "left";
   const showBadge = section && "showBadge" in section ? section.showBadge !== false : true;
-  const showRating = section && "showRating" in section ? section.showRating !== false : true;
   const showPrice = section && "showPrice" in section ? section.showPrice !== false : true;
   const showButton = section && "showButton" in section ? section.showButton !== false : true;
   const typography = (section && "typography" in section && section.typography) || "base";
@@ -2062,7 +2235,6 @@ function ProductCardStyle() {
 function ProductCardBadges() {
   const section = useEditor((s) => selectedSection(s));
   const showBadge = section && "showBadge" in section ? section.showBadge !== false : true;
-  const showRating = section && "showRating" in section ? section.showRating !== false : true;
   const showPrice = section && "showPrice" in section ? section.showPrice !== false : true;
   const showButton = section && "showButton" in section ? section.showButton !== false : true;
 

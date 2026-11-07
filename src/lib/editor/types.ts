@@ -400,6 +400,7 @@ export interface PageModel {
 export type Pages = Record<PageId, PageModel>;
 
 export type SheetKind =
+  | "arrange"
   | "themes"
   | "add"
   | "page-color"

@@ -1,4 +1,5 @@
 import {
+  ArrowUpDown,
   Compass,
   Droplet,
   Eye,
@@ -31,7 +32,7 @@ export function Dock() {
     const open = (sheet: SheetKind) => () => useEditor.getState().openSheet(sheet);
     if (!selectedId || !section) {
       return [
-        { id: "themes", label: "Template", icon: LayoutTemplate, action: open("themes") },
+        { id: "arrange", label: "Arrange", icon: ArrowUpDown, action: open("arrange") },
         { id: "add", label: "Add", icon: PlusCircle, action: open("add") },
         { id: "color", label: "Background", icon: Palette, action: open("page-color") },
         {

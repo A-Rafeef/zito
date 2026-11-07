@@ -518,12 +518,13 @@ export const useEditor = create<EditorState>((set, get) => {
       const currentSec = page.sections[index];
       if (!currentSec) return;
       if (currentSec.type === "navbar" || currentSec.type === "footer") {
-        get().showToast("Header and Footer are fixed elements.");
+        get().showToast(`${currentSec.type === "navbar" ? "Header" : "Footer"} is a fixed element.`);
         return;
       }
+      const hasFooter = page.sections[page.sections.length - 1]?.type === "footer";
+      const maxIndex = hasFooter ? page.sections.length - 2 : page.sections.length - 1;
       const next = index + dir;
-      // Fixed shell: cannot move above Navbar (index 0) or below Footer (last index)
-      if (next < 1 || next > page.sections.length - 2) return;
+      if (next < 1 || next > maxIndex) return;
       commit(({ pages, pageId }) => {
         const arr = pages[pageId].sections;
         const [item] = arr.splice(index, 1);
