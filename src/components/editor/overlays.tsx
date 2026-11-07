@@ -138,10 +138,20 @@ function SearchModal() {
   const openProduct = (product: Product) => {
     setQuery("");
     useEditor.getState().openProduct({
+      id: product.id,
       name: product.name,
-      price: product.price,
+      price: product.salePrice || product.price,
+      regularPrice: product.regularPrice || product.price,
+      salePrice: product.salePrice,
+      discountPercentage: product.discountPercentage,
+      stock: product.stock ?? 10,
+      brand: product.brand,
+      category: product.category,
+      description: product.description,
+      gallery: product.gallery && product.gallery.length > 0 ? product.gallery : [product.img],
       img: product.img,
-      rating: `${product.rating} · ${product.reviews} reviews`,
+      variants: product.variants,
+      badge: product.badge,
     });
   };
 

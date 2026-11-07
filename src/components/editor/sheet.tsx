@@ -1173,12 +1173,6 @@ function ProductElementsSheet({ sec }: { sec: ProductSection }) {
       enabled: sec.showBadge !== false,
     },
     {
-      key: "showRating",
-      label: "Star Rating & Reviews",
-      detail: "Product star rating score (e.g. ★ 4.9)",
-      enabled: sec.showRating !== false,
-    },
-    {
       key: "showDescription",
       label: "Product Description",
       detail: "Product summary paragraph and details",
@@ -2036,6 +2030,9 @@ function ProductCardDetailsSheet() {
   const showBadge = section && "showBadge" in section ? section.showBadge !== false : true;
   const showPrice = section && "showPrice" in section ? section.showPrice !== false : true;
   const showButton = section && "showButton" in section ? section.showButton !== false : true;
+  const showBrand = section && "showBrand" in section ? section.showBrand !== false : true;
+  const showDiscountBadge = section && "showDiscountBadge" in section ? section.showDiscountBadge !== false : true;
+  const showStockStatus = section && "showStockStatus" in section ? section.showStockStatus !== false : true;
   const typography = (section && "typography" in section && section.typography) || "base";
 
   const scales: { id: ProductTypography; label: string; sample: string }[] = [
@@ -2200,6 +2197,81 @@ function ProductCardDetailsSheet() {
                 className={cn(
                   "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
                   showButton ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Brand Name toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Brand Name</div>
+              <div className="text-xs text-muted">Show brand kicker above title</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showBrand}
+              onClick={() => useEditor.getState().patchSelected({ showBrand: !showBrand })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showBrand ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showBrand ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Discount Badge toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Discount % Badge</div>
+              <div className="text-xs text-muted">Auto-compute & show '% OFF' badge</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showDiscountBadge}
+              onClick={() => useEditor.getState().patchSelected({ showDiscountBadge: !showDiscountBadge })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showDiscountBadge ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showDiscountBadge ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Stock Status toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Stock Status Badge</div>
+              <div className="text-xs text-muted">Show 'Sold Out' or 'Only X Left' tag</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showStockStatus}
+              onClick={() => useEditor.getState().patchSelected({ showStockStatus: !showStockStatus })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showStockStatus ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showStockStatus ? "translate-x-5" : "translate-x-0"
                 )}
               />
             </button>

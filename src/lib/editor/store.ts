@@ -12,6 +12,7 @@ import {
   createProductSection,
   isDark,
   paintTheme,
+  products,
 } from "@/lib/editor/defaults";
 import { renderHtml } from "@/lib/editor/export-html";
 import type {
@@ -28,7 +29,7 @@ import type {
   Snapshot,
 } from "@/lib/editor/types";
 
-const STORAGE_KEY = "ziteo-editor-v1";
+const STORAGE_KEY = "ziteo-editor-v2";
 
 export interface SavedEditor {
   pages: Pages;
@@ -92,7 +93,7 @@ interface EditorState extends SavedEditor {
   setHeroSlide: (index: number) => void;
   setCatalogFilter: (filter: CatalogFilter) => void;
   setProductField: (patch: Partial<Extract<Section, { type: "product" }>>) => void;
-  openProduct: (product: Pick<Product, "name" | "price" | "img"> & { rating?: string }) => void;
+  openProduct: (product: Partial<Product> & { name: string; price: number; img: string }) => void;
   addToCart: (item: { name: string; price: number; img: string }) => void;
   updateQty: (index: number, delta: number) => void;
   removeItem: (index: number) => void;
@@ -735,11 +736,55 @@ export const useEditor = create<EditorState>((set, get) => {
       const pages = structuredClone(get().pages);
       const view = pages.product.sections.find((sec) => sec.type === "product");
       if (view && view.type === "product") {
-        view.productName = product.name;
+        const prodName = product.name || (product as { title?: string }).title || "";
+        const prodId = product.id;
+        const master = products.find(
+          (p) =>
+            (prodId && p.id === prodId) ||
+            (prodName && p.name && p.name.toLowerCase() === prodName.toLowerCase())
+        );
+        const resolvedVariants =
+          product.variants && product.variants.length > 0
+            ? product.variants
+            : master?.variants && master.variants.length > 0
+              ? master.variants
+              : undefined;
+
+        view.productName = prodName;
         view.price = product.price;
-        view.image = product.img;
-        view.gallery = [product.img, ...view.gallery.filter((img) => img !== product.img)].slice(0, 4);
-        if (product.rating) view.rating = product.rating;
+        view.regularPrice = product.regularPrice ?? master?.regularPrice ?? product.price;
+        view.salePrice = product.salePrice ?? master?.salePrice;
+        view.discountPercentage = product.discountPercentage ?? master?.discountPercentage;
+        view.stock = product.stock ?? master?.stock ?? 10;
+        view.brand = product.brand || master?.brand;
+        view.category = (typeof product.category === "string" ? product.category : master?.category) || "Catalog";
+        view.description = product.description || master?.description || view.description;
+        view.image =
+          product.img ||
+          (product.gallery && product.gallery[0]) ||
+          (master?.gallery && master.gallery[0]) ||
+          view.image;
+        view.gallery =
+          product.gallery && product.gallery.length > 0
+            ? product.gallery
+            : master?.gallery && master.gallery.length > 0
+              ? master.gallery
+              : [product.img, ...view.gallery.filter((img) => img !== product.img)].slice(0, 4);
+
+        if (resolvedVariants && resolvedVariants.length > 0) {
+          view.variants = resolvedVariants;
+          const colorGroup = resolvedVariants.find((v) => v.name.toLowerCase() === "color");
+          if (colorGroup && colorGroup.options[0]) {
+            view.color = colorGroup.options[0].colorHex || colorGroup.options[0].label;
+            view.colors = colorGroup.options.map((o) => o.colorHex || o.label);
+          }
+          const sizeGroup = resolvedVariants.find((v) => v.name.toLowerCase() === "size");
+          if (sizeGroup && sizeGroup.options[0]) {
+            view.size = sizeGroup.options[0].label;
+            view.sizes = sizeGroup.options.map((o) => o.label);
+          }
+        }
+        view.activeProduct = (master ? { ...master, ...product } : product) as Product;
       }
       set({
         pages,
@@ -833,9 +878,6 @@ export const useEditor = create<EditorState>((set, get) => {
 
       // If product page only had minimal sections, ensure it has its companion sections
       if (cleanPages.product && cleanPages.product.sections.length <= 3) {
-        const hasReviews = cleanPages.product.sections.some(
-          (s) => s.type === "block" && (s as BlockSection).kind === "reviews",
-        );
         const hasRelated = cleanPages.product.sections.some(
           (s) => s.id === "product-related" || (s.type === "featured" && s.id !== "featured"),
         );
@@ -844,7 +886,6 @@ export const useEditor = create<EditorState>((set, get) => {
         const insertIdx = footerIndex !== -1 ? footerIndex : cleanPages.product.sections.length;
 
         const newSections: Section[] = [];
-        if (!hasReviews) newSections.push(createBlock("reviews"));
         if (!hasRelated) {
           newSections.push({
             ...createFeaturedSection(),
@@ -883,6 +924,10 @@ export function selectedSection(state: Pick<EditorState, "pages" | "pageId" | "s
     );
   }
   return state.pages[state.pageId].sections.find((sec) => sec.id === state.selectedId) ?? null;
+}
+
+if (typeof window !== "undefined") {
+  (window as unknown as { __editorStore: unknown }).__editorStore = useEditor;
 }
 
 export { STORAGE_KEY };

@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { isDark, money, QUOTES } from "@/lib/editor/defaults";
+import { isDark, money, QUOTES, PHOTOS } from "@/lib/editor/defaults";
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import type {
   CatalogFilter,
@@ -856,9 +856,20 @@ function GridView({
   const openItem = (item: (typeof sec.items)[number]) => {
     if (preview) {
       useEditor.getState().openProduct({
+        id: item.id,
         name: item.title,
-        price: priceNumber(item.price),
+        price: item.salePrice || priceNumber(item.price),
+        regularPrice: item.regularPrice || priceNumber(item.price),
+        salePrice: item.salePrice,
+        discountPercentage: item.discountPercentage,
+        stock: item.stock ?? 10,
+        brand: item.brand,
+        category: item.category || item.tag,
+        description: item.description,
+        gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.image],
         img: item.image,
+        variants: item.variants,
+        badge: item.badge,
       });
     } else {
       useEditor.getState().select("product-card");
@@ -891,6 +902,11 @@ function GridView({
             id={item.id}
             title={item.title}
             price={item.price}
+            regularPrice={item.regularPrice}
+            salePrice={item.salePrice}
+            discountPercentage={item.discountPercentage}
+            stock={item.stock}
+            brand={item.brand}
             image={item.image}
             badge={item.badge}
             dark={dark}
@@ -934,6 +950,12 @@ interface StoreProductCardProps {
   id: string;
   title: string;
   price: string | number;
+  regularPrice?: number;
+  salePrice?: number;
+  discountPercentage?: number;
+  stock?: number;
+  brand?: string;
+  category?: string;
   image: string;
   badge?: string;
   rating?: string;
@@ -945,6 +967,9 @@ interface StoreProductCardProps {
   showRating?: boolean;
   showPrice?: boolean;
   showButton?: boolean;
+  showBrand?: boolean;
+  showDiscountBadge?: boolean;
+  showStockStatus?: boolean;
   priceColor?: string;
   buttonColor?: string;
   isList?: boolean;
@@ -968,17 +993,23 @@ function StoreProductCard({
   id,
   title,
   price,
+  regularPrice,
+  salePrice,
+  discountPercentage,
+  stock,
+  brand,
   image,
   badge,
-  rating,
   dark = false,
   imageRatio = "1:1",
   borderRadius = 16,
   typography = "base",
   showBadge = true,
-  showRating = true,
   showPrice = true,
   showButton = true,
+  showBrand = true,
+  showDiscountBadge = true,
+  showStockStatus = true,
   priceColor = "#059669",
   buttonColor = "#25D366",
   currency = "$",
@@ -1011,16 +1042,44 @@ function StoreProductCard({
         ? "text-base font-semibold"
         : "text-sm font-medium";
 
-  const formattedPrice =
-    typeof price === "number"
-      ? money(price, currency)
-      : typeof price === "string" && price.startsWith("$")
-        ? `${currency}${price.slice(1)}`
-        : price;
+  const effRegularPrice =
+    regularPrice !== undefined
+      ? regularPrice
+      : typeof price === "number"
+        ? price
+        : priceNumber(price);
+
+  const effSalePrice =
+    salePrice !== undefined && salePrice < effRegularPrice ? salePrice : undefined;
+
+  const hasDiscount = effSalePrice !== undefined;
+  const activePrice = hasDiscount ? effSalePrice : effRegularPrice;
+
+  const effDiscountPct =
+    discountPercentage !== undefined && discountPercentage > 0
+      ? discountPercentage
+      : hasDiscount && effRegularPrice > 0
+        ? Math.round(((effRegularPrice - effSalePrice) / effRegularPrice) * 100)
+        : 0;
+
+  const formattedActivePrice = money(activePrice, currency);
+  const formattedRegularPrice = money(effRegularPrice, currency);
+
   const shadowValue = shadowEnabled && shadowStyle ? CARD_SHADOW_MAP[shadowStyle] : "none";
   const borderValue = borderEnabled ? `${borderWidth ?? 1}px solid ${borderColor || "#e2e8f0"}` : "none";
   const bgValue = cardBackground || (dark ? "#18181b" : "#ffffff");
   const effImageRadius = imageRadius !== undefined ? imageRadius : Math.max(0, borderRadius - (imageInset ? 6 : 0));
+
+  const stockBadge =
+    showStockStatus && stock !== undefined && stock <= 0 ? (
+      <span className="rounded-md bg-slate-900/90 text-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider backdrop-blur-xs shadow-xs">
+        Sold Out
+      </span>
+    ) : showStockStatus && stock !== undefined && stock <= 3 ? (
+      <span className="rounded-md bg-amber-500 text-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shadow-xs">
+        Only {stock} Left
+      </span>
+    ) : null;
 
   if (isList) {
     return (
@@ -1046,11 +1105,19 @@ function StoreProductCard({
             className="size-20 sm:size-24 shrink-0 relative overflow-hidden bg-fill/50"
             style={{ borderRadius: `${effImageRadius}px` }}
           >
-            {showBadge && badge && (
-              <span className="absolute top-1.5 left-1.5 z-10 rounded-md bg-ink/90 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-                {badge}
-              </span>
-            )}
+            <div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-1 items-start">
+              {showDiscountBadge && hasDiscount && effDiscountPct > 0 && showBadge && (
+                <span className="rounded-md bg-rose-600 px-1.5 py-0.5 text-[9px] font-extrabold tracking-wider text-white uppercase shadow-xs">
+                  {effDiscountPct}% OFF
+                </span>
+              )}
+              {showBadge && badge && (!hasDiscount || !showDiscountBadge) && (
+                <span className="rounded-md bg-ink/90 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+                  {badge}
+                </span>
+              )}
+              {stockBadge}
+            </div>
             <img
               src={image}
               alt=""
@@ -1059,16 +1126,25 @@ function StoreProductCard({
           </div>
 
           <div className="min-w-0 flex-1">
+            {showBrand && brand && (
+              <span className="text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase truncate block">
+                {brand}
+              </span>
+            )}
             <h3 className={cn("transition-colors group-hover:text-accent truncate", titleClass, dark ? "text-on-ink" : "text-ink")}>
               {title}
             </h3>
             {showPrice && (
-              <span
-                className="mt-1 block text-sm font-semibold"
-                style={{ color: priceColor }}
-              >
-                {formattedPrice}
-              </span>
+              <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-sm font-semibold" style={{ color: priceColor }}>
+                  {formattedActivePrice}
+                </span>
+                {hasDiscount && (
+                  <span className="text-xs text-slate-400 dark:text-slate-500 line-through font-normal">
+                    {formattedRegularPrice}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </button>
@@ -1122,11 +1198,21 @@ function StoreProductCard({
           onCardClick();
         }}
       >
-        {showBadge && badge && (
-          <span className="absolute top-2.5 left-2.5 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-            {badge}
-          </span>
-        )}
+        {/* Floating Badges */}
+        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
+          {showDiscountBadge && hasDiscount && effDiscountPct > 0 && showBadge && (
+            <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase shadow-sm">
+              {effDiscountPct}% OFF
+            </span>
+          )}
+          {showBadge && badge && (!hasDiscount || !showDiscountBadge) && (
+            <span className="rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+              {badge}
+            </span>
+          )}
+          {stockBadge}
+        </div>
+
         <img
           src={image}
           alt=""
@@ -1148,14 +1234,26 @@ function StoreProductCard({
               onCardClick();
             }}
           >
+            {showBrand && brand && (
+              <span className="text-[10px] font-bold tracking-wider text-slate-300 uppercase truncate block">
+                {brand}
+              </span>
+            )}
             <h3 className={cn("transition-colors font-medium truncate text-white w-full", titleClass)}>
               {title}
             </h3>
             <div className={cn("mt-2 flex items-center gap-2", textAlign === "center" ? "justify-center" : "justify-between w-full")}>
               {showPrice && (
-                <span className="text-sm font-bold text-white drop-shadow-xs">
-                  {formattedPrice}
-                </span>
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span className="text-sm font-bold text-white drop-shadow-xs">
+                    {formattedActivePrice}
+                  </span>
+                  {hasDiscount && (
+                    <span className="text-xs text-slate-300 line-through font-normal drop-shadow-xs">
+                      {formattedRegularPrice}
+                    </span>
+                  )}
+                </div>
               )}
               {showButton && (
                 <button
@@ -1194,6 +1292,11 @@ function StoreProductCard({
               onCardClick();
             }}
           >
+            {showBrand && brand && (
+              <span className="text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase truncate block mb-0.5">
+                {brand}
+              </span>
+            )}
             <h3 className={cn("transition-colors group-hover:text-accent truncate", titleClass, dark ? "text-on-ink" : "text-ink")}>
               {title}
             </h3>
@@ -1201,9 +1304,16 @@ function StoreProductCard({
 
           <div className={cn("mt-2 sm:mt-2.5 flex items-center w-full", textAlign === "center" ? "justify-center gap-3" : "justify-between")}>
             {showPrice ? (
-              <span className="text-sm font-semibold truncate" style={{ color: priceColor }}>
-                {formattedPrice}
-              </span>
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span className="text-sm sm:text-base font-bold truncate" style={{ color: priceColor }}>
+                  {formattedActivePrice}
+                </span>
+                {hasDiscount && (
+                  <span className="text-xs text-slate-400 dark:text-slate-500 line-through font-normal shrink-0">
+                    {formattedRegularPrice}
+                  </span>
+                )}
+              </div>
             ) : <span />}
 
             {showButton && (
@@ -1248,10 +1358,20 @@ function CatalogView({
   const openItem = (item: (typeof items)[number]) => {
     if (preview) {
       useEditor.getState().openProduct({
+        id: item.id,
         name: item.name,
-        price: item.price,
+        price: item.salePrice || item.price,
+        regularPrice: item.regularPrice || item.price,
+        salePrice: item.salePrice,
+        discountPercentage: item.discountPercentage,
+        stock: item.stock ?? 10,
+        brand: item.brand,
+        category: item.category,
+        description: item.description,
+        gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.img],
         img: item.img,
-        rating: `${item.rating} · ${item.reviews} reviews`,
+        variants: item.variants,
+        badge: item.badge,
       });
     } else {
       useEditor.getState().select("product-card");
@@ -1304,6 +1424,11 @@ function CatalogView({
               id={item.id}
               title={item.name}
               price={item.price}
+              regularPrice={item.regularPrice}
+              salePrice={item.salePrice}
+              discountPercentage={item.discountPercentage}
+              stock={item.stock}
+              brand={item.brand}
               image={item.img}
               badge={item.badge}
               dark={dark}
@@ -1313,6 +1438,9 @@ function CatalogView({
               showBadge={sec.showBadge !== false}
               showPrice={sec.showPrice !== false}
               showButton={sec.showButton !== false}
+              showBrand={sec.showBrand !== false}
+              showDiscountBadge={sec.showDiscountBadge !== false}
+              showStockStatus={sec.showStockStatus !== false}
               priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
               buttonColor={sec.buttonColor || "#25D366"}
               currency={sec.currency || "$"}
@@ -1355,6 +1483,57 @@ function ProductView({
   const wide = device === "desktop";
   const isSplit = sec.template === "split";
   const isGrid = sec.template === "grid";
+
+  const [activeImage, setActiveImage] = useState<string>(
+    sec.image || (sec.gallery && sec.gallery[0]) || ""
+  );
+  const [selectedColor, setSelectedColor] = useState<string>(
+    sec.color || (sec.colors && sec.colors[0]) || ""
+  );
+  const [selectedSize, setSelectedSize] = useState<string>(
+    sec.size || (sec.sizes && sec.sizes[0]) || ""
+  );
+
+  useEffect(() => {
+    if (sec.image) setActiveImage(sec.image);
+    else if (sec.gallery && sec.gallery[0]) setActiveImage(sec.gallery[0]);
+    if (sec.color) setSelectedColor(sec.color);
+    if (sec.size) setSelectedSize(sec.size);
+  }, [sec.image, sec.productName, sec.color, sec.size]);
+
+  // Variant extraction
+  const colorGroup = sec.variants?.find((v) => v.name.toLowerCase() === "color");
+  const sizeGroup = sec.variants?.find((v) => v.name.toLowerCase() === "size");
+
+  const selectedSizeOption = sizeGroup?.options.find((o) => o.label === selectedSize);
+  const sizePriceDelta = selectedSizeOption?.priceDelta || 0;
+
+  // Price calculations
+  const effRegularPrice =
+    sec.regularPrice !== undefined ? sec.regularPrice : typeof sec.price === "number" ? sec.price : 149;
+  const effSalePrice =
+    sec.salePrice !== undefined && sec.salePrice < effRegularPrice ? sec.salePrice : undefined;
+  const basePrice = effSalePrice !== undefined ? effSalePrice : (sec.price || effRegularPrice);
+
+  const currentPrice = basePrice + sizePriceDelta;
+  const currentRegularPrice = effRegularPrice + sizePriceDelta;
+  const hasDiscount = effSalePrice !== undefined || currentPrice < currentRegularPrice;
+
+  const discountPct =
+    sec.discountPercentage !== undefined && sec.discountPercentage > 0
+      ? sec.discountPercentage
+      : hasDiscount && currentRegularPrice > 0
+        ? Math.round(((currentRegularPrice - currentPrice) / currentRegularPrice) * 100)
+        : 0;
+
+  // Stock calculations
+  const currentStock =
+    selectedSizeOption?.stock !== undefined
+      ? selectedSizeOption.stock
+      : sec.stock !== undefined
+        ? sec.stock
+        : 10;
+  const isOutOfStock = currentStock <= 0;
 
   const ratioClass =
     sec.imageRatio === "3:4"
@@ -1399,16 +1578,36 @@ function ProductView({
     const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
     const productUrl = `${origin}/product?name=${encodeURIComponent(sec.productName)}`;
     const phone = (sec.whatsappNumber || "919876543210").replace(/[^0-9]/g, "");
+
+    let specsText = "";
+    if (sec.brand) specsText += `🏷️ *Brand:* ${sec.brand}\n`;
+    if (sec.category) specsText += `📁 *Category:* ${sec.category}\n`;
+    if (selectedColor) specsText += `🎨 *Color:* ${selectedColor}\n`;
+    if (selectedSize) specsText += `📏 *Size:* ${selectedSize}\n`;
+
+    const statusText = isOutOfStock
+      ? "Out of Stock"
+      : currentStock <= 3
+        ? `Low Stock (${currentStock} left)`
+        : "In Stock";
+
     const message =
-      `Hi! I would like to order from Ziteo:\n\n` +
+      `Hi! I would like to order from your store:\n\n` +
       `📦 *Product:* ${sec.productName}\n` +
-      `💰 *Price:* ${money(sec.price, sec.currency || "$")}\n` +
-      `🎨 *Color:* ${sec.color}\n` +
-      `📏 *Size:* ${sec.size}\n` +
+      specsText +
+      `💰 *Price:* ${money(currentPrice, sec.currency || "$")}` +
+      (hasDiscount && discountPct > 0
+        ? ` (MRP: ${money(currentRegularPrice, sec.currency || "$")} • ${discountPct}% OFF)`
+        : "") +
+      `\n` +
+      `📊 *Status:* ${statusText}\n` +
       `🔗 *Link:* ${productUrl}`;
 
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
+
+  const galleryImages =
+    sec.gallery && sec.gallery.length > 0 ? sec.gallery : [sec.image || PHOTOS.court];
 
   const gallery = (
     <div>
@@ -1416,14 +1615,21 @@ function ProductView({
         style={{ borderRadius: radiusPx }}
         className={cn("relative overflow-hidden bg-fill/40", wide ? "h-96" : "")}
       >
-        {sec.showBadge !== false && (
-          <span className="absolute top-4 left-4 z-10 rounded-md bg-ink/90 px-2.5 py-1 text-xs font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-            {sec.badgeText || "POPULAR"}
-          </span>
-        )}
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-1 items-start">
+          {hasDiscount && discountPct > 0 && (
+            <span className="rounded-md bg-rose-600 px-2.5 py-1 text-xs font-extrabold tracking-wider text-white uppercase shadow-sm">
+              {discountPct}% OFF
+            </span>
+          )}
+          {sec.showBadge !== false && sec.badgeText && (
+            <span className="rounded-md bg-ink/90 px-2.5 py-1 text-xs font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+              {sec.badgeText}
+            </span>
+          )}
+        </div>
         <img
-          key={sec.image}
-          src={sec.image}
+          key={activeImage}
+          src={activeImage}
           alt={sec.productName}
           className={cn(
             "animate-fade-in w-full object-cover transition-transform duration-700 ease-out hover:scale-105",
@@ -1434,19 +1640,20 @@ function ProductView({
 
       {galleryStyle === "dots" ? (
         <div className="mt-3.5 flex items-center justify-center gap-2">
-          {sec.gallery.map((img) => (
+          {galleryImages.map((img) => (
             <button
               key={img}
               type="button"
               aria-label="Photo dot"
               onClick={(e) => {
                 e.stopPropagation();
+                setActiveImage(img);
                 useEditor.getState().setProductField({ image: img });
               }}
               className={cn(
-                "tap-smooth rounded-full transition-all duration-200",
-                img === sec.image
-                  ? "h-2 w-6 bg-accent"
+                "tap-smooth rounded-full transition-all duration-200 cursor-pointer",
+                img === activeImage
+                  ? "h-2 w-6 bg-purple-600"
                   : "size-2 bg-slate-300 dark:bg-zinc-600 hover:bg-slate-400"
               )}
             />
@@ -1454,21 +1661,22 @@ function ProductView({
         </div>
       ) : galleryStyle === "grid" ? (
         <div className="mt-3.5 grid grid-cols-4 gap-2">
-          {sec.gallery.map((img) => (
+          {galleryImages.map((img) => (
             <button
               key={img}
               type="button"
               aria-label="Show photo"
               onClick={(event) => {
                 event.stopPropagation();
+                setActiveImage(img);
                 useEditor.getState().setProductField({ image: img });
               }}
               style={{ borderRadius: thumbRadiusPx }}
               className={cn(
-                "tap-smooth aspect-square overflow-hidden transition-all duration-200",
-                img === sec.image
-                  ? "ring-2 ring-accent scale-102 shadow-xs"
-                  : "opacity-80 hover:opacity-100 hover:scale-102"
+                "tap-smooth aspect-square overflow-hidden transition-all duration-200 cursor-pointer border",
+                img === activeImage
+                  ? "border-purple-600 ring-2 ring-purple-600/40 scale-102 shadow-xs"
+                  : "border-transparent opacity-80 hover:opacity-100 hover:scale-102"
               )}
             >
               <img src={img} alt="" className="h-full w-full object-cover" />
@@ -1477,21 +1685,22 @@ function ProductView({
         </div>
       ) : (
         <div className={cn("no-scrollbar mt-3.5 flex gap-2 overflow-x-auto", wide ? "" : "px-1")}>
-          {sec.gallery.map((img) => (
+          {galleryImages.map((img) => (
             <button
               key={img}
               type="button"
               aria-label="Show photo"
               onClick={(event) => {
                 event.stopPropagation();
+                setActiveImage(img);
                 useEditor.getState().setProductField({ image: img });
               }}
               style={{ borderRadius: thumbRadiusPx }}
               className={cn(
-                "tap-smooth size-16 shrink-0 overflow-hidden transition-all duration-200",
-                img === sec.image
-                  ? "ring-2 ring-accent scale-105 shadow-xs"
-                  : "opacity-80 hover:opacity-100 hover:scale-102"
+                "tap-smooth size-16 shrink-0 overflow-hidden transition-all duration-200 cursor-pointer border",
+                img === activeImage
+                  ? "border-purple-600 ring-2 ring-purple-600/40 scale-105 shadow-xs"
+                  : "border-transparent opacity-80 hover:opacity-100 hover:scale-102"
               )}
             >
               <img src={img} alt="" className="h-full w-full object-cover" />
@@ -1504,93 +1713,247 @@ function ProductView({
 
   const info = (
     <div className={cn(wide || isSplit ? "flex flex-col justify-center" : "pt-6")}>
-      {sec.showRating !== false && (
-        <p className={cn("text-xs font-medium", dark ? "text-on-ink/70" : "text-muted")}>
-          {sec.rating}
-        </p>
-      )}
-      <h1 className={cn("mt-2 tracking-tight", titleClass)}>{sec.productName}</h1>
-      <p
-        className="mt-3 text-2xl font-bold"
-        style={{ color: sec.priceColor || (dark ? "#34d399" : "#059669") }}
-      >
-        {money(sec.price, sec.currency || "$")}
-      </p>
+      {/* Category & Brand Breadcrumbs */}
+      <div className="flex items-center gap-1.5 text-xs text-muted mb-2 font-medium">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (preview) useEditor.getState().switchPage("home");
+          }}
+          className="hover:text-ink transition-colors cursor-pointer"
+        >
+          Home
+        </button>
+        <span>/</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (preview) useEditor.getState().switchPage("shop");
+          }}
+          className="hover:text-ink transition-colors cursor-pointer"
+        >
+          {sec.category || "Catalog"}
+        </button>
+        {sec.brand && (
+          <>
+            <span>/</span>
+            <span className="text-ink font-semibold">{sec.brand}</span>
+          </>
+        )}
+      </div>
 
-      {sec.showDescription !== false && (
-        <p className={cn("mt-4 max-w-md text-sm leading-relaxed", dark ? "text-on-ink/70" : "text-muted")}>
+      <h1 className={cn("tracking-tight", titleClass)}>{sec.productName}</h1>
+
+      {/* Stock availability & Discount badge */}
+      <div className="mt-2.5 flex items-center gap-2.5 flex-wrap">
+        {isOutOfStock ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:text-rose-300">
+            <span className="size-2 rounded-full bg-rose-500" />
+            <span>Out of Stock</span>
+          </span>
+        ) : currentStock <= 3 ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+            <span className="size-2 rounded-full bg-amber-500" />
+            <span>Low Stock — Only {currentStock} left!</span>
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>In Stock ({currentStock} available)</span>
+          </span>
+        )}
+
+        {hasDiscount && discountPct > 0 && (
+          <span className="inline-flex items-center rounded-md bg-rose-600 px-2 py-0.5 text-xs font-bold text-white uppercase shadow-xs">
+            {discountPct}% OFF
+          </span>
+        )}
+      </div>
+
+      {/* Price with strikethrough regular price */}
+      <div className="mt-3.5 flex items-baseline gap-2.5 flex-wrap">
+        <span
+          className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+          style={{ color: sec.priceColor || (dark ? "#34d399" : "#059669") }}
+        >
+          {money(currentPrice, sec.currency || "$")}
+        </span>
+        {hasDiscount && (
+          <span className="text-base text-slate-400 dark:text-slate-500 line-through font-normal">
+            {money(currentRegularPrice, sec.currency || "$")}
+          </span>
+        )}
+      </div>
+
+      {/* Product Description */}
+      {sec.showDescription !== false && sec.description && (
+        <p className={cn("mt-4 max-w-md text-sm leading-relaxed", dark ? "text-on-ink/80" : "text-muted")}>
           {sec.description}
         </p>
       )}
 
-      {sec.showColors !== false && sec.colors && sec.colors.length > 0 && (
-        <div className="mt-6">
-          <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>
-            Select Color
-          </p>
-          <div className="mt-2.5 flex gap-2.5">
-            {sec.colors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                aria-label={`Color ${color}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  useEditor.getState().setProductField({ color });
-                }}
-                className={cn(
-                  "tap-smooth size-10 rounded-full border border-line transition-transform duration-200 hover:scale-110",
-                  color === sec.color && "ring-2 ring-emerald-500 ring-offset-2 scale-105"
-                )}
-                style={{ background: color }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {sec.showSizes !== false && sec.sizes && sec.sizes.length > 0 && (
+      {/* Variant 1: Color Picker */}
+      {sec.showColors !== false && (
         <div className="mt-5">
-          <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>
-            Select Size
-          </p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {sec.sizes.map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  useEditor.getState().setProductField({ size });
-                }}
-                className={cn(
-                  "tap-smooth h-10 rounded-full border px-4 text-xs font-semibold tracking-wide transition-all duration-200",
-                  size === sec.size
-                    ? "border-[#25D366] bg-[#25D366] text-white shadow-xs"
-                    : "border-line bg-transparent hover:border-ink"
-                )}
-              >
-                {size}
-              </button>
-            ))}
+          <div className="flex items-center justify-between">
+            <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>
+              Select Color
+            </p>
+            {selectedColor && (
+              <span className="text-xs font-medium text-ink">{selectedColor}</span>
+            )}
+          </div>
+          <div className="mt-2.5 flex gap-2.5 flex-wrap">
+            {colorGroup ? (
+              colorGroup.options.map((opt) => {
+                const isSelected = selectedColor === opt.label || selectedColor === opt.colorHex;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    title={`${opt.label} (${opt.stock} in stock)`}
+                    aria-label={`Color ${opt.label}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedColor(opt.label);
+                      useEditor.getState().setProductField({ color: opt.label });
+                    }}
+                    className={cn(
+                      "tap-smooth flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all cursor-pointer",
+                      isSelected
+                        ? "border-purple-600 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 ring-2 ring-purple-600/30 font-semibold"
+                        : "border-line-soft bg-surface hover:border-slate-300 dark:hover:border-slate-700 text-ink"
+                    )}
+                  >
+                    {opt.colorHex && (
+                      <span
+                        className="size-3.5 rounded-full border border-black/10 shadow-2xs"
+                        style={{ backgroundColor: opt.colorHex }}
+                      />
+                    )}
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })
+            ) : sec.colors && sec.colors.length > 0 ? (
+              sec.colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  aria-label={`Color ${color}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedColor(color);
+                    useEditor.getState().setProductField({ color });
+                  }}
+                  className={cn(
+                    "tap-smooth size-10 rounded-full border border-line transition-transform duration-200 hover:scale-110 cursor-pointer",
+                    color === selectedColor && "ring-2 ring-emerald-500 ring-offset-2 scale-105"
+                  )}
+                  style={{ background: color }}
+                />
+              ))
+            ) : null}
           </div>
         </div>
       )}
 
+      {/* Variant 2: Size Picker */}
+      {sec.showSizes !== false && (
+        <div className="mt-5">
+          <div className="flex items-center justify-between">
+            <p className={cn("text-xs font-semibold uppercase tracking-wider", dark ? "text-on-ink/70" : "text-muted")}>
+              Select Size
+            </p>
+            {selectedSize && (
+              <span className="text-xs font-medium text-ink">{selectedSize}</span>
+            )}
+          </div>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {sizeGroup ? (
+              sizeGroup.options.map((opt) => {
+                const isSelected = selectedSize === opt.label;
+                const isOptOutOfStock = opt.stock <= 0;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    disabled={isOptOutOfStock}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedSize(opt.label);
+                      useEditor.getState().setProductField({ size: opt.label });
+                    }}
+                    className={cn(
+                      "tap-smooth min-h-10 rounded-xl border px-3.5 py-1.5 text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5",
+                      isOptOutOfStock
+                        ? "border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-slate-400 line-through cursor-not-allowed opacity-50"
+                        : isSelected
+                          ? "border-purple-600 bg-purple-600 text-white shadow-xs cursor-pointer scale-102"
+                          : "border-line-soft bg-surface hover:border-slate-300 text-ink cursor-pointer"
+                    )}
+                  >
+                    <span>{opt.label}</span>
+                    {opt.priceDelta ? (
+                      <span className={cn("text-[10px]", isSelected ? "text-white/80" : "text-muted")}>
+                        (+{money(opt.priceDelta, sec.currency || "$")})
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })
+            ) : sec.sizes && sec.sizes.length > 0 ? (
+              sec.sizes.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedSize(size);
+                    useEditor.getState().setProductField({ size });
+                  }}
+                  className={cn(
+                    "tap-smooth h-10 rounded-full border px-4 text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer",
+                    size === selectedSize
+                      ? "border-purple-600 bg-purple-600 text-white shadow-xs"
+                      : "border-line bg-transparent hover:border-ink"
+                  )}
+                >
+                  {size}
+                </button>
+              ))
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Buy Button */}
       <button
         type="button"
+        disabled={isOutOfStock}
         onClick={handleBuyOnWhatsApp}
-        style={{ backgroundColor: sec.buttonColor || "#25D366" }}
-        className="tap-smooth-sm mt-6 flex h-13 w-full items-center justify-center gap-2.5 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:opacity-95 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]"
+        style={{ backgroundColor: isOutOfStock ? "#94a3b8" : (sec.buttonColor || "#25D366") }}
+        className={cn(
+          "tap-smooth-sm mt-6 flex h-13 w-full items-center justify-center gap-2.5 rounded-full text-sm font-semibold text-white shadow-lg transition-all",
+          isOutOfStock
+            ? "cursor-not-allowed opacity-60"
+            : "hover:opacity-95 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+        )}
       >
         <WhatsAppIcon className="size-5 fill-white" />
-        <span>{(sec.buttonText || "Buy on WhatsApp")} · {money(sec.price, sec.currency || "$")}</span>
+        <span>
+          {isOutOfStock
+            ? "Sold Out in this Variant"
+            : `${sec.buttonText || "Buy on WhatsApp"} · ${money(currentPrice, sec.currency || "$")}`}
+        </span>
       </button>
 
       {sec.showTrustBadges !== false && (
         <div className="mt-3 flex items-center justify-center gap-2 text-xs text-muted">
           <span className="size-1.5 rounded-full" style={{ backgroundColor: sec.buttonColor || "#25D366" }} />
-          <span>Instant WhatsApp confirmation & order tracking</span>
+          <span>Direct WhatsApp order with instant seller confirmation</span>
         </div>
       )}
     </div>
@@ -1602,7 +1965,7 @@ function ProductView({
         <div className="grid grid-cols-12 gap-8 px-8 py-10">
           <div className="col-span-7">
             <div className="grid grid-cols-2 gap-3">
-              {sec.gallery.map((img, idx) => (
+              {galleryImages.map((img, idx) => (
                 <div
                   key={img}
                   style={{ borderRadius: radiusPx }}
@@ -1612,13 +1975,23 @@ function ProductView({
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
+                    setActiveImage(img);
                     useEditor.getState().setProductField({ image: img });
                   }}
                 >
-                  {idx === 0 && sec.showBadge !== false && (
-                    <span className="absolute top-4 left-4 z-10 rounded-md bg-ink/90 px-2.5 py-1 text-xs font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-                      {sec.badgeText || "POPULAR"}
-                    </span>
+                  {idx === 0 && (
+                    <div className="absolute top-4 left-4 z-10 flex flex-col gap-1 items-start">
+                      {hasDiscount && discountPct > 0 && (
+                        <span className="rounded-md bg-rose-600 px-2.5 py-1 text-xs font-extrabold tracking-wider text-white uppercase shadow-sm">
+                          {discountPct}% OFF
+                        </span>
+                      )}
+                      {sec.showBadge !== false && sec.badgeText && (
+                        <span className="rounded-md bg-ink/90 px-2.5 py-1 text-xs font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+                          {sec.badgeText}
+                        </span>
+                      )}
+                    </div>
                   )}
                   <img src={img} alt="" className="h-full w-full object-cover" />
                 </div>
@@ -1626,9 +1999,7 @@ function ProductView({
             </div>
           </div>
           <div className="col-span-5">
-            <div className="sticky top-24">
-              {info}
-            </div>
+            <div className="sticky top-24">{info}</div>
           </div>
         </div>
       ) : (
@@ -1886,9 +2257,20 @@ function FeaturedView({
     const price = Number.isFinite(num) && num > 0 ? num : 149;
     if (preview) {
       useEditor.getState().openProduct({
+        id: item.id,
         name: item.title,
-        price,
+        price: item.salePrice || price,
+        regularPrice: item.regularPrice || price,
+        salePrice: item.salePrice,
+        discountPercentage: item.discountPercentage,
+        stock: item.stock ?? 10,
+        brand: item.brand,
+        category: item.category || item.tag,
+        description: item.description,
+        gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.image],
         img: item.image,
+        variants: item.variants,
+        badge: item.badge,
       });
     } else {
       useEditor.getState().select("product-card");
@@ -1950,6 +2332,11 @@ function FeaturedView({
               id={item.id}
               title={item.title}
               price={item.price}
+              regularPrice={item.regularPrice}
+              salePrice={item.salePrice}
+              discountPercentage={item.discountPercentage}
+              stock={item.stock}
+              brand={item.brand}
               image={item.image}
               badge={item.badge}
               dark={dark}
@@ -1959,6 +2346,9 @@ function FeaturedView({
               showBadge={sec.showBadge !== false}
               showPrice={sec.showPrice !== false}
               showButton={sec.showButton !== false}
+              showBrand={sec.showBrand !== false}
+              showDiscountBadge={sec.showDiscountBadge !== false}
+              showStockStatus={sec.showStockStatus !== false}
               priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
               buttonColor={sec.buttonColor || "#25D366"}
               currency={sec.currency || "$"}
@@ -2348,6 +2738,9 @@ function ProductCardStudio({ device }: { device: Device }) {
     showBadge: (section && "showBadge" in section && section.showBadge !== undefined) ? section.showBadge : true,
     showPrice: (section && "showPrice" in section && section.showPrice !== undefined) ? section.showPrice : true,
     showButton: (section && "showButton" in section && section.showButton !== undefined) ? section.showButton : true,
+    showBrand: (section && "showBrand" in section && section.showBrand !== undefined) ? section.showBrand : true,
+    showDiscountBadge: (section && "showDiscountBadge" in section && section.showDiscountBadge !== undefined) ? section.showDiscountBadge : true,
+    showStockStatus: (section && "showStockStatus" in section && section.showStockStatus !== undefined) ? section.showStockStatus : true,
     priceColor: (section && "priceColor" in section && section.priceColor) || "#059669",
     buttonColor: (section && "buttonColor" in section && section.buttonColor) || "#25D366",
     whatsappNumber: (section && "whatsappNumber" in section && section.whatsappNumber) || "919876543210",
@@ -2469,6 +2862,11 @@ function ProductCardStudio({ device }: { device: Device }) {
               id="studio-sample-card-1"
               title="Air Retro Court"
               price={149}
+              regularPrice={199}
+              salePrice={149}
+              discountPercentage={25}
+              stock={8}
+              brand="Nike"
               image="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=80"
               badge="TRENDING"
               dark={backdrop === "dark"}
@@ -2478,6 +2876,9 @@ function ProductCardStudio({ device }: { device: Device }) {
               showBadge={cardProps.showBadge}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
+              showBrand={cardProps.showBrand}
+              showDiscountBadge={cardProps.showDiscountBadge}
+              showStockStatus={cardProps.showStockStatus}
               currency={cardProps.currency}
               priceColor={cardProps.priceColor}
               buttonColor={cardProps.buttonColor}
@@ -2502,6 +2903,11 @@ function ProductCardStudio({ device }: { device: Device }) {
               id="studio-sample-card-1"
               title="Air Retro Court"
               price={149}
+              regularPrice={199}
+              salePrice={149}
+              discountPercentage={25}
+              stock={8}
+              brand="Nike"
               image="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=80"
               badge="TRENDING"
               dark={backdrop === "dark"}
@@ -2511,6 +2917,9 @@ function ProductCardStudio({ device }: { device: Device }) {
               showBadge={cardProps.showBadge}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
+              showBrand={cardProps.showBrand}
+              showDiscountBadge={cardProps.showDiscountBadge}
+              showStockStatus={cardProps.showStockStatus}
               currency={cardProps.currency}
               priceColor={cardProps.priceColor}
               buttonColor={cardProps.buttonColor}
@@ -2531,6 +2940,11 @@ function ProductCardStudio({ device }: { device: Device }) {
               id="studio-sample-card-2"
               title="Weather Fleece"
               price={129}
+              regularPrice={159}
+              salePrice={129}
+              discountPercentage={19}
+              stock={3}
+              brand="The North Face"
               image="https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&w=800&q=80"
               badge="NEW"
               dark={backdrop === "dark"}
@@ -2540,6 +2954,9 @@ function ProductCardStudio({ device }: { device: Device }) {
               showBadge={cardProps.showBadge}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
+              showBrand={cardProps.showBrand}
+              showDiscountBadge={cardProps.showDiscountBadge}
+              showStockStatus={cardProps.showStockStatus}
               currency={cardProps.currency}
               priceColor={cardProps.priceColor}
               buttonColor={cardProps.buttonColor}

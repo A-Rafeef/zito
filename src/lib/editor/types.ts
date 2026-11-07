@@ -27,25 +27,58 @@ export interface CartItem {
   img: string;
 }
 
+export type StockStatus = "in_stock" | "low_stock" | "out_of_stock";
+
+export interface VariantOption {
+  id: string;
+  label: string;
+  colorHex?: string; // hex code for visual color swatches, e.g. "#18181b", "#EF4444"
+  priceDelta?: number; // additional price delta for this option (+100, 0, etc.)
+  stock: number; // exact stock count (e.g. 5, 2, 0)
+}
+
+export interface VariantGroup {
+  id: string;
+  name: "Color" | "Size" | "Material" | "Storage" | string;
+  options: VariantOption[];
+}
+
 export interface GridItem {
   id: string;
   title: string;
-  tag: string;
+  tag?: string;
   price: string;
+  regularPrice?: number;
+  salePrice?: number;
+  discountPercentage?: number;
+  stock?: number;
+  brand?: string;
+  category?: string;
+  description?: string;
   image: string;
-  badge?: "NEW" | "SALE" | "HOT";
+  gallery?: string[];
+  variants?: VariantGroup[];
+  badge?: "NEW" | "SALE" | "HOT" | "TRENDING";
 }
 
 export interface Product {
   id: string;
   name: string;
   price: number;
-  originalPrice?: number;
-  badge?: "NEW" | "SALE" | "HOT";
-  rating: number;
-  reviews: number;
+  regularPrice?: number;
+  salePrice?: number;
+  discountPercentage?: number;
+  stock?: number;
+  description?: string;
+  category: Category | string;
+  brand?: string;
+  gallery?: string[];
   img: string;
-  category: Category;
+  variants?: VariantGroup[];
+  badge?: "NEW" | "SALE" | "HOT" | "TRENDING";
+  rating?: number;
+  reviews?: number;
+  originalPrice?: number;
 }
 
 export interface NavbarLink {
@@ -143,6 +176,9 @@ export interface GridSection {
   showRating?: boolean;
   showPrice?: boolean;
   showButton?: boolean;
+  showBrand?: boolean;
+  showDiscountBadge?: boolean;
+  showStockStatus?: boolean;
   whatsappNumber?: string;
   currency?: string;
   priceColor?: string;
@@ -174,6 +210,9 @@ export interface FeaturedSection {
   showRating?: boolean;
   showPrice?: boolean;
   showButton?: boolean;
+  showBrand?: boolean;
+  showDiscountBadge?: boolean;
+  showStockStatus?: boolean;
   whatsappNumber?: string;
   currency?: string;
   priceColor?: string;
@@ -278,6 +317,9 @@ export interface CatalogSection {
   showRating?: boolean;
   showPrice?: boolean;
   showButton?: boolean;
+  showBrand?: boolean;
+  showDiscountBadge?: boolean;
+  showStockStatus?: boolean;
   whatsappNumber?: string;
   currency?: string;
   priceColor?: string;
@@ -319,6 +361,14 @@ export interface ProductSection {
   priceColor?: string;
   titleFontSize?: "sm" | "base" | "lg" | "xl";
   titleFontWeight?: "normal" | "medium" | "semibold" | "bold";
+  regularPrice?: number;
+  salePrice?: number;
+  discountPercentage?: number;
+  stock?: number;
+  brand?: string;
+  category?: string;
+  variants?: VariantGroup[];
+  activeProduct?: Product;
 }
 
 export interface FooterSection {
@@ -366,6 +416,9 @@ export interface ProductCardSection {
   showRating?: boolean;
   showPrice?: boolean;
   showButton?: boolean;
+  showBrand?: boolean;
+  showDiscountBadge?: boolean;
+  showStockStatus?: boolean;
   whatsappNumber?: string;
   currency?: string;
   priceColor?: string;
