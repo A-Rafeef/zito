@@ -649,15 +649,18 @@ function HeroView({
 }) {
   const image = sec.slides[sec.active] ?? sec.slides[0];
   const ratio = sec.ratio ?? "16:9";
-  const aspect = ratio.replace(":", " / ");
+  const aspect = ratio === "auto" ? undefined : ratio.replace(":", " / ");
+
+  const autoplay = sec.autoplay !== false;
+  const speed = sec.autoplaySpeed ?? 4500;
 
   useEffect(() => {
-    if (sec.slides.length <= 1) return;
+    if (!autoplay || sec.slides.length <= 1) return;
     const timer = setInterval(() => {
       useEditor.getState().setHeroSlide((sec.active + 1) % sec.slides.length);
-    }, 4500);
+    }, speed);
     return () => clearInterval(timer);
-  }, [sec.active, sec.slides.length]);
+  }, [autoplay, sec.active, sec.slides.length, speed]);
 
   const prev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -671,65 +674,112 @@ function HeroView({
     useEditor.getState().setHeroSlide(nextIdx);
   };
 
+  // Width mode container
+  const widthClass =
+    sec.widthMode === "gap-sm"
+      ? "max-w-7xl mx-auto px-3 sm:px-6"
+      : sec.widthMode === "gap-md"
+      ? "max-w-5xl mx-auto px-5 sm:px-10"
+      : sec.widthMode === "gap-lg"
+      ? "max-w-4xl mx-auto px-6 sm:px-16"
+      : "w-full px-0";
+
+  // Vertical padding
+  const paddingYClass =
+    sec.paddingY === "sm"
+      ? "py-2 sm:py-3"
+      : sec.paddingY === "md"
+      ? "py-4 sm:py-6"
+      : sec.paddingY === "lg"
+      ? "py-6 sm:py-10"
+      : "py-0";
+
+  const paddingXClass =
+    sec.paddingX === "sm"
+      ? "px-2"
+      : sec.paddingX === "md"
+      ? "px-4"
+      : sec.paddingX === "lg"
+      ? "px-8"
+      : "px-0";
+
+  // Corner radius
+  const radius = sec.borderRadius ?? 0;
+
+  // Animation styling
+  const animClass =
+    sec.animationEffect === "fade"
+      ? "animate-fade-in duration-500"
+      : sec.animationEffect === "zoom"
+      ? "scale-100 hover:scale-105 transition-transform duration-700 ease-out"
+      : sec.animationEffect === "none"
+      ? ""
+      : "animate-fade-in transition-transform duration-700 ease-out";
+
   return (
-    <SectionShell section={sec} background={sec.background}>
-      <div
-        className="relative w-full overflow-hidden transition-all duration-300"
-        style={{ aspectRatio: aspect }}
-      >
-        {image && (
-          <img
-            key={image + sec.active}
-            src={image}
-            alt=""
-            className="animate-fade-in h-full w-full object-cover transition-transform duration-700 ease-out"
-          />
-        )}
+    <SectionShell section={sec} background={sec.background || "transparent"}>
+      <div className={cn("transition-all duration-300", widthClass, paddingYClass, paddingXClass)}>
+        <div
+          className="relative w-full overflow-hidden transition-all duration-300 shadow-xs"
+          style={{
+            aspectRatio: aspect,
+            borderRadius: radius > 0 ? `${radius}px` : undefined,
+          }}
+        >
+          {image && (
+            <img
+              key={image + sec.active}
+              src={image}
+              alt=""
+              className={cn("h-full w-full object-cover", animClass)}
+            />
+          )}
 
-        {/* Previous & Next Arrow Controls */}
-        {sec.slides.length > 1 && (
-          <>
-            <button
-              type="button"
-              aria-label="Previous image"
-              onClick={prev}
-              className="tap-smooth absolute left-3 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all opacity-80 hover:opacity-100"
-            >
-              <ChevronLeft className="size-4" strokeWidth={2.25} />
-            </button>
-            <button
-              type="button"
-              aria-label="Next image"
-              onClick={next}
-              className="tap-smooth absolute right-3 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all opacity-80 hover:opacity-100"
-            >
-              <ChevronRight className="size-4" strokeWidth={2.25} />
-            </button>
-          </>
-        )}
-
-        {/* Dynamic Pagination Dots */}
-        {sec.slides.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 backdrop-blur-md shadow-xs">
-            {sec.slides.map((slide, index) => (
+          {/* Previous & Next Arrow Controls */}
+          {sec.slides.length > 1 && (
+            <>
               <button
-                key={slide + index}
                 type="button"
-                aria-label={`Go to slide ${index + 1}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  useEditor.getState().setHeroSlide(index);
-                }}
-                className={cn(
-                  "h-1.5 rounded-full transition-all duration-300 ease-out",
-                  index === sec.active
-                    ? "w-5 bg-white opacity-100"
-                    : "w-1.5 bg-white/60 opacity-60 hover:opacity-90",
-                )}
-              />
-            ))}
-          </div>
-        )}
+                aria-label="Previous image"
+                onClick={prev}
+                className="tap-smooth absolute left-3 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all opacity-80 hover:opacity-100"
+              >
+                <ChevronLeft className="size-4" strokeWidth={2.25} />
+              </button>
+              <button
+                type="button"
+                aria-label="Next image"
+                onClick={next}
+                className="tap-smooth absolute right-3 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all opacity-80 hover:opacity-100"
+              >
+                <ChevronRight className="size-4" strokeWidth={2.25} />
+              </button>
+            </>
+          )}
+
+          {/* Dynamic Pagination Dots */}
+          {sec.slides.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 backdrop-blur-md shadow-xs">
+              {sec.slides.map((slide, index) => (
+                <button
+                  key={slide + index}
+                  type="button"
+                  aria-label={`Go to slide ${index + 1}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    useEditor.getState().setHeroSlide(index);
+                  }}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-300 ease-out",
+                    index === sec.active
+                      ? "w-5 bg-white opacity-100"
+                      : "w-1.5 bg-white/60 opacity-60 hover:opacity-90",
+                  )}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </SectionShell>
   );

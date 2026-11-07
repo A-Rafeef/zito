@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   Compass,
+  Image,
   Layers,
   Menu,
   Plus,
@@ -18,8 +19,11 @@ import { HERO_PHOTOS, PAGE_COLORS, TEXT_COLORS } from "@/lib/editor/defaults";
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import { cn } from "@/lib/cn";
 import type {
+  HeroAnimation,
+  HeroPadding,
   HeroRatio,
   HeroSection,
+  HeroWidth,
   IntroSection,
   NavbarLink,
   NavbarSection,
@@ -44,6 +48,13 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "navbar-typography": { title: "Typography", subtitle: "Font size, weight, spacing & casing." },
   "navbar-links": { title: "Links", subtitle: "Manage store navigation menu items." },
   "navbar-more": { title: "Edit More", subtitle: "Layout, borders, typography & behavior." },
+  "hero-width": { title: "Banner Width", subtitle: "Full-width or spaced margins." },
+  "hero-background": { title: "Background", subtitle: "Color behind banner (default transparent)." },
+  "hero-ratio": { title: "Aspect Ratio", subtitle: "Image height & proportions." },
+  "hero-padding": { title: "Padding", subtitle: "Vertical and side spacing." },
+  "hero-radius": { title: "Corner Curve", subtitle: "Corner rounding & curvature." },
+  "hero-animation": { title: "Animation", subtitle: "Slide transitions & autoplay." },
+  "hero-media": { title: "Banner Images", subtitle: "Manage hero slides in Dashboard." },
   "hero-layout": { title: "Template", subtitle: "" },
   "hero-photo": { title: "Photo", subtitle: "Replaces the current slide." },
   "hero-text": { title: "Hero text", subtitle: "The line under the photograph." },
@@ -138,6 +149,20 @@ function SheetBody({ kind }: { kind: SheetKind }) {
       return section?.type === "navbar" ? <NavbarLinks sec={section} /> : null;
     case "navbar-more":
       return section?.type === "navbar" ? <NavbarMore sec={section} /> : null;
+    case "hero-width":
+      return section?.type === "hero" ? <HeroWidthSheet hero={section} /> : null;
+    case "hero-background":
+      return section?.type === "hero" ? <HeroBackgroundSheet hero={section} /> : null;
+    case "hero-ratio":
+      return section?.type === "hero" ? <HeroRatioSheet hero={section} /> : null;
+    case "hero-padding":
+      return section?.type === "hero" ? <HeroPaddingSheet hero={section} /> : null;
+    case "hero-radius":
+      return section?.type === "hero" ? <HeroRadiusSheet hero={section} /> : null;
+    case "hero-animation":
+      return section?.type === "hero" ? <HeroAnimationSheet hero={section} /> : null;
+    case "hero-media":
+      return section?.type === "hero" ? <HeroMediaSheet /> : null;
     case "hero-layout":
       return section?.type === "hero" ? <HeroLayouts hero={section} /> : null;
     case "hero-photo":
@@ -1898,7 +1923,464 @@ const RATIOS: { id: HeroRatio; title: string; detail: string; aspect: string }[]
   { id: "4:3", title: "4:3 Classic", detail: "Taller classic photo format.", aspect: "4 / 3" },
   { id: "3:2", title: "3:2 Standard", detail: "Classic 35mm landscape format.", aspect: "3 / 2" },
   { id: "1:1", title: "1:1 Square", detail: "Compact square product showcase.", aspect: "1 / 1" },
+  { id: "auto", title: "Auto Responsive", detail: "Natural height adapting to content.", aspect: "auto" },
 ];
+
+function HeroWidthSheet({ hero }: { hero: HeroSection }) {
+  const current = hero.widthMode ?? "full";
+  const options: { id: HeroWidth; title: string; subtitle: string; visual: string }[] = [
+    { id: "full", title: "Full Width", subtitle: "Edge-to-edge bleed, 0 side gap", visual: "w-full" },
+    { id: "gap-sm", title: "Small Gap", subtitle: "Sleek inset with subtle side margin", visual: "w-11/12 mx-auto" },
+    { id: "gap-md", title: "Medium Gap", subtitle: "Centered container with balanced gap", visual: "w-4/5 mx-auto" },
+    { id: "gap-lg", title: "Large Gap", subtitle: "Compact card layout with spacious margins", visual: "w-3/5 mx-auto" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-3">
+      {options.map((opt) => (
+        <TemplateCard
+          key={opt.id}
+          active={current === opt.id}
+          onClick={() => useEditor.getState().patchSelected({ widthMode: opt.id })}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-20 h-10 rounded-xl bg-fill/80 border border-line-soft flex items-center justify-center p-1.5 shrink-0">
+              <div className={cn("h-full rounded-md bg-accent/70 transition-all", opt.visual)} />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-ink">{opt.title}</div>
+              <div className="text-xs text-muted">{opt.subtitle}</div>
+            </div>
+          </div>
+        </TemplateCard>
+      ))}
+    </div>
+  );
+}
+
+function HeroBackgroundSheet({ hero }: { hero: HeroSection }) {
+  const current = hero.background || "transparent";
+  const isTransparent = current === "transparent";
+
+  const palettes = [
+    { name: "Clean White", value: "#ffffff" },
+    { name: "Soft Cream", value: "#fbfbfd" },
+    { name: "Warm Linen", value: "#f7f4ed" },
+    { name: "Pure Ink", value: "#0b0b0d" },
+    { name: "Midnight", value: "#0f172a" },
+    { name: "Deep Slate", value: "#1e293b" },
+    { name: "Royal Violet", value: "#2e1065" },
+    { name: "Deep Navy", value: "#0a192f" },
+    { name: "Forest", value: "#064e3b" },
+    { name: "Warm Amber", value: "#d97706" },
+  ];
+
+  const setColor = (val: string) => {
+    useEditor.getState().patchSelected({ background: val });
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Quick Transparent Button (Default) */}
+      <button
+        type="button"
+        onClick={() => setColor("transparent")}
+        className={cn(
+          "tap-smooth flex items-center justify-between p-3.5 rounded-2xl border transition-all",
+          isTransparent
+            ? "border-accent bg-accent/10 text-accent font-semibold ring-2 ring-accent/20"
+            : "border-line-soft bg-surface text-ink hover:bg-fill"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="size-8 rounded-full border border-dashed border-slate-400 bg-linear-to-tr from-slate-200 to-transparent flex items-center justify-center">
+            <span className="text-[10px] font-bold text-muted">∅</span>
+          </div>
+          <div className="text-left">
+            <div className="text-sm font-semibold">Transparent (Default)</div>
+            <div className="text-xs text-muted">Shows underlying store canvas</div>
+          </div>
+        </div>
+        {isTransparent && <Check className="size-4 text-accent" strokeWidth={2.5} />}
+      </button>
+
+      {/* Interactive Custom Color Picker */}
+      <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <label className="relative flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-2xl border-2 border-line shadow-xs overflow-hidden transition-transform active:scale-95">
+          <input
+            type="color"
+            value={current.startsWith("#") && current.length === 7 ? current : "#ffffff"}
+            onChange={(e) => setColor(e.target.value)}
+            className="absolute inset-0 size-full opacity-0 cursor-pointer"
+          />
+          <span
+            className="size-full"
+            style={{ background: isTransparent ? "transparent" : current }}
+          />
+        </label>
+        <div className="flex-1 min-w-0">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+            Custom Background Color
+          </label>
+          <div className="relative mt-1 flex items-center">
+            <span className="absolute left-3 text-xs font-mono text-muted">#</span>
+            <input
+              type="text"
+              value={isTransparent ? "" : current.replace(/^#/, "")}
+              onChange={(e) => {
+                const hex = `#${e.target.value.replace(/[^0-9A-Fa-f]/g, "").slice(0, 8)}`;
+                setColor(hex);
+              }}
+              placeholder="transparent"
+              className="w-full rounded-xl border border-line-soft bg-fill/50 pl-7 pr-3 py-1.5 text-xs font-mono uppercase tracking-wider text-ink focus:border-accent focus:bg-surface focus:outline-hidden"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Preset Swatches Palette */}
+      <div>
+        <p className="mb-2 text-xs font-semibold text-muted uppercase tracking-wider">
+          Curated Palettes
+        </p>
+        <div className="grid grid-cols-5 gap-2">
+          {palettes.map((c) => {
+            const active = !isTransparent && current.toLowerCase() === c.value.toLowerCase();
+            return (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setColor(c.value)}
+                className="tap-smooth group flex flex-col items-center gap-1.5 p-2 rounded-2xl border border-line-soft hover:bg-fill/70 transition-all"
+              >
+                <span
+                  className={cn(
+                    "size-8 rounded-full border border-line shadow-xs transition-transform group-hover:scale-105 flex items-center justify-center",
+                    active && "ring-2 ring-accent ring-offset-2"
+                  )}
+                  style={{ background: c.value }}
+                >
+                  {active && (
+                    <Check
+                      className={cn(
+                        "size-3.5 stroke-[2.5]",
+                        c.value === "#ffffff" || c.value === "#fbfbfd" || c.value === "#f7f4ed"
+                          ? "text-slate-900"
+                          : "text-white"
+                      )}
+                    />
+                  )}
+                </span>
+                <span className="text-[10px] font-medium text-muted truncate max-w-full group-hover:text-ink">
+                  {c.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroRatioSheet({ hero }: { hero: HeroSection }) {
+  const current = hero.ratio ?? "16:9";
+  const ratios: { id: HeroRatio; title: string; subtitle: string; aspectBox: string }[] = [
+    { id: "16:9", title: "16:9 Widescreen", subtitle: "Standard modern widescreen banner", aspectBox: "aspect-video" },
+    { id: "21:9", title: "21:9 Cinematic", subtitle: "Ultra-wide panoramic showcase", aspectBox: "aspect-[21/9]" },
+    { id: "4:3", title: "4:3 Classic", subtitle: "Taller classic photo format", aspectBox: "aspect-[4/3]" },
+    { id: "3:2", title: "3:2 Standard", subtitle: "Classic 35mm landscape format", aspectBox: "aspect-[3/2]" },
+    { id: "1:1", title: "1:1 Square", subtitle: "Compact square product showcase", aspectBox: "aspect-square" },
+    { id: "auto", title: "Auto Responsive", subtitle: "Natural height adapting to content", aspectBox: "aspect-auto" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-3">
+      {ratios.map((item) => (
+        <TemplateCard
+          key={item.id}
+          active={current === item.id}
+          onClick={() => useEditor.getState().patchSelected({ ratio: item.id })}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-16 h-10 rounded-xl bg-fill/80 border border-line-soft flex items-center justify-center p-1 shrink-0">
+              <div className={cn("w-full max-h-full bg-accent/70 rounded-md", item.aspectBox)} />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-ink">{item.title}</div>
+              <div className="text-xs text-muted">{item.subtitle}</div>
+            </div>
+          </div>
+        </TemplateCard>
+      ))}
+    </div>
+  );
+}
+
+function HeroPaddingSheet({ hero }: { hero: HeroSection }) {
+  const paddingY = hero.paddingY ?? "none";
+  const paddingX = hero.paddingX ?? "none";
+
+  const pyOptions: { id: HeroPadding; label: string; desc: string }[] = [
+    { id: "none", label: "None (0px)", desc: "Flush border" },
+    { id: "sm", label: "Compact (12px)", desc: "Subtle breathing room" },
+    { id: "md", label: "Standard (24px)", desc: "Balanced spacing" },
+    { id: "lg", label: "Spacious (40px)", desc: "Roomy luxury layout" },
+  ];
+
+  const pxOptions: { id: HeroPadding; label: string; desc: string }[] = [
+    { id: "none", label: "None (0px)", desc: "Edge-to-edge" },
+    { id: "sm", label: "Compact (8px)", desc: "Subtle inset" },
+    { id: "md", label: "Standard (16px)", desc: "Balanced side margin" },
+    { id: "lg", label: "Roomy (32px)", desc: "Framed card" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Vertical Spacing (Top & Bottom)
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {pyOptions.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ paddingY: opt.id })}
+              className={cn(
+                "p-3 rounded-2xl border text-left transition-all",
+                paddingY === opt.id
+                  ? "border-accent bg-accent/10 ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface hover:bg-fill"
+              )}
+            >
+              <div className="text-xs font-semibold text-ink">{opt.label}</div>
+              <div className="text-[11px] text-muted">{opt.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Side Spacing (Left & Right)
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {pxOptions.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ paddingX: opt.id })}
+              className={cn(
+                "p-3 rounded-2xl border text-left transition-all",
+                paddingX === opt.id
+                  ? "border-accent bg-accent/10 ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface hover:bg-fill"
+              )}
+            >
+              <div className="text-xs font-semibold text-ink">{opt.label}</div>
+              <div className="text-[11px] text-muted">{opt.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroRadiusSheet({ hero }: { hero: HeroSection }) {
+  const current = hero.borderRadius ?? 0;
+  const presets = [
+    { label: "Sharp", value: 0 },
+    { label: "Subtle", value: 8 },
+    { label: "Rounded", value: 16 },
+    { label: "Curved", value: 24 },
+    { label: "Extra", value: 36 },
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3 rounded-2xl border border-line-soft bg-surface p-4 shadow-2xs">
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-semibold text-muted uppercase tracking-wider">Corner Curvature</span>
+          <span className="text-xs font-bold text-accent font-mono bg-accent/10 px-2.5 py-1 rounded-lg">
+            {current}px
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={48}
+          step={2}
+          value={current}
+          onChange={(e) => useEditor.getState().patchSelected({ borderRadius: Number(e.target.value) })}
+          className="accent-accent w-full cursor-pointer h-2 bg-slate-200 dark:bg-zinc-700 rounded-lg"
+        />
+        <div className="flex justify-between text-[10px] text-muted font-mono">
+          <span>0px (Sharp)</span>
+          <span>24px (Medium)</span>
+          <span>48px (Pill)</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">Quick Presets</label>
+        <div className="grid grid-cols-5 gap-2">
+          {presets.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ borderRadius: p.value })}
+              className={cn(
+                "py-2.5 text-xs font-semibold rounded-xl border text-center transition-all",
+                current === p.value
+                  ? "border-accent bg-accent text-white"
+                  : "border-line-soft bg-surface hover:bg-fill text-ink"
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroAnimationSheet({ hero }: { hero: HeroSection }) {
+  const currentEffect = hero.animationEffect ?? "slide";
+  const autoplay = hero.autoplay !== false;
+  const speed = hero.autoplaySpeed ?? 4500;
+
+  const effects: { id: HeroAnimation; label: string; desc: string }[] = [
+    { id: "slide", label: "Slide Transition", desc: "Classic smooth horizontal slide" },
+    { id: "fade", label: "Gentle Fade", desc: "Soft crossfade between banner slides" },
+    { id: "zoom", label: "Ken Burns Zoom", desc: "Subtle elegant zoom animation" },
+    { id: "none", label: "Static / None", desc: "Instant banner image switch" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Autoplay Toggle */}
+      <div className="flex items-center justify-between p-3.5 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <div>
+          <div className="text-sm font-semibold text-ink">Autoplay Slideshow</div>
+          <div className="text-xs text-muted">Automatically cycle through hero images</div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={autoplay}
+          onClick={() => useEditor.getState().patchSelected({ autoplay: !autoplay })}
+          className={cn(
+            "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+            autoplay ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200",
+              autoplay ? "translate-x-5" : "translate-x-0"
+            )}
+          />
+        </button>
+      </div>
+
+      {/* Slide Speed */}
+      {autoplay && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+          <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+            Slide Interval Speed
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Fast (2.5s)", val: 2500 },
+              { label: "Normal (4.5s)", val: 4500 },
+              { label: "Relaxed (7s)", val: 7000 },
+            ].map((s) => (
+              <button
+                key={s.val}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ autoplaySpeed: s.val })}
+                className={cn(
+                  "py-2 text-xs font-semibold rounded-xl border text-center transition-all",
+                  speed === s.val
+                    ? "border-accent bg-accent/10 text-accent font-bold ring-2 ring-accent/20"
+                    : "border-line-soft bg-surface hover:bg-fill text-ink"
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Transition Style */}
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Transition Style
+        </label>
+        <div className="flex flex-col gap-2">
+          {effects.map((eff) => (
+            <TemplateCard
+              key={eff.id}
+              active={currentEffect === eff.id}
+              onClick={() => useEditor.getState().patchSelected({ animationEffect: eff.id })}
+            >
+              <div>
+                <div className="text-sm font-semibold text-ink">{eff.label}</div>
+                <div className="text-xs text-muted">{eff.desc}</div>
+              </div>
+            </TemplateCard>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroMediaSheet() {
+  const [confirmed, setConfirmed] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-4 text-center py-2">
+      <div className="mx-auto flex size-14 items-center justify-center rounded-3xl bg-accent/10 text-accent">
+        <Image className="size-7" />
+      </div>
+
+      <div>
+        <h3 className="text-base font-bold text-ink">Manage Banner Images</h3>
+        <p className="mt-1 text-xs text-muted leading-relaxed max-w-sm mx-auto">
+          Hero banner images and slides are managed in the <strong>Dashboard</strong>. Would you like to switch to the Dashboard to update and arrange your banner media?
+        </p>
+      </div>
+
+      {confirmed ? (
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+          ✓ Dashboard redirection ready. You will be able to upload, crop, and reorder hero banners in the Media Dashboard.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setConfirmed(true)}
+            className="w-full py-3 rounded-2xl bg-accent text-white text-sm font-semibold shadow-xs hover:bg-accent/90 transition-all active:scale-[0.99]"
+          >
+            Yes, Go to Dashboard
+          </button>
+          <button
+            type="button"
+            onClick={() => useEditor.getState().closeSheet()}
+            className="w-full py-2.5 rounded-2xl border border-line-soft bg-surface text-ink text-xs font-medium hover:bg-fill transition-all"
+          >
+            Stay in Designer
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function HeroLayouts({ hero }: { hero: HeroSection }) {
   const currentRatio = hero.ratio ?? "16:9";

@@ -2,6 +2,8 @@ import {
   Compass,
   Droplet,
   Eye,
+  Film,
+  Image,
   Layers,
   LayoutTemplate,
   Maximize2,
@@ -10,8 +12,10 @@ import {
   Pencil,
   Pin,
   PlusCircle,
+  RectangleHorizontal,
   Settings2,
   SlidersHorizontal,
+  Square,
   Tag,
   Type,
 } from "lucide-react";
@@ -51,8 +55,13 @@ export function Dock() {
         ];
       case "hero":
         return [
-          { id: "template", label: "Template", icon: LayoutTemplate, action: open("hero-layout") },
-          { id: "color", label: "Color", icon: Palette, action: open("section-color") },
+          { id: "width", label: "Width", icon: Maximize2, action: open("hero-width") },
+          { id: "background", label: "Background", icon: Palette, action: open("hero-background") },
+          { id: "ratio", label: "Ratio", icon: RectangleHorizontal, action: open("hero-ratio") },
+          { id: "padding", label: "Padding", icon: SlidersHorizontal, action: open("hero-padding") },
+          { id: "curve", label: "Curve", icon: Square, action: open("hero-radius") },
+          { id: "animation", label: "Animation", icon: Film, action: open("hero-animation") },
+          { id: "images", label: "Images", icon: Image, action: open("hero-media") },
         ];
       case "intro":
         return [

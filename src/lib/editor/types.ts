@@ -6,7 +6,10 @@ export type CatalogFilter = "All" | Category;
 
 export type NavbarTemplate = "centered" | "left" | "minimal" | "float" | "expanded";
 export type HeroTemplate = "bleed" | "split";
-export type HeroRatio = "16:9" | "21:9" | "4:3" | "3:2" | "1:1";
+export type HeroRatio = "16:9" | "21:9" | "4:3" | "3:2" | "1:1" | "auto";
+export type HeroWidth = "full" | "gap-sm" | "gap-md" | "gap-lg";
+export type HeroPadding = "none" | "sm" | "md" | "lg";
+export type HeroAnimation = "slide" | "fade" | "zoom" | "none";
 export type GridTemplate = "mosaic" | "editorial";
 export type FooterTemplate = "minimal" | "columns";
 
@@ -91,6 +94,13 @@ export interface HeroSection {
   kicker: string;
   title: string;
   body: string;
+  widthMode?: HeroWidth;
+  paddingY?: HeroPadding;
+  paddingX?: HeroPadding;
+  borderRadius?: number;
+  animationEffect?: HeroAnimation;
+  autoplay?: boolean;
+  autoplaySpeed?: number;
 }
 
 export interface IntroSection {
@@ -311,6 +321,13 @@ export type SheetKind =
   | "navbar-links"
   | "navbar-more"
   | "hero-layout"
+  | "hero-width"
+  | "hero-background"
+  | "hero-ratio"
+  | "hero-padding"
+  | "hero-radius"
+  | "hero-animation"
+  | "hero-media"
   | "hero-photo"
   | "hero-text"
   | "intro-text"
