@@ -639,7 +639,6 @@ export function createPages(): Pages {
       sections: [
         navbar(),
         createCatalogSection("catalog"),
-        createBannerSection("shop-banner"),
         footer(),
       ],
     },

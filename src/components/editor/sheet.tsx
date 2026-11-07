@@ -643,18 +643,12 @@ function AddList() {
 
   const shopItems: AddItem[] = [
     { kind: "catalog", title: "Catalog Grid", desc: "Full product catalog with category filter & search.", badge: "CORE" },
-    { kind: "banner", title: "Promo Banner", desc: "Seasonal sale or discount offer callout." },
-    { kind: "reviews", title: "Customer Reviews", desc: "Store ratings and buyer testimonials." },
-    { kind: "newsletter", title: "Newsletter", desc: "Email capture box for new drops and VIP deals." },
   ];
 
   const productItems: AddItem[] = [
     { kind: "product", title: "Product Details", desc: "Main product view with gallery & WhatsApp checkout.", badge: "CORE" },
-    { kind: "reviews", title: "Customer Reviews", desc: "Verified buyer ratings and reviews for this product.", badge: "POPULAR" },
     { kind: "featured", title: "Related Products", desc: "You May Also Like - curated recommendations." },
     { kind: "about", title: "Trust & Guarantees", desc: "100% authentic, fast delivery & warranty guarantees." },
-    { kind: "banner", title: "Promo Banner", desc: "Limited-time bundle deal or product offer banner." },
-    { kind: "newsletter", title: "Newsletter", desc: "Email capture box for restocks and new drops." },
   ];
 
   const items = pageId === "home" ? homeItems : pageId === "shop" ? shopItems : productItems;

@@ -29,7 +29,7 @@ import type {
   Snapshot,
 } from "@/lib/editor/types";
 
-const STORAGE_KEY = "ziteo-editor-v2";
+const STORAGE_KEY = "ziteo-editor-v3";
 
 export interface SavedEditor {
   pages: Pages;
@@ -864,8 +864,8 @@ export const useEditor = create<EditorState>((set, get) => {
     hydrate: (saved) => {
       const allowedTypes: Record<PageId, Section["type"][]> = {
         home: ["navbar", "hero", "categories", "featured", "banner", "brands", "about", "block", "footer"],
-        shop: ["navbar", "catalog", "banner", "block", "footer"],
-        product: ["navbar", "product", "block", "featured", "about", "banner", "footer"],
+        shop: ["navbar", "catalog", "footer"],
+        product: ["navbar", "product", "featured", "about", "footer"],
       };
 
       const cleanPages = structuredClone(saved.pages);
@@ -875,6 +875,20 @@ export const useEditor = create<EditorState>((set, get) => {
           cleanPages[pId].sections = cleanPages[pId].sections.filter((s) => allowed.includes(s.type));
         }
       });
+
+      // Strictly ensure shop page has only catalog grid (+ navbar & footer)
+      if (cleanPages.shop && Array.isArray(cleanPages.shop.sections)) {
+        cleanPages.shop.sections = cleanPages.shop.sections.filter(
+          (s) => s.type === "navbar" || s.type === "catalog" || s.type === "footer"
+        );
+      }
+
+      // Strictly ensure product page has no reviews, no promo banner, no newsletter
+      if (cleanPages.product && Array.isArray(cleanPages.product.sections)) {
+        cleanPages.product.sections = cleanPages.product.sections.filter(
+          (s) => s.type !== "banner" && s.type !== "block"
+        );
+      }
 
       // If product page only had minimal sections, ensure it has its companion sections
       if (cleanPages.product && cleanPages.product.sections.length <= 3) {
