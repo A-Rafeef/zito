@@ -71,6 +71,7 @@ interface EditorState extends SavedEditor {
   patchProductCard: (patch: Record<string, unknown>) => void;
   setLogo: (logo: string) => void;
   moveSection: (id: string, dir: -1 | 1) => void;
+  reorderSection: (id: string, targetIndex: number) => void;
   deleteSection: (id: string) => void;
   insertBlock: (kind: BlockSection["kind"]) => void;
   insertSection: (
@@ -529,6 +530,26 @@ export const useEditor = create<EditorState>((set, get) => {
         const arr = pages[pageId].sections;
         const [item] = arr.splice(index, 1);
         if (item) arr.splice(next, 0, item);
+      });
+    },
+
+    reorderSection: (id, targetIndex) => {
+      const page = get().pages[get().pageId];
+      const index = page.sections.findIndex((sec) => sec.id === id);
+      const currentSec = page.sections[index];
+      if (!currentSec) return;
+      if (currentSec.type === "navbar" || currentSec.type === "footer") {
+        get().showToast(`${currentSec.type === "navbar" ? "Header" : "Footer"} is a fixed element.`);
+        return;
+      }
+      const hasFooter = page.sections[page.sections.length - 1]?.type === "footer";
+      const maxIndex = hasFooter ? page.sections.length - 2 : page.sections.length - 1;
+      const clampedTarget = Math.max(1, Math.min(targetIndex, maxIndex));
+      if (clampedTarget === index) return;
+      commit(({ pages, pageId }) => {
+        const arr = pages[pageId].sections;
+        const [item] = arr.splice(index, 1);
+        if (item) arr.splice(clampedTarget, 0, item);
       });
     },
 

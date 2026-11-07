@@ -1,9 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Check,
   ChevronDown,
   ChevronUp,
   Compass,
+  GripVertical,
   Image,
   Layers,
   LayoutGrid,
@@ -48,7 +49,7 @@ import type {
 import { Field, Group, PrimaryButton, TextArea, TextInput } from "@/components/editor/ui";
 
 const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
-  arrange: { title: "Arrange Sections", subtitle: "Reorder page sections up and down. Header is fixed at the top." },
+  arrange: { title: "Arrange Sections", subtitle: "Drag & drop or use arrows to reorder sections. Header is fixed at top." },
   themes: { title: "Template", subtitle: "" },
   add: { title: "Add section", subtitle: "Place it above the footer." },
   "page-color": { title: "Background", subtitle: "The canvas behind every section." },
@@ -296,6 +297,14 @@ function ArrangeSectionsSheet() {
   const selectedId = useEditor((s) => s.selectedId);
   const sections = page?.sections || [];
 
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const touchActiveId = useRef<string | null>(null);
+  const touchOverIndex = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
   const getSectionMeta = (sec: Section) => {
     switch (sec.type) {
       case "navbar":
@@ -330,13 +339,97 @@ function ArrangeSectionsSheet() {
   const hasFooter = sections.length > 0 && sections[sections.length - 1].type === "footer";
   const lastMoveableIndex = hasFooter ? sections.length - 2 : sections.length - 1;
 
+  // Touch Drag Handlers (for mobile/tablet touch screens)
+  const handleTouchStart = (secId: string, startIndex: number, e: React.TouchEvent) => {
+    e.stopPropagation();
+    touchActiveId.current = secId;
+    touchOverIndex.current = startIndex;
+    touchStartY.current = e.touches[0].clientY;
+    setDraggingId(secId);
+    setDragOverIndex(startIndex);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchActiveId.current) return;
+    e.stopPropagation();
+    const touch = e.touches[0];
+    if (!touch) return;
+    const clientY = touch.clientY;
+
+    // Scan through registered DOM elements
+    for (const [id, el] of itemRefs.current.entries()) {
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (clientY >= rect.top && clientY <= rect.bottom) {
+        const targetIdx = Number(el.getAttribute("data-index"));
+        if (!isNaN(targetIdx) && targetIdx >= 1 && targetIdx <= lastMoveableIndex) {
+          touchOverIndex.current = targetIdx;
+          setDragOverIndex(targetIdx);
+        }
+        break;
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    const activeId = touchActiveId.current;
+    const targetIdx = touchOverIndex.current;
+    if (activeId && targetIdx !== null && targetIdx >= 1 && targetIdx <= lastMoveableIndex) {
+      useEditor.getState().reorderSection(activeId, targetIdx);
+    }
+    touchActiveId.current = null;
+    touchOverIndex.current = null;
+    touchStartY.current = null;
+    setDraggingId(null);
+    setDragOverIndex(null);
+  };
+
+  const handleTouchCancel = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    touchActiveId.current = null;
+    touchOverIndex.current = null;
+    touchStartY.current = null;
+    setDraggingId(null);
+    setDragOverIndex(null);
+  };
+
+  // HTML5 Drag & Drop (for desktop mouse)
+  const handleDragStart = (secId: string, e: React.DragEvent) => {
+    e.dataTransfer.setData("text/plain", secId);
+    e.dataTransfer.effectAllowed = "move";
+    setDraggingId(secId);
+  };
+
+  const handleDragOver = (idx: number, isFixed: boolean, e: React.DragEvent) => {
+    e.preventDefault();
+    if (isFixed || idx < 1 || idx > lastMoveableIndex) return;
+    e.dataTransfer.dropEffect = "move";
+    setDragOverIndex(idx);
+  };
+
+  const handleDrop = (targetIdx: number, isFixed: boolean, e: React.DragEvent) => {
+    e.preventDefault();
+    const srcId = e.dataTransfer.getData("text/plain") || draggingId;
+    if (srcId && !isFixed && targetIdx >= 1 && targetIdx <= lastMoveableIndex) {
+      useEditor.getState().reorderSection(srcId, targetIdx);
+    }
+    setDraggingId(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Information Header Pill */}
       <div className="flex items-center gap-2 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/80 dark:bg-purple-950/40 p-3 text-xs text-purple-900 dark:text-purple-200 shadow-2xs">
         <Pin className="size-4 text-purple-600 shrink-0" />
         <span className="leading-snug">
-          <strong>Header is fixed</strong> at the top. Use the up and down arrows to arrange other sections.
+          <strong>Header is fixed</strong> at the top. Drag the handle (⋮⋮) or use the up/down arrows to arrange sections.
         </span>
       </div>
 
@@ -351,30 +444,70 @@ function ArrangeSectionsSheet() {
           const canMoveUp = !isFixed && index > 1;
           const canMoveDown = !isFixed && index < lastMoveableIndex;
           const isSelected = selectedId === sec.id;
+          const isBeingDragged = draggingId === sec.id;
+          const isDropTarget = !isFixed && dragOverIndex === index && draggingId !== null && draggingId !== sec.id;
 
           return (
             <div
               key={sec.id}
+              ref={(el) => {
+                if (el) itemRefs.current.set(sec.id, el);
+                else itemRefs.current.delete(sec.id);
+              }}
+              data-index={index}
+              data-arrange-item={sec.id}
+              draggable={!isFixed}
+              onDragStart={(e) => !isFixed && handleDragStart(sec.id, e)}
+              onDragOver={(e) => handleDragOver(index, isFixed, e)}
+              onDrop={(e) => handleDrop(index, isFixed, e)}
+              onDragEnd={handleDragEnd}
               onClick={() => {
-                if (!isFixed) {
+                if (!isFixed && !draggingId) {
                   useEditor.getState().select(sec.id);
                 }
               }}
               className={cn(
-                "group flex items-center justify-between gap-3 rounded-2xl border p-3.5 transition-all select-none",
-                isHeader
-                  ? "border-purple-300 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/30 shadow-2xs"
-                  : isFooter
-                    ? "border-slate-300/80 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40"
-                    : isSelected
-                      ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/50 shadow-xs ring-1 ring-purple-500"
-                      : "border-line-soft bg-surface hover:border-slate-300 dark:hover:border-slate-700 hover:bg-fill/40 shadow-2xs cursor-pointer"
+                "group relative flex items-center justify-between gap-2.5 rounded-2xl border p-3 sm:p-3.5 transition-all select-none",
+                isBeingDragged
+                  ? "opacity-50 scale-[0.98] border-purple-500 bg-purple-50/70 dark:bg-purple-950/70 shadow-md ring-2 ring-purple-500/50"
+                  : isDropTarget
+                    ? "border-purple-600 bg-purple-100/60 dark:bg-purple-900/50 shadow-md ring-2 ring-purple-500"
+                    : isHeader
+                      ? "border-purple-300 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/30 shadow-2xs"
+                      : isFooter
+                        ? "border-slate-300/80 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40"
+                        : isSelected
+                          ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/50 shadow-xs ring-1 ring-purple-500"
+                          : "border-line-soft bg-surface hover:border-slate-300 dark:hover:border-slate-700 hover:bg-fill/40 shadow-2xs"
               )}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              {/* Left Side: Drag Handle + Index Badge + Icon + Label */}
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                {/* Drag Handle or Fixed Pin */}
+                {!isFixed ? (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    title="Drag to reorder"
+                    aria-label={`Drag ${meta.label} to reorder`}
+                    onTouchStart={(e) => handleTouchStart(sec.id, index, e)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchCancel={handleTouchCancel}
+                    className="tap-smooth flex size-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-100/80 dark:hover:bg-purple-900/60 cursor-grab active:cursor-grabbing touch-none select-none transition-colors"
+                  >
+                    <GripVertical className="size-4.5" />
+                  </div>
+                ) : (
+                  <div className="flex size-8 shrink-0 items-center justify-center text-slate-300 dark:text-slate-600">
+                    <Pin className="size-3.5" />
+                  </div>
+                )}
+
+                {/* Index Pill */}
                 <span
                   className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
+                    "flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
                     isHeader
                       ? "bg-purple-600 text-white"
                       : isFooter
@@ -385,27 +518,29 @@ function ArrangeSectionsSheet() {
                   {index + 1}
                 </span>
 
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  <Icon className="size-4.5" />
+                {/* Section Icon */}
+                <div className="flex size-8 sm:size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  <Icon className="size-4 sm:size-4.5" />
                 </div>
 
-                <div className="min-w-0">
+                {/* Label & Description */}
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-semibold text-ink truncate">{meta.label}</h4>
+                    <h4 className="text-xs sm:text-sm font-semibold text-ink truncate">{meta.label}</h4>
                   </div>
-                  <p className="text-xs text-muted truncate">{meta.desc}</p>
+                  <p className="text-[11px] sm:text-xs text-muted truncate">{meta.desc}</p>
                 </div>
               </div>
 
-              {/* Action Controls */}
+              {/* Right Side: Fixed Badges or Move Buttons */}
               <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                 {isHeader ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 dark:border-purple-800 bg-purple-100/70 dark:bg-purple-900/60 px-2.5 py-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider shadow-2xs">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 dark:border-purple-800 bg-purple-100/70 dark:bg-purple-900/60 px-2 sm:px-2.5 py-1 text-[9px] sm:text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider shadow-2xs">
                     <Pin className="size-3" />
                     <span>Fixed Top</span>
                   </span>
                 ) : isFooter ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-200/70 dark:bg-slate-800 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider shadow-2xs">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-200/70 dark:bg-slate-800 px-2 sm:px-2.5 py-1 text-[9px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider shadow-2xs">
                     <Pin className="size-3" />
                     <span>Fixed Bottom</span>
                   </span>
@@ -418,7 +553,7 @@ function ArrangeSectionsSheet() {
                       title="Move section up"
                       aria-label={`Move ${meta.label} up`}
                       className={cn(
-                        "tap-smooth flex size-8 items-center justify-center rounded-lg border transition-all",
+                        "tap-smooth flex size-7 sm:size-8 items-center justify-center rounded-lg border transition-all",
                         !canMoveUp
                           ? "border-transparent text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-30"
                           : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 shadow-2xs cursor-pointer active:scale-90"
@@ -434,7 +569,7 @@ function ArrangeSectionsSheet() {
                       title="Move section down"
                       aria-label={`Move ${meta.label} down`}
                       className={cn(
-                        "tap-smooth flex size-8 items-center justify-center rounded-lg border transition-all",
+                        "tap-smooth flex size-7 sm:size-8 items-center justify-center rounded-lg border transition-all",
                         !canMoveDown
                           ? "border-transparent text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-30"
                           : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 shadow-2xs cursor-pointer active:scale-90"
