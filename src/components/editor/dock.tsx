@@ -24,11 +24,12 @@ import { cn } from "@/lib/cn";
 import type { SheetKind } from "@/lib/editor/types";
 
 export function Dock() {
+  const selectedId = useEditor((s) => s.selectedId);
   const section = useEditor((s) => selectedSection(s));
 
   const items = (() => {
     const open = (sheet: SheetKind) => () => useEditor.getState().openSheet(sheet);
-    if (!section) {
+    if (!selectedId || !section) {
       return [
         { id: "themes", label: "Template", icon: LayoutTemplate, action: open("themes") },
         { id: "add", label: "Add", icon: PlusCircle, action: open("add") },
@@ -39,6 +40,14 @@ export function Dock() {
           icon: Eye,
           action: () => useEditor.getState().togglePreview(),
         },
+      ];
+    }
+    if (selectedId === "product-card") {
+      return [
+        { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
+        { id: "elements", label: "Elements", icon: Tag, action: open("product-card-badges") },
+        { id: "color", label: "Colors", icon: Palette, action: open("product-card-color") },
+        { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, action: open("product-card-cta") },
       ];
     }
     switch (section.type) {

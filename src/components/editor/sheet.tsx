@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Check,
   ChevronDown,
@@ -1668,6 +1668,10 @@ function ProductCardCta() {
   const rawNumber =
     (section && "whatsappNumber" in section && section.whatsappNumber) || "919876543210";
   const [phone, setPhone] = useState(rawNumber);
+
+  useEffect(() => {
+    setPhone(rawNumber);
+  }, [rawNumber]);
 
   return (
     <div className="flex flex-col gap-5">

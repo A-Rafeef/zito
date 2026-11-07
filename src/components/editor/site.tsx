@@ -1095,13 +1095,13 @@ function CatalogView({
         rating: `${item.rating} · ${item.reviews} reviews`,
       });
     } else {
-      useEditor.getState().select(sec.id);
+      useEditor.getState().select("product-card");
     }
   };
 
   const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof items)[number]) => {
     if (!preview) {
-      useEditor.getState().select(sec.id);
+      useEditor.getState().select("product-card");
       return;
     }
     event.stopPropagation();
@@ -1723,13 +1723,13 @@ function FeaturedView({
         img: item.image,
       });
     } else {
-      useEditor.getState().select(sec.id);
+      useEditor.getState().select("product-card");
     }
   };
 
   const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof sec.items)[number]) => {
     if (!preview) {
-      useEditor.getState().select(sec.id);
+      useEditor.getState().select("product-card");
       return;
     }
     event.stopPropagation();

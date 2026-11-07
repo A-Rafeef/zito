@@ -832,25 +832,12 @@ export function selectedSection(state: Pick<EditorState, "pages" | "pageId" | "s
   if (!state.selectedId) return null;
   if (state.selectedId === "product-card") {
     const curPage = state.pages[state.pageId];
-    const sec =
-      curPage.sections.find((s) => s.type === "catalog" || s.type === "featured") ||
-      state.pages.shop.sections.find((s) => s.type === "catalog") ||
-      state.pages.home.sections.find((s) => s.type === "featured");
-    return {
-      id: "product-card",
-      type: "product-card",
-      name: "Product Card",
-      imageRatio: (sec && "imageRatio" in sec && sec.imageRatio) || "1:1",
-      borderRadius: (sec && "borderRadius" in sec && sec.borderRadius) ?? 16,
-      typography: (sec && "typography" in sec && sec.typography) || "base",
-      showBadge: sec && "showBadge" in sec ? sec.showBadge !== false : true,
-      showRating: sec && "showRating" in sec ? sec.showRating !== false : true,
-      showPrice: sec && "showPrice" in sec ? sec.showPrice !== false : true,
-      showButton: sec && "showButton" in sec ? sec.showButton !== false : true,
-      whatsappNumber: (sec && "whatsappNumber" in sec && sec.whatsappNumber) || "919876543210",
-      priceColor: (sec && "priceColor" in sec && sec.priceColor) || "#059669",
-      buttonColor: (sec && "buttonColor" in sec && sec.buttonColor) || "#25D366",
-    } as unknown as Section;
+    return (
+      curPage.sections.find((s) => s.type === "catalog" || s.type === "featured" || s.type === "grid") ??
+      state.pages.shop.sections.find((s) => s.type === "catalog") ??
+      state.pages.home.sections.find((s) => s.type === "featured" || s.type === "grid") ??
+      null
+    );
   }
   return state.pages[state.pageId].sections.find((sec) => sec.id === state.selectedId) ?? null;
 }
