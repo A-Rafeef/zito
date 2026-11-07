@@ -73,7 +73,7 @@ export function Editor() {
           if (!useEditor.getState().preview) useEditor.getState().deselect();
         }}
       >
-        <div className="flex h-full min-h-full justify-center px-3 py-3">
+        <div className="flex h-full min-h-full justify-center px-1 sm:px-3 py-1 sm:py-3">
           <div
             className={cn("h-full shrink-0 device-frame", frame)}
             style={

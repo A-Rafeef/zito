@@ -2385,29 +2385,30 @@ function ProductCardStudio({ device }: { device: Device }) {
       }
     >
       {/* Studio Top Control Bar */}
-      <div className="z-20 flex items-center justify-between border-b border-black/5 dark:border-white/10 px-4 py-3 backdrop-blur-md bg-white/75 dark:bg-slate-900/75 shrink-0">
+      <div className="z-20 flex items-center justify-between gap-1.5 sm:gap-2 border-b border-black/5 dark:border-white/10 px-2.5 sm:px-4 py-2 sm:py-2.5 backdrop-blur-md bg-white/85 dark:bg-slate-900/85 shrink-0">
         <button
           type="button"
           onClick={() => useEditor.getState().deselect()}
-          className="tap-smooth inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
+          className="tap-smooth inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95"
         >
           <ArrowLeft className="size-3.5" />
-          <span>Back to Store</span>
+          <span className="hidden sm:inline">Back to Store</span>
+          <span className="sm:hidden">Back</span>
         </button>
 
-        <div className="flex items-center gap-2 rounded-full border border-purple-200/60 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/50 px-3 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 shadow-2xs">
-          <span className="size-2 rounded-full bg-purple-500 animate-pulse" />
-          <span>Product Card Studio</span>
+        <div className="flex items-center gap-1.5 rounded-full border border-purple-200/60 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/50 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 dark:text-purple-300 shadow-2xs shrink-0 whitespace-nowrap">
+          <span className="size-1.5 sm:size-2 rounded-full bg-purple-500 animate-pulse" />
+          <span>Card Studio</span>
         </div>
 
         {/* Backdrop switch */}
-        <div className="flex items-center gap-1 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 p-0.5 shadow-2xs text-[11px] font-medium">
+        <div className="flex items-center gap-0.5 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 p-0.5 shadow-2xs text-[10px] sm:text-[11px] font-medium shrink-0">
           <button
             type="button"
             onClick={() => setBackdrop("pattern")}
             className={cn(
-              "rounded-full px-2 py-0.5 transition-all cursor-pointer",
-              backdrop === "pattern" ? "bg-purple-600 text-white shadow-2xs" : "text-muted hover:text-ink"
+              "rounded-full px-2 py-0.5 transition-all cursor-pointer whitespace-nowrap",
+              backdrop === "pattern" ? "bg-purple-600 text-white shadow-2xs font-semibold" : "text-muted hover:text-ink"
             )}
           >
             Grid
@@ -2416,8 +2417,8 @@ function ProductCardStudio({ device }: { device: Device }) {
             type="button"
             onClick={() => setBackdrop("light")}
             className={cn(
-              "rounded-full px-2 py-0.5 transition-all cursor-pointer",
-              backdrop === "light" ? "bg-purple-600 text-white shadow-2xs" : "text-muted hover:text-ink"
+              "rounded-full px-2 py-0.5 transition-all cursor-pointer whitespace-nowrap",
+              backdrop === "light" ? "bg-purple-600 text-white shadow-2xs font-semibold" : "text-muted hover:text-ink"
             )}
           >
             Light
@@ -2426,8 +2427,8 @@ function ProductCardStudio({ device }: { device: Device }) {
             type="button"
             onClick={() => setBackdrop("dark")}
             className={cn(
-              "rounded-full px-2 py-0.5 transition-all cursor-pointer",
-              backdrop === "dark" ? "bg-purple-600 text-white shadow-2xs" : "text-muted hover:text-ink"
+              "rounded-full px-2 py-0.5 transition-all cursor-pointer whitespace-nowrap",
+              backdrop === "dark" ? "bg-purple-600 text-white shadow-2xs font-semibold" : "text-muted hover:text-ink"
             )}
           >
             Dark
@@ -2436,11 +2437,10 @@ function ProductCardStudio({ device }: { device: Device }) {
       </div>
 
       {/* Main Studio Card Canvas */}
-      <div className="relative flex flex-1 flex-col items-center justify-center p-6 sm:p-10 overflow-y-auto min-h-0">
+      <div className="relative flex flex-1 flex-col items-center justify-start sm:justify-center px-4 sm:px-8 pt-4 sm:pt-8 pb-32 sm:pb-36 overflow-y-auto min-h-0 no-scrollbar overscroll-contain">
         <div
           className={cn(
-            "transition-all duration-300",
-            device === "mobile" ? "w-[270px]" : device === "tablet" ? "w-[300px]" : "w-[330px]"
+            "w-full max-w-[270px] sm:max-w-[310px] md:max-w-[330px] transition-all duration-300",
           )}
         >
           <StoreProductCard
@@ -2475,9 +2475,9 @@ function ProductCardStudio({ device }: { device: Device }) {
           />
         </div>
 
-        <div className="mt-8 flex items-center gap-2 rounded-full border border-slate-300/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 px-3.5 py-1.5 text-xs text-muted shadow-xs">
+        <div className="mt-5 sm:mt-7 flex items-center gap-1.5 sm:gap-2 rounded-full border border-slate-300/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 px-3 py-1.5 text-[11px] sm:text-xs text-muted shadow-xs max-w-full text-center">
           <Check className="size-3.5 text-emerald-500 shrink-0" />
-          <span>Customizations reflect on all product cards across your store.</span>
+          <span className="truncate">Syncs automatically to all store pages</span>
         </div>
       </div>
     </div>
@@ -2494,7 +2494,7 @@ export function SiteFrame({ className }: { className?: string }) {
     return (
       <div
         className={cn(
-          "relative h-full overflow-hidden rounded-4xl border border-line-soft bg-surface shadow-frame transition-[background-color] duration-300",
+          "relative h-full overflow-hidden rounded-2xl sm:rounded-4xl border border-line-soft bg-surface shadow-frame transition-[background-color] duration-300",
           className,
         )}
       >
@@ -2506,7 +2506,7 @@ export function SiteFrame({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative h-full overflow-hidden rounded-4xl border border-line-soft bg-surface shadow-frame transition-[background-color] duration-300",
+        "relative h-full overflow-hidden rounded-2xl sm:rounded-4xl border border-line-soft bg-surface shadow-frame transition-[background-color] duration-300",
         className,
       )}
       style={{ background: page.background }}

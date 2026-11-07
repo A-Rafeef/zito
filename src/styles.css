@@ -38,8 +38,13 @@
   flex-shrink: 0;
 }
 
-@utility sheet-max {
-  max-height: min(40rem, 85dvh);
+.sheet-max {
+  max-height: min(34rem, 70dvh);
+}
+@media (min-width: 640px) {
+  .sheet-max {
+    max-height: min(40rem, 85dvh);
+  }
 }
 
 @utility z-toast {
