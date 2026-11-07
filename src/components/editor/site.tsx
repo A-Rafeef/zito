@@ -19,6 +19,8 @@ import type {
   NavbarLink,
   NavbarSection,
   PageId,
+  ProductImageRatio,
+  ProductTypography,
   Section,
 } from "@/lib/editor/types";
 import { cn } from "@/lib/cn";
@@ -72,6 +74,8 @@ function priceNumber(price: string) {
 
 function SelectionChip({ id }: { id: string }) {
   const sections = useEditor((s) => s.pages[s.pageId].sections);
+  const selectedId = useEditor((s) => s.selectedId);
+  const isGlobalCard = selectedId === "product-card";
   const index = sections.findIndex((sec) => sec.id === id);
   const sec = sections[index];
   const [placement, setPlacement] = useState<"below" | "above">(
@@ -114,14 +118,16 @@ function SelectionChip({ id }: { id: string }) {
 
   if (!sec) return null;
 
-  const isFixed = sec.type === "navbar" || sec.type === "footer";
+  const isFixed = isGlobalCard || sec.type === "navbar" || sec.type === "footer";
 
   const displayName =
-    sec.type === "navbar"
-      ? "Header"
-      : sec.type === "footer"
-        ? "Footer"
-        : sec.name || sec.type;
+    isGlobalCard
+      ? "Product Card"
+      : sec.type === "navbar"
+        ? "Header"
+        : sec.type === "footer"
+          ? "Footer"
+          : sec.name || sec.type;
 
   const positionClass =
     placement === "below"
@@ -227,7 +233,8 @@ function SectionShell({
   children: ReactNode;
 }) {
   const preview = useEditor((s) => s.preview);
-  const selected = useEditor((s) => !s.preview && s.selectedId === section.id);
+  const isCardSec = section.type === "catalog" || section.type === "featured" || section.type === "grid";
+  const selected = useEditor((s) => !s.preview && (s.selectedId === section.id || (s.selectedId === "product-card" && isCardSec)));
 
   return (
     <section
@@ -903,6 +910,165 @@ function GridView({
   );
 }
 
+interface StoreProductCardProps {
+  id: string;
+  title: string;
+  price: string | number;
+  image: string;
+  badge?: string;
+  rating?: string;
+  dark?: boolean;
+  imageRatio?: ProductImageRatio;
+  borderRadius?: number;
+  typography?: ProductTypography;
+  showBadge?: boolean;
+  showRating?: boolean;
+  showPrice?: boolean;
+  showButton?: boolean;
+  priceColor?: string;
+  buttonColor?: string;
+  isList?: boolean;
+  isCarousel?: boolean;
+  onCardClick: () => void;
+  onWhatsAppClick: (e: React.MouseEvent) => void;
+}
+
+function StoreProductCard({
+  title,
+  price,
+  image,
+  badge,
+  rating,
+  dark = false,
+  imageRatio = "1:1",
+  borderRadius = 16,
+  typography = "base",
+  showBadge = true,
+  showRating = true,
+  showPrice = true,
+  showButton = true,
+  priceColor = "#059669",
+  buttonColor = "#25D366",
+  isList = false,
+  isCarousel = false,
+  onCardClick,
+  onWhatsAppClick,
+}: StoreProductCardProps) {
+  const ratioClass =
+    imageRatio === "3:4"
+      ? "aspect-[3/4]"
+      : imageRatio === "16:9"
+        ? "aspect-video"
+        : "aspect-square";
+
+  const titleClass =
+    typography === "sm"
+      ? "text-xs"
+      : typography === "lg"
+        ? "text-base font-semibold"
+        : "text-sm font-medium";
+
+  const formattedPrice = typeof price === "number" ? money(price) : price;
+
+  return (
+    <article
+      className={cn(
+        "group relative transition-all",
+        isList
+          ? "flex items-center justify-between gap-4 p-3 rounded-2xl bg-fill/40 hover:bg-fill/70 border border-line-soft/60"
+          : isCarousel
+            ? "w-44 sm:w-56 shrink-0 snap-start"
+            : "w-full"
+      )}
+    >
+      <button
+        type="button"
+        className={cn(
+          "tap-smooth-sm block text-left",
+          isList ? "flex items-center gap-3.5 flex-1 min-w-0" : "w-full"
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          onCardClick();
+        }}
+      >
+        <div
+          className={cn(
+            "relative overflow-hidden bg-fill/50 transition-all",
+            isList ? "size-20 sm:size-24 shrink-0" : "w-full"
+          )}
+          style={{ borderRadius: `${borderRadius}px` }}
+        >
+          {showBadge && badge && (
+            <span className="absolute top-2 left-2 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
+              {badge}
+            </span>
+          )}
+          <img
+            src={image}
+            alt=""
+            className={cn(
+              "object-cover transition-transform duration-500 ease-out group-hover:scale-105",
+              isList ? "size-full" : cn("w-full", ratioClass)
+            )}
+          />
+        </div>
+
+        <div className={cn(isList ? "min-w-0 flex-1" : "")}>
+          <h3 className={cn("mt-2.5 transition-colors group-hover:text-accent truncate", titleClass, dark ? "text-on-ink" : "text-ink")}>
+            {title}
+          </h3>
+          {showRating && rating && (
+            <p className={cn("mt-0.5 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
+              {rating}
+            </p>
+          )}
+          {isList && showPrice && (
+            <span
+              className="mt-1 block text-sm font-semibold"
+              style={{ color: priceColor }}
+            >
+              {formattedPrice}
+            </span>
+          )}
+        </div>
+      </button>
+
+      <div className={cn(isList ? "shrink-0" : "mt-2.5 flex items-center justify-between")}>
+        {!isList && (
+          <div>
+            {showPrice ? (
+              <span
+                className="text-sm font-semibold"
+                style={{ color: priceColor }}
+              >
+                {formattedPrice}
+              </span>
+            ) : (
+              <span />
+            )}
+          </div>
+        )}
+        {showButton && (
+          <button
+            type="button"
+            title="Buy on WhatsApp"
+            aria-label={`Buy ${title} on WhatsApp`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onWhatsAppClick(e);
+            }}
+            className="tap-smooth inline-flex size-9 items-center justify-center rounded-full text-white hover:scale-105 transition-all shadow-xs"
+            style={{ backgroundColor: buttonColor }}
+          >
+            <WhatsAppIcon className="size-4 fill-white" />
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function CatalogView({
   sec,
   device,
@@ -920,20 +1086,6 @@ function CatalogView({
       ? "grid-cols-3"
       : "grid-cols-2";
 
-  const ratioClass =
-    sec.imageRatio === "3:4"
-      ? "aspect-[3/4]"
-      : sec.imageRatio === "16:9"
-        ? "aspect-video"
-        : "aspect-square";
-
-  const titleClass =
-    sec.typography === "sm"
-      ? "text-xs"
-      : sec.typography === "lg"
-        ? "text-base font-semibold"
-        : "text-sm font-medium";
-
   const openItem = (item: (typeof items)[number]) => {
     if (preview) {
       useEditor.getState().openProduct({
@@ -945,6 +1097,23 @@ function CatalogView({
     } else {
       useEditor.getState().select(sec.id);
     }
+  };
+
+  const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof items)[number]) => {
+    if (!preview) {
+      useEditor.getState().select(sec.id);
+      return;
+    }
+    event.stopPropagation();
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
+    const productUrl = `${origin}/product?name=${encodeURIComponent(item.name)}`;
+    const phone = (sec.whatsappNumber || "919876543210").replace(/[^0-9]/g, "");
+    const message =
+      `Hi! I'd like to order from Ziteo:\n\n` +
+      `📦 *Product:* ${item.name}\n` +
+      `💰 *Price:* ${money(item.price)}\n` +
+      `🔗 *Link:* ${productUrl}`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   return (
@@ -971,86 +1140,31 @@ function CatalogView({
         </div>
         <div key={sec.filter} className={cn("animate-page-enter mt-6 grid gap-x-4", isList ? "gap-y-3" : "gap-y-8", cols)}>
           {items.map((item) => (
-            <article
+            <StoreProductCard
               key={item.id}
-              className={cn(
-                "group relative transition-all",
-                isList
-                  ? "flex items-center justify-between gap-4 p-3 rounded-2xl bg-fill/40 hover:bg-fill/70 border border-line-soft/60"
-                  : ""
-              )}
-            >
-              <button
-                type="button"
-                className={cn(
-                  "tap-smooth-sm block text-left",
-                  isList ? "flex items-center gap-3.5 flex-1 min-w-0" : "w-full"
-                )}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  openItem(item);
-                }}
-              >
-                <div
-                  className={cn(
-                    "relative overflow-hidden rounded-2xl bg-fill/50",
-                    isList ? "size-20 sm:size-24 shrink-0 rounded-xl" : "w-full"
-                  )}
-                >
-                  {sec.showBadge !== false && item.badge && (
-                    <span className="absolute top-2 left-2 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-                      {item.badge}
-                    </span>
-                  )}
-                  <img
-                    src={item.img}
-                    alt=""
-                    className={cn(
-                      "object-cover transition-transform duration-500 ease-out group-hover:scale-105",
-                      isList ? "size-full" : cn("w-full", ratioClass)
-                    )}
-                  />
-                </div>
-                <div className={cn(isList ? "min-w-0 flex-1" : "")}>
-                  <h3 className={cn("mt-3 sm:mt-2 transition-colors group-hover:text-accent truncate", titleClass)}>
-                    {item.name}
-                  </h3>
-                  {sec.showRating !== false && (
-                    <p className={cn("mt-1 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
-                      {item.rating} · {item.reviews} reviews
-                    </p>
-                  )}
-                  {isList && sec.showPrice !== false && (
-                    <span className="mt-1 block text-sm font-semibold">{money(item.price)}</span>
-                  )}
-                </div>
-              </button>
-              <div className={cn(isList ? "shrink-0" : "mt-3 flex items-center justify-between")}>
-                {!isList && (
-                  <div>
-                    {sec.showPrice !== false ? (
-                      <span className="text-sm font-semibold">{money(item.price)}</span>
-                    ) : (
-                      <span />
-                    )}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  title="Buy on WhatsApp"
-                  aria-label={`Buy ${item.name} on WhatsApp`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openItem(item);
-                  }}
-                  className="tap-smooth inline-flex size-10 items-center justify-center rounded-full bg-[#25D366] text-white hover:bg-[#20bd5a] hover:scale-105 transition-all shadow-xs"
-                >
-                  <WhatsAppIcon className="size-4.5 fill-white" />
-                </button>
-              </div>
-            </article>
+              id={item.id}
+              title={item.name}
+              price={item.price}
+              image={item.img}
+              badge={item.badge}
+              rating={`${item.rating} · ${item.reviews} reviews`}
+              dark={dark}
+              imageRatio={sec.imageRatio}
+              borderRadius={sec.borderRadius ?? 16}
+              typography={sec.typography}
+              showBadge={sec.showBadge !== false}
+              showRating={sec.showRating !== false}
+              showPrice={sec.showPrice !== false}
+              showButton={sec.showButton !== false}
+              priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
+              buttonColor={sec.buttonColor || "#25D366"}
+              isList={isList}
+              onCardClick={() => openItem(item)}
+              onWhatsAppClick={(e) => buyDirectOnWhatsApp(e, item)}
+            />
           ))}
         </div>
+
         {items.length === 0 && (
           <p className={cn("py-12 text-center text-sm", dark ? "text-on-ink/70" : "text-muted")}>
             Nothing in this category.
@@ -1599,20 +1713,6 @@ function FeaturedView({
         ? "grid-cols-3"
         : "grid-cols-2";
 
-  const ratioClass =
-    sec.imageRatio === "3:4"
-      ? "aspect-[3/4]"
-      : sec.imageRatio === "16:9"
-        ? "aspect-video"
-        : "aspect-square";
-
-  const titleClass =
-    sec.typography === "sm"
-      ? "text-xs"
-      : sec.typography === "lg"
-        ? "text-base font-semibold"
-        : "text-sm font-medium";
-
   const openItem = (item: (typeof sec.items)[number]) => {
     const num = Number(item.price.replace(/[^0-9.]/g, ""));
     const price = Number.isFinite(num) && num > 0 ? num : 149;
@@ -1628,19 +1728,18 @@ function FeaturedView({
   };
 
   const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof sec.items)[number]) => {
-    if (!preview) return;
+    if (!preview) {
+      useEditor.getState().select(sec.id);
+      return;
+    }
     event.stopPropagation();
     const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
     const productUrl = `${origin}/product?name=${encodeURIComponent(item.title)}`;
     const phone = (sec.whatsappNumber || "919876543210").replace(/[^0-9]/g, "");
     const message =
-      `Hi! I'd like to order from Ziteo:
-
-` +
-      `📦 *Product:* ${item.title}
-` +
-      `💰 *Price:* ${item.price}
-` +
+      `Hi! I'd like to order from Ziteo:\n\n` +
+      `📦 *Product:* ${item.title}\n` +
+      `💰 *Price:* ${item.price}\n` +
       `🔗 *Link:* ${productUrl}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
@@ -1678,57 +1777,28 @@ function FeaturedView({
           )}
         >
           {sec.items.map((item) => (
-            <article
+            <StoreProductCard
               key={item.id}
-              className={cn(
-                "group relative transition-all",
-                isCarousel ? "w-44 sm:w-56 shrink-0 snap-start" : "w-full"
-              )}
-            >
-              <button
-                type="button"
-                className="tap-smooth-sm block w-full text-left"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openItem(item);
-                }}
-              >
-                <div className="relative overflow-hidden rounded-2xl bg-fill/50">
-                  {sec.showBadge !== false && item.badge && (
-                    <span className="absolute top-2.5 left-2.5 z-10 rounded-md bg-ink/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-on-ink uppercase backdrop-blur-xs shadow-xs">
-                      {item.badge}
-                    </span>
-                  )}
-                  <img
-                    src={item.image}
-                    alt=""
-                    className={cn(
-                      "w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105",
-                      ratioClass
-                    )}
-                  />
-                </div>
-                <h3 className={cn("mt-3 truncate transition-colors group-hover:text-accent", titleClass)}>
-                  {item.title}
-                </h3>
-              </button>
-              <div className="mt-2 flex items-center justify-between">
-                <div>
-                  {sec.showPrice !== false ? (
-                    <span className="text-sm font-semibold">{item.price}</span>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  title="Buy on WhatsApp"
-                  aria-label={`Buy ${item.title} on WhatsApp`}
-                  onClick={(e) => buyDirectOnWhatsApp(e, item)}
-                  className="tap-smooth inline-flex size-9 items-center justify-center rounded-full bg-[#25D366] text-white hover:bg-[#20bd5a] hover:scale-105 transition-all shadow-xs"
-                >
-                  <WhatsAppIcon className="size-4 fill-white" />
-                </button>
-              </div>
-            </article>
+              id={item.id}
+              title={item.title}
+              price={item.price}
+              image={item.image}
+              badge={item.badge}
+              rating={sec.showRating !== false ? "4.9 · 128 reviews" : undefined}
+              dark={dark}
+              imageRatio={sec.imageRatio}
+              borderRadius={sec.borderRadius ?? 16}
+              typography={sec.typography}
+              showBadge={sec.showBadge !== false}
+              showRating={sec.showRating !== false}
+              showPrice={sec.showPrice !== false}
+              showButton={sec.showButton !== false}
+              priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
+              buttonColor={sec.buttonColor || "#25D366"}
+              isCarousel={isCarousel}
+              onCardClick={() => openItem(item)}
+              onWhatsAppClick={(e) => buyDirectOnWhatsApp(e, item)}
+            />
           ))}
         </div>
       </div>
@@ -2069,6 +2139,8 @@ function renderSection(sec: Section, device: Device) {
       return <FooterView key={sec.id} sec={sec} device={device} />;
     case "block":
       return <BlockView key={sec.id} sec={sec} device={device} />;
+    case "product-card":
+      return null;
     default: {
       const never: never = sec;
       return never;

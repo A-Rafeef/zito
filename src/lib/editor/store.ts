@@ -68,6 +68,7 @@ interface EditorState extends SavedEditor {
   undo: () => void;
   redo: () => void;
   patchSelected: (patch: Record<string, unknown>) => void;
+  patchProductCard: (patch: Record<string, unknown>) => void;
   setLogo: (logo: string) => void;
   moveSection: (id: string, dir: -1 | 1) => void;
   deleteSection: (id: string) => void;
@@ -238,6 +239,19 @@ export const useEditor = create<EditorState>((set, get) => {
       const id = get().selectedId;
       if (!id) return;
       commit(({ pages, pageId }) => {
+        // GLOBAL PRODUCT CARD (from Global Elements)
+        if (id === "product-card") {
+          (Object.keys(pages) as PageId[]).forEach((pId) => {
+            pages[pId].sections = pages[pId].sections.map((sec) => {
+              if (sec.type === "catalog" || sec.type === "featured" || sec.type === "grid") {
+                return { ...sec, ...patch } as Section;
+              }
+              return sec;
+            });
+          });
+          return;
+        }
+
         const curPage = pages[pageId];
         const currentSec = curPage.sections.find((sec) => sec.id === id);
         if (!currentSec) return;
@@ -269,7 +283,43 @@ export const useEditor = create<EditorState>((set, get) => {
         }
 
         // 3. GLOBAL PRODUCT CARD / PRODUCTS
-        if (currentSec.type === "catalog" || currentSec.type === "grid" || currentSec.type === "product") {
+        if (
+          currentSec.type === "catalog" ||
+          currentSec.type === "featured" ||
+          currentSec.type === "grid" ||
+          currentSec.type === "product"
+        ) {
+          // Sync card appearance across all product cards
+          const cardStyleKeys = [
+            "imageRatio",
+            "borderRadius",
+            "typography",
+            "showBadge",
+            "showRating",
+            "showPrice",
+            "showButton",
+            "whatsappNumber",
+            "priceColor",
+            "buttonColor",
+          ];
+          const hasCardStylePatch = cardStyleKeys.some((k) => k in patch);
+          if (
+            hasCardStylePatch &&
+            (currentSec.type === "catalog" || currentSec.type === "featured" || currentSec.type === "grid")
+          ) {
+            const cardPatch: Record<string, unknown> = {};
+            cardStyleKeys.forEach((k) => {
+              if (k in patch) cardPatch[k] = patch[k];
+            });
+            (Object.keys(pages) as PageId[]).forEach((pId) => {
+              pages[pId].sections = pages[pId].sections.map((sec) => {
+                if (sec.type === "catalog" || sec.type === "featured" || sec.type === "grid") {
+                  return { ...sec, ...cardPatch } as Section;
+                }
+                return sec;
+              });
+            });
+          }
           // A) If template is being changed
           if (patch.template) {
             const tmpl = patch.template as string;
@@ -409,6 +459,19 @@ export const useEditor = create<EditorState>((set, get) => {
         curPage.sections = curPage.sections.map((sec) =>
           sec.id === id ? ({ ...sec, ...patch } as Section) : sec,
         );
+      });
+    },
+
+    patchProductCard: (patch) => {
+      commit(({ pages }) => {
+        (Object.keys(pages) as PageId[]).forEach((pId) => {
+          pages[pId].sections = pages[pId].sections.map((sec) => {
+            if (sec.type === "catalog" || sec.type === "featured" || sec.type === "grid") {
+              return { ...sec, ...patch } as Section;
+            }
+            return sec;
+          });
+        });
       });
     },
 
@@ -767,6 +830,28 @@ export const useEditor = create<EditorState>((set, get) => {
 
 export function selectedSection(state: Pick<EditorState, "pages" | "pageId" | "selectedId">) {
   if (!state.selectedId) return null;
+  if (state.selectedId === "product-card") {
+    const curPage = state.pages[state.pageId];
+    const sec =
+      curPage.sections.find((s) => s.type === "catalog" || s.type === "featured") ||
+      state.pages.shop.sections.find((s) => s.type === "catalog") ||
+      state.pages.home.sections.find((s) => s.type === "featured");
+    return {
+      id: "product-card",
+      type: "product-card",
+      name: "Product Card",
+      imageRatio: (sec && "imageRatio" in sec && sec.imageRatio) || "1:1",
+      borderRadius: (sec && "borderRadius" in sec && sec.borderRadius) ?? 16,
+      typography: (sec && "typography" in sec && sec.typography) || "base",
+      showBadge: sec && "showBadge" in sec ? sec.showBadge !== false : true,
+      showRating: sec && "showRating" in sec ? sec.showRating !== false : true,
+      showPrice: sec && "showPrice" in sec ? sec.showPrice !== false : true,
+      showButton: sec && "showButton" in sec ? sec.showButton !== false : true,
+      whatsappNumber: (sec && "whatsappNumber" in sec && sec.whatsappNumber) || "919876543210",
+      priceColor: (sec && "priceColor" in sec && sec.priceColor) || "#059669",
+      buttonColor: (sec && "buttonColor" in sec && sec.buttonColor) || "#25D366",
+    } as unknown as Section;
+  }
   return state.pages[state.pageId].sections.find((sec) => sec.id === state.selectedId) ?? null;
 }
 

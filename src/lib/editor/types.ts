@@ -137,11 +137,15 @@ export interface FeaturedSection {
   background: string;
   template: "grid" | "carousel";
   imageRatio?: ProductImageRatio;
+  borderRadius?: number;
   typography?: ProductTypography;
   showBadge?: boolean;
   showRating?: boolean;
   showPrice?: boolean;
+  showButton?: boolean;
   whatsappNumber?: string;
+  priceColor?: string;
+  buttonColor?: string;
   items: GridItem[];
 }
 
@@ -226,11 +230,15 @@ export interface CatalogSection {
   products: Product[];
   template?: "grid" | "list";
   imageRatio?: ProductImageRatio;
+  borderRadius?: number;
   typography?: ProductTypography;
   showBadge?: boolean;
   showRating?: boolean;
   showPrice?: boolean;
+  showButton?: boolean;
   whatsappNumber?: string;
+  priceColor?: string;
+  buttonColor?: string;
 }
 
 export interface ProductSection {
@@ -293,6 +301,22 @@ export interface BlockSection {
   template?: "card" | "minimal";
 }
 
+export interface ProductCardSection {
+  id: "product-card";
+  type: "product-card";
+  name: "Product Card";
+  imageRatio?: ProductImageRatio;
+  borderRadius?: number;
+  typography?: ProductTypography;
+  showBadge?: boolean;
+  showRating?: boolean;
+  showPrice?: boolean;
+  showButton?: boolean;
+  whatsappNumber?: string;
+  priceColor?: string;
+  buttonColor?: string;
+}
+
 export type Section =
   | NavbarSection
   | HeroSection
@@ -306,7 +330,8 @@ export type Section =
   | CatalogSection
   | ProductSection
   | FooterSection
-  | BlockSection;
+  | BlockSection
+  | ProductCardSection;
 
 export interface PageModel {
   id: PageId;
@@ -363,6 +388,8 @@ export type SheetKind =
   | "block-template"
   | "product-card-style"
   | "product-card-badges"
+  | "product-card-color"
+  | "product-card-cta"
   | "categories-template"
   | "brands-template"
   | "banner-template"

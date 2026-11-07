@@ -143,15 +143,15 @@ export function TopBar() {
     setPageOpen(false);
     if (useEditor.getState().preview) useEditor.getState().togglePreview(false);
     const state = useEditor.getState();
-    const secId =
-      state.pageId === "home" ? "grid" :
-      state.pageId === "product" ? "product-view" :
-      "catalog";
-    state.select(secId);
-    setTimeout(() => {
-      const el = document.querySelector(`[data-section-id="${secId}"]`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 60);
+    state.select("product-card");
+    const curSections = state.pages[state.pageId].sections;
+    const targetSec = curSections.find((s) => s.type === "featured" || s.type === "catalog" || s.type === "grid");
+    if (targetSec) {
+      setTimeout(() => {
+        const el = document.querySelector(`[data-section-id="${targetSec.id}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 60);
+    }
   };
 
   return (
@@ -248,7 +248,7 @@ export function TopBar() {
                   id: "product-card",
                   label: "Product card",
                   icon: Component,
-                  active: selectedId === "catalog" || selectedId === "product-view" || selectedId === "grid",
+                  active: selectedId === "product-card",
                   action: selectProductCard,
                 },
                 {

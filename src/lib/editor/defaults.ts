@@ -186,11 +186,15 @@ export function createFeaturedSection(): FeaturedSection {
     background: "#ffffff",
     template: "grid",
     imageRatio: "1:1",
+    borderRadius: 16,
     typography: "base",
     showBadge: true,
     showRating: true,
     showPrice: true,
+    showButton: true,
     whatsappNumber: "919876543210",
+    priceColor: "#059669",
+    buttonColor: "#25D366",
     items: [
       {
         id: "p1",
@@ -345,11 +349,15 @@ export function createCatalogSection(): CatalogSection {
     background: "#ffffff",
     template: "grid",
     imageRatio: "1:1",
+    borderRadius: 16,
     typography: "base",
     showBadge: true,
     showRating: true,
     showPrice: true,
+    showButton: true,
     whatsappNumber: "919876543210",
+    priceColor: "#059669",
+    buttonColor: "#25D366",
     products,
   };
 }
@@ -534,6 +542,8 @@ export function paintTheme(page: PageModel, theme: "light" | "ink"): PageModel {
         return { ...sec, background: soft, text: muted, template: dark ? "columns" : "minimal" };
       case "block":
         return { ...sec, background: bg, text };
+      case "product-card":
+        return sec;
       default: {
         const never: never = sec;
         return never;

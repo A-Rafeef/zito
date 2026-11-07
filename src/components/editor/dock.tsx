@@ -76,11 +76,18 @@ export function Dock() {
           { id: "badges", label: "Badges", icon: Tag, action: open("product-card-badges") },
           { id: "color", label: "Color", icon: Palette, action: open("section-color") },
         ];
+      case "product-card":
+        return [
+          { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
+          { id: "elements", label: "Elements", icon: Tag, action: open("product-card-badges") },
+          { id: "color", label: "Colors", icon: Palette, action: open("product-card-color") },
+          { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, action: open("product-card-cta") },
+        ];
       case "featured":
         return [
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("featured-template") },
-          { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
-          { id: "badges", label: "WhatsApp", icon: MessageCircle, action: open("product-card-badges") },
+          { id: "style", label: "Card Style", icon: SlidersHorizontal, action: open("product-card-style") },
+          { id: "badges", label: "Elements", icon: Tag, action: open("product-card-badges") },
           { id: "color", label: "Color", icon: Palette, action: open("section-color") },
         ];
       case "categories":

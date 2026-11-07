@@ -78,8 +78,10 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "block-template": { title: "Template", subtitle: "" },
   "block-text": { title: "Section", subtitle: "Edit the words." },
   "section-color": { title: "Color", subtitle: "Background of this section." },
-  "product-card-style": { title: "Card Style", subtitle: "" },
-  "product-card-badges": { title: "Badges & WhatsApp", subtitle: "" },
+  "product-card-style": { title: "Card Style", subtitle: "Image aspect ratio, corner curve & typography." },
+  "product-card-badges": { title: "Card Elements", subtitle: "Toggle badges, ratings, prices & WhatsApp button." },
+  "product-card-color": { title: "Card Colors", subtitle: "Price color and WhatsApp button styling." },
+  "product-card-cta": { title: "WhatsApp Direct Buy", subtitle: "Phone number and direct WhatsApp ordering." },
   "categories-template": { title: "Template", subtitle: "" },
   "brands-template": { title: "Template", subtitle: "" },
   "banner-template": { title: "Template", subtitle: "" },
@@ -202,6 +204,10 @@ function SheetBody({ kind }: { kind: SheetKind }) {
       return <ProductCardStyle />;
     case "product-card-badges":
       return <ProductCardBadges />;
+    case "product-card-color":
+      return <ProductCardColor />;
+    case "product-card-cta":
+      return <ProductCardCta />;
     case "categories-template":
       return section?.type === "categories" ? <CategoriesTemplate current={section.template} /> : null;
     case "brands-template":
@@ -1306,6 +1312,7 @@ function ProductCardStyle() {
   const section = useEditor((s) => selectedSection(s));
   const imageRatio = (section && "imageRatio" in section && section.imageRatio) || "1:1";
   const typography = (section && "typography" in section && section.typography) || "base";
+  const borderRadius = (section && "borderRadius" in section && section.borderRadius !== undefined) ? section.borderRadius : 16;
 
   const ratios: { id: ProductImageRatio; label: string; aspect: string }[] = [
     { id: "1:1", label: "1:1 Square", aspect: "aspect-square" },
@@ -1319,8 +1326,58 @@ function ProductCardStyle() {
     { id: "lg", label: "Editorial", sample: "text-base font-semibold" },
   ];
 
+  const radiusPresets = [
+    { label: "Sharp", value: 0 },
+    { label: "Subtle", value: 8 },
+    { label: "Rounded", value: 16 },
+    { label: "Curved", value: 24 },
+    { label: "Extra", value: 32 },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Corner Curve */}
+      <div>
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-xs font-semibold tracking-wider text-muted uppercase">Corner Radius</p>
+          <span className="text-xs font-semibold tabular-nums text-slate-700">{borderRadius}px</span>
+        </div>
+        <div className="grid grid-cols-5 gap-1.5 mb-3">
+          {radiusPresets.map((preset) => {
+            const active = borderRadius === preset.value;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ borderRadius: preset.value })}
+                className={cn(
+                  "tap-smooth flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-all",
+                  active
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <div
+                  className="size-6 border-2 border-slate-400 bg-slate-200/60"
+                  style={{ borderRadius: `${preset.value / 2}px` }}
+                />
+                <span className="text-[10px] font-medium text-ink">{preset.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="32"
+          step="2"
+          value={borderRadius}
+          onChange={(e) => useEditor.getState().patchSelected({ borderRadius: Number(e.target.value) })}
+          className="w-full accent-[#53389E] cursor-pointer"
+        />
+      </div>
+
+      {/* Image Ratio */}
       <div>
         <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Image Aspect Ratio</p>
         <div className="grid grid-cols-3 gap-2.5">
@@ -1348,6 +1405,7 @@ function ProductCardStyle() {
         </div>
       </div>
 
+      {/* Typography */}
       <div>
         <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Typography Scale</p>
         <div className="grid grid-cols-3 gap-2.5">
@@ -1383,14 +1441,12 @@ function ProductCardBadges() {
   const showBadge = section && "showBadge" in section ? section.showBadge !== false : true;
   const showRating = section && "showRating" in section ? section.showRating !== false : true;
   const showPrice = section && "showPrice" in section ? section.showPrice !== false : true;
-  const rawNumber =
-    (section && "whatsappNumber" in section && section.whatsappNumber) || "919876543210";
-  const [phone, setPhone] = useState(rawNumber);
+  const showButton = section && "showButton" in section ? section.showButton !== false : true;
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Element Visibility</p>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Card Elements Visibility</p>
         <div className="divide-y divide-line-soft overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
           {/* Badge toggle */}
           <div className="flex items-center justify-between p-3.5">
@@ -1466,13 +1522,159 @@ function ProductCardBadges() {
               />
             </button>
           </div>
+
+          {/* Quick Buy Button toggle */}
+          <div className="flex items-center justify-between p-3.5">
+            <div>
+              <div className="text-sm font-medium">Quick WhatsApp Button</div>
+              <div className="text-xs text-muted">Show direct WhatsApp Buy button on card</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showButton}
+              onClick={() => useEditor.getState().patchSelected({ showButton: !showButton })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                showButton ? "bg-accent" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  showButton ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductCardColor() {
+  const section = useEditor((s) => selectedSection(s));
+  const priceColor = (section && "priceColor" in section && section.priceColor) || "#059669";
+  const buttonColor = (section && "buttonColor" in section && section.buttonColor) || "#25D366";
+
+  const pricePresets = [
+    { label: "Emerald", value: "#059669" },
+    { label: "Slate", value: "#0F172A" },
+    { label: "Purple", value: "#7C3AED" },
+    { label: "Blue", value: "#2563EB" },
+    { label: "Red", value: "#DC2626" },
+    { label: "Amber", value: "#D97706" },
+    { label: "Rose", value: "#E11D48" },
+    { label: "Black", value: "#000000" },
+  ];
+
+  const buttonPresets = [
+    { label: "WhatsApp", value: "#25D366" },
+    { label: "Emerald", value: "#059669" },
+    { label: "Dark", value: "#111827" },
+    { label: "Purple", value: "#53389E" },
+    { label: "Royal", value: "#2563EB" },
+    { label: "Orange", value: "#F97316" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Price Color */}
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Price Text Color</p>
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          {pricePresets.map((p) => {
+            const active = priceColor.toLowerCase() === p.value.toLowerCase();
+            return (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ priceColor: p.value })}
+                className={cn(
+                  "tap-smooth flex items-center gap-2 rounded-xl border p-2 text-left transition-all",
+                  active
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <span className="size-4 shrink-0 rounded-full border border-black/10 shadow-2xs" style={{ backgroundColor: p.value }} />
+                <span className="truncate text-xs font-medium text-ink">{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-line-soft bg-surface p-2 shadow-2xs">
+          <input
+            type="color"
+            value={priceColor}
+            onChange={(e) => useEditor.getState().patchSelected({ priceColor: e.target.value })}
+            className="size-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+          />
+          <input
+            type="text"
+            value={priceColor}
+            onChange={(e) => useEditor.getState().patchSelected({ priceColor: e.target.value })}
+            className="flex-1 bg-transparent text-xs font-mono font-medium text-ink focus:outline-none uppercase"
+          />
         </div>
       </div>
 
+      {/* Button Color */}
       <div>
-        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">WhatsApp Direct Ordering</p>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">WhatsApp Button Color</p>
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          {buttonPresets.map((b) => {
+            const active = buttonColor.toLowerCase() === b.value.toLowerCase();
+            return (
+              <button
+                key={b.value}
+                type="button"
+                onClick={() => useEditor.getState().patchSelected({ buttonColor: b.value })}
+                className={cn(
+                  "tap-smooth flex items-center gap-2 rounded-xl border p-2 text-left transition-all",
+                  active
+                    ? "border-[#53389E] bg-[#EEF2FF]/60 shadow-xs ring-2 ring-[#53389E]/25"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <span className="size-4 shrink-0 rounded-full border border-black/10 shadow-2xs" style={{ backgroundColor: b.value }} />
+                <span className="truncate text-xs font-medium text-ink">{b.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-line-soft bg-surface p-2 shadow-2xs">
+          <input
+            type="color"
+            value={buttonColor}
+            onChange={(e) => useEditor.getState().patchSelected({ buttonColor: e.target.value })}
+            className="size-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+          />
+          <input
+            type="text"
+            value={buttonColor}
+            onChange={(e) => useEditor.getState().patchSelected({ buttonColor: e.target.value })}
+            className="flex-1 bg-transparent text-xs font-mono font-medium text-ink focus:outline-none uppercase"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductCardCta() {
+  const section = useEditor((s) => selectedSection(s));
+  const rawNumber =
+    (section && "whatsappNumber" in section && section.whatsappNumber) || "919876543210";
+  const [phone, setPhone] = useState(rawNumber);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-muted uppercase">Seller WhatsApp Number</p>
         <div className="rounded-2xl border border-line-soft bg-surface p-4 shadow-2xs">
-          <Field label="Seller WhatsApp Number (with country code)">
+          <Field label="Phone number with country code (e.g. 919876543210)">
             <TextInput
               value={phone}
               placeholder="919876543210"
@@ -1495,7 +1697,7 @@ function ProductCardBadges() {
               <span>Direct Customer Ordering</span>
             </div>
             <p className="mt-1 text-emerald-800/80">
-              When visitors click "Buy on WhatsApp", an order message will open directly in their WhatsApp with product name, selected variant, and link.
+              When shoppers tap the WhatsApp button on any product card, an instant order message pre-fills in their WhatsApp with product name, price, and storefront link.
             </p>
           </div>
         </div>
