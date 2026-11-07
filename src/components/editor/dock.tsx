@@ -1,7 +1,10 @@
 import {
+  Compass,
   Droplet,
   Eye,
+  Layers,
   LayoutTemplate,
+  Maximize2,
   MessageCircle,
   Palette,
   Pencil,
@@ -10,6 +13,7 @@ import {
   Settings2,
   SlidersHorizontal,
   Tag,
+  Type,
 } from "lucide-react";
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import { cn } from "@/lib/cn";
@@ -39,7 +43,11 @@ export function Dock() {
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("navbar-style") },
           { id: "colors", label: "Colors", icon: Palette, action: open("navbar-color") },
           { id: "elements", label: "Elements", icon: SlidersHorizontal, action: open("navbar-elements") },
-          { id: "more", label: "Edit More", icon: Settings2, action: open("navbar-more") },
+          { id: "layout", label: "Layout", icon: Maximize2, action: open("navbar-layout") },
+          { id: "effects", label: "Effects", icon: Layers, action: open("navbar-effects") },
+          { id: "fonts", label: "Fonts", icon: Type, action: open("navbar-typography") },
+          { id: "links", label: "Links", icon: Compass, action: open("navbar-links") },
+          { id: "sticky", label: "Sticky", icon: Pin, action: open("navbar-sticky") },
         ];
       case "hero":
         return [
@@ -120,7 +128,7 @@ export function Dock() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none p-3 pb-safe">
       <div className="pointer-events-auto flex items-center justify-center max-w-full">
-        <div className="flex items-center gap-1 sm:gap-1.5 rounded-3xl border border-slate-200/90 bg-surface/95 px-2 py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-xl">
+        <div className="flex items-center gap-1 sm:gap-1.5 rounded-3xl border border-slate-200/90 bg-surface/95 px-2 py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-xl overflow-x-auto max-w-[calc(100vw-24px)] no-scrollbar">
           {items.map((item) => {
             const Icon = item.icon;
             return (
@@ -129,11 +137,11 @@ export function Dock() {
                 type="button"
                 onClick={item.action}
                 className={cn(
-                  "tap-smooth flex h-14 min-w-12 sm:min-w-16 px-1 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-ink transition-all duration-150 hover:bg-fill hover:-translate-y-0.5 active:translate-y-0",
+                  "tap-smooth flex h-14 min-w-14 sm:min-w-16 px-1.5 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl text-ink transition-all duration-150 hover:bg-fill hover:-translate-y-0.5 active:translate-y-0",
                 )}
               >
                 <Icon className="size-5 stroke-[1.75]" />
-                <span className="text-[11px] font-medium leading-none">{item.label}</span>
+                <span className="text-[11px] font-medium leading-none whitespace-nowrap">{item.label}</span>
               </button>
             );
           })}

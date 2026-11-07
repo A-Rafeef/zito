@@ -39,6 +39,10 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "navbar-color": { title: "Colors", subtitle: "Background, text & icon colors." },
   "navbar-sticky": { title: "Sticky header", subtitle: "Pin header to top while scrolling." },
   "navbar-elements": { title: "Elements", subtitle: "Toggle brand, menu, search & icons." },
+  "navbar-layout": { title: "Layout", subtitle: "Full-width or floating pill, height & radius." },
+  "navbar-effects": { title: "Effects", subtitle: "Border styles, shadows & frosted blur." },
+  "navbar-typography": { title: "Typography", subtitle: "Font size, weight, spacing & casing." },
+  "navbar-links": { title: "Links", subtitle: "Manage store navigation menu items." },
   "navbar-more": { title: "Edit More", subtitle: "Layout, borders, typography & behavior." },
   "hero-layout": { title: "Template", subtitle: "" },
   "hero-photo": { title: "Photo", subtitle: "Replaces the current slide." },
@@ -124,6 +128,14 @@ function SheetBody({ kind }: { kind: SheetKind }) {
       return section?.type === "navbar" ? <NavbarSticky current={section.sticky ?? true} /> : null;
     case "navbar-elements":
       return section?.type === "navbar" ? <NavbarElements sec={section} /> : null;
+    case "navbar-layout":
+      return section?.type === "navbar" ? <NavbarLayout sec={section} /> : null;
+    case "navbar-effects":
+      return section?.type === "navbar" ? <NavbarEffects sec={section} /> : null;
+    case "navbar-typography":
+      return section?.type === "navbar" ? <NavbarTypography sec={section} /> : null;
+    case "navbar-links":
+      return section?.type === "navbar" ? <NavbarLinks sec={section} /> : null;
     case "navbar-more":
       return section?.type === "navbar" ? <NavbarMore sec={section} /> : null;
     case "hero-layout":
@@ -1536,6 +1548,345 @@ function NavbarMore({ sec }: { sec: NavbarSection }) {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function NavbarLayout({ sec }: { sec: NavbarSection }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Full-width vs Floating Pill */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">Layout Mode</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ isFloating: false })}
+            className={cn(
+              "py-2.5 text-xs font-semibold rounded-xl border text-center transition-all",
+              !sec.isFloating
+                ? "border-accent bg-accent/10 text-accent font-bold ring-2 ring-accent/20"
+                : "border-line-soft bg-surface text-ink hover:bg-fill"
+            )}
+          >
+            Full Width
+          </button>
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ isFloating: true })}
+            className={cn(
+              "py-2.5 text-xs font-semibold rounded-xl border text-center transition-all",
+              sec.isFloating
+                ? "border-accent bg-accent/10 text-accent font-bold ring-2 ring-accent/20"
+                : "border-line-soft bg-surface text-ink hover:bg-fill"
+            )}
+          >
+            Floating Pill
+          </button>
+        </div>
+      </div>
+
+      {/* Height Slider */}
+      <div className="flex flex-col gap-2 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-semibold text-muted uppercase tracking-wider">Bar Height</span>
+          <span className="text-xs font-bold text-accent font-mono bg-accent/10 px-2 py-0.5 rounded-md">
+            {sec.height || 56}px
+          </span>
+        </div>
+        <input
+          type="range"
+          min={48}
+          max={80}
+          step={2}
+          value={sec.height || 56}
+          onChange={(e) => useEditor.getState().patchSelected({ height: Number(e.target.value) })}
+          className="accent-accent w-full cursor-pointer h-2 bg-slate-200 dark:bg-zinc-700 rounded-lg"
+        />
+        <div className="flex justify-between text-[10px] text-muted font-mono">
+          <span>Compact (48px)</span>
+          <span>Standard (56px)</span>
+          <span>Roomy (80px)</span>
+        </div>
+      </div>
+
+      {/* Corner Radius Slider */}
+      <div className="flex flex-col gap-2 rounded-2xl border border-line-soft bg-surface p-3.5 shadow-2xs">
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-semibold text-muted uppercase tracking-wider">Corner Radius</span>
+          <span className="text-xs font-bold text-accent font-mono bg-accent/10 px-2 py-0.5 rounded-md">
+            {sec.borderRadius === 9999 ? "Full Pill (9999px)" : `${sec.borderRadius ?? (sec.isFloating ? 9999 : 0)}px`}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={0}
+            max={40}
+            step={2}
+            value={sec.borderRadius === 9999 ? 40 : (sec.borderRadius ?? (sec.isFloating ? 40 : 0))}
+            onChange={(e) => useEditor.getState().patchSelected({ borderRadius: Number(e.target.value) })}
+            className="accent-accent flex-1 cursor-pointer h-2 bg-slate-200 dark:bg-zinc-700 rounded-lg"
+          />
+          <button
+            type="button"
+            onClick={() => useEditor.getState().patchSelected({ borderRadius: 9999 })}
+            className={cn(
+              "px-3 py-1.5 text-xs font-semibold rounded-xl border shrink-0 transition-all",
+              sec.borderRadius === 9999
+                ? "border-accent bg-accent text-white"
+                : "border-line-soft bg-fill hover:bg-line-soft text-ink"
+            )}
+          >
+            Pill
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NavbarEffects({ sec }: { sec: NavbarSection }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Border Style */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">Border Style</label>
+        <div className="grid grid-cols-3 gap-2">
+          {(["none", "subtle", "solid"] as const).map((b) => (
+            <button
+              key={b}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ borderStyle: b })}
+              className={cn(
+                "py-2 text-xs font-semibold rounded-xl border capitalize transition-all",
+                (sec.borderStyle || "subtle") === b
+                  ? "border-accent bg-accent/10 text-accent font-bold ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              {b}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Shadow Effect */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">Shadow Effect</label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {(["none", "subtle", "float", "glass"] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ shadow: s })}
+              className={cn(
+                "py-2 text-xs font-semibold rounded-xl border capitalize transition-all",
+                (sec.shadow || "none") === s
+                  ? "border-accent bg-accent/10 text-accent font-bold ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Backdrop Blur toggle */}
+      <div className="flex items-center justify-between p-3.5 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <div>
+          <div className="text-sm font-semibold text-ink">Backdrop Blur</div>
+          <div className="text-xs text-muted">Frosted glass effect behind header</div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={sec.backdropBlur !== false}
+          onClick={() => useEditor.getState().patchSelected({ backdropBlur: sec.backdropBlur === false ? true : false })}
+          className={cn(
+            "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+            sec.backdropBlur !== false ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200",
+              sec.backdropBlur !== false ? "translate-x-5" : "translate-x-0"
+            )}
+          />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function NavbarTypography({ sec }: { sec: NavbarSection }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Font size */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">Brand & Link Size</label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {(["sm", "base", "lg", "xl"] as const).map((sz) => (
+            <button
+              key={sz}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ fontSize: sz })}
+              className={cn(
+                "py-2 text-xs font-semibold rounded-xl border uppercase transition-all",
+                (sec.fontSize || "base") === sz
+                  ? "border-accent bg-accent/10 text-accent font-bold ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              {sz}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Font weight */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">Font Weight</label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {(["normal", "medium", "semibold", "bold"] as const).map((w) => (
+            <button
+              key={w}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ fontWeight: w })}
+              className={cn(
+                "py-2 text-xs font-semibold rounded-xl border capitalize transition-all",
+                (sec.fontWeight || "semibold") === w
+                  ? "border-accent bg-accent/10 text-accent font-bold ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              {w}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Letter spacing */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">Letter Spacing</label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {(["tight", "normal", "wide", "widest"] as const).map((ls) => (
+            <button
+              key={ls}
+              type="button"
+              onClick={() => useEditor.getState().patchSelected({ letterSpacing: ls })}
+              className={cn(
+                "py-2 text-xs font-semibold rounded-xl border capitalize transition-all",
+                (sec.letterSpacing || "normal") === ls
+                  ? "border-accent bg-accent/10 text-accent font-bold ring-2 ring-accent/20"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              {ls}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Uppercase toggle */}
+      <div className="flex items-center justify-between p-3.5 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+        <div>
+          <div className="text-sm font-semibold text-ink">Uppercase Brand & Links</div>
+          <div className="text-xs text-muted">Display brand name & links in ALL CAPS</div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={sec.uppercase !== false}
+          onClick={() => useEditor.getState().patchSelected({ uppercase: sec.uppercase === false ? true : false })}
+          className={cn(
+            "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+            sec.uppercase !== false ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200",
+              sec.uppercase !== false ? "translate-x-5" : "translate-x-0"
+            )}
+          />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function NavbarLinks({ sec }: { sec: NavbarSection }) {
+  const defaultLinks: NavbarLink[] = [
+    { id: "1", label: "Home", url: "home" },
+    { id: "2", label: "Shop", url: "shop" },
+    { id: "3", label: "Product", url: "product" },
+  ];
+
+  const currentLinks = sec.links && sec.links.length > 0 ? sec.links : defaultLinks;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold text-muted uppercase tracking-wider">Navigation Links</label>
+        <button
+          type="button"
+          onClick={() => {
+            const newLink: NavbarLink = {
+              id: Date.now().toString(),
+              label: "New Link",
+              url: "shop",
+            };
+            useEditor.getState().patchSelected({ links: [...currentLinks, newLink] });
+          }}
+          className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
+        >
+          <Plus className="size-3.5" />
+          <span>Add Link</span>
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {currentLinks.map((link, idx) => (
+          <div key={link.id} className="flex items-center gap-2 p-2.5 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+            <input
+              type="text"
+              value={link.label}
+              onChange={(e) => {
+                const updated = [...currentLinks];
+                updated[idx] = { ...link, label: e.target.value };
+                useEditor.getState().patchSelected({ links: updated });
+              }}
+              placeholder="Label"
+              className="flex-1 rounded-xl border border-line-soft bg-fill/50 px-3 py-1.5 text-xs font-medium text-ink focus:border-accent focus:bg-surface focus:outline-hidden"
+            />
+            <input
+              type="text"
+              value={link.url}
+              onChange={(e) => {
+                const updated = [...currentLinks];
+                updated[idx] = { ...link, url: e.target.value };
+                useEditor.getState().patchSelected({ links: updated });
+              }}
+              placeholder="URL / Page"
+              className="w-28 rounded-xl border border-line-soft bg-fill/50 px-3 py-1.5 text-xs font-mono text-muted focus:border-accent focus:bg-surface focus:outline-hidden"
+            />
+            <button
+              type="button"
+              aria-label="Remove link"
+              onClick={() => {
+                const updated = currentLinks.filter((_, i) => i !== idx);
+                useEditor.getState().patchSelected({ links: updated });
+              }}
+              className="p-1.5 text-muted hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
