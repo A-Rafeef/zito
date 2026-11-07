@@ -55,7 +55,6 @@ export function Dock() {
         ];
       case "hero":
         return [
-          { id: "width", label: "Width", icon: Maximize2, action: open("hero-width") },
           { id: "background", label: "Background", icon: Palette, action: open("hero-background") },
           { id: "ratio", label: "Ratio", icon: RectangleHorizontal, action: open("hero-ratio") },
           { id: "padding", label: "Padding", icon: SlidersHorizontal, action: open("hero-padding") },
