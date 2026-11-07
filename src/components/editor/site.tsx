@@ -893,13 +893,11 @@ function GridView({
             price={item.price}
             image={item.image}
             badge={item.badge}
-            rating={sec.showRating !== false ? "4.8 · 94 reviews" : undefined}
             dark={dark}
             imageRatio={sec.imageRatio}
             borderRadius={sec.borderRadius ?? 16}
             typography={sec.typography}
             showBadge={sec.showBadge !== false}
-            showRating={sec.showRating !== false}
             showPrice={sec.showPrice !== false}
             showButton={sec.showButton !== false}
             priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
@@ -1056,11 +1054,6 @@ function StoreProductCard({
             <h3 className={cn("transition-colors group-hover:text-accent truncate", titleClass, dark ? "text-on-ink" : "text-ink")}>
               {title}
             </h3>
-            {showRating && rating && (
-              <p className={cn("mt-0.5 text-xs", dark ? "text-on-ink/60" : "text-muted")}>
-                ★ {rating}
-              </p>
-            )}
             {showPrice && (
               <span
                 className="mt-1 block text-sm font-semibold"
@@ -1147,11 +1140,6 @@ function StoreProductCard({
               onCardClick();
             }}
           >
-            {showRating && rating && (
-              <p className="text-[11px] text-white/80 font-medium mb-0.5">
-                ★ {rating}
-              </p>
-            )}
             <h3 className={cn("transition-colors font-medium truncate text-white w-full", titleClass)}>
               {title}
             </h3>
@@ -1201,11 +1189,6 @@ function StoreProductCard({
             <h3 className={cn("transition-colors group-hover:text-accent truncate", titleClass, dark ? "text-on-ink" : "text-ink")}>
               {title}
             </h3>
-            {showRating && rating && (
-              <p className={cn("mt-0.5 text-xs truncate", dark ? "text-on-ink/60" : "text-muted")}>
-                ★ {rating}
-              </p>
-            )}
           </button>
 
           <div className={cn("mt-2 sm:mt-2.5 flex items-center w-full", textAlign === "center" ? "justify-center gap-3" : "justify-between")}>
@@ -1315,13 +1298,11 @@ function CatalogView({
               price={item.price}
               image={item.img}
               badge={item.badge}
-              rating={`${item.rating} · ${item.reviews} reviews`}
               dark={dark}
               imageRatio={sec.imageRatio}
               borderRadius={sec.borderRadius ?? 16}
               typography={sec.typography}
               showBadge={sec.showBadge !== false}
-              showRating={sec.showRating !== false}
               showPrice={sec.showPrice !== false}
               showButton={sec.showButton !== false}
               priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
@@ -1962,13 +1943,11 @@ function FeaturedView({
               price={item.price}
               image={item.image}
               badge={item.badge}
-              rating={sec.showRating !== false ? "4.9 · 128 reviews" : undefined}
               dark={dark}
               imageRatio={sec.imageRatio}
               borderRadius={sec.borderRadius ?? 16}
               typography={sec.typography}
               showBadge={sec.showBadge !== false}
-              showRating={sec.showRating !== false}
               showPrice={sec.showPrice !== false}
               showButton={sec.showButton !== false}
               priceColor={sec.priceColor || (dark ? "#34d399" : "#059669")}
@@ -2357,7 +2336,6 @@ function ProductCardStudio({ device }: { device: Device }) {
     detailsLayout: (section && "detailsLayout" in section && section.detailsLayout) || "outer",
     textAlign: (section && "textAlign" in section && section.textAlign) || "left",
     showBadge: (section && "showBadge" in section && section.showBadge !== undefined) ? section.showBadge : true,
-    showRating: (section && "showRating" in section && section.showRating !== undefined) ? section.showRating : true,
     showPrice: (section && "showPrice" in section && section.showPrice !== undefined) ? section.showPrice : true,
     showButton: (section && "showButton" in section && section.showButton !== undefined) ? section.showButton : true,
     priceColor: (section && "priceColor" in section && section.priceColor) || "#059669",
@@ -2482,13 +2460,11 @@ function ProductCardStudio({ device }: { device: Device }) {
               price={149}
               image="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=80"
               badge="TRENDING"
-              rating="4.9 · 128 reviews"
               dark={backdrop === "dark"}
               imageRatio={cardProps.imageRatio}
               borderRadius={cardProps.borderRadius}
               typography={cardProps.typography}
               showBadge={cardProps.showBadge}
-              showRating={cardProps.showRating}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
               priceColor={cardProps.priceColor}
@@ -2516,13 +2492,11 @@ function ProductCardStudio({ device }: { device: Device }) {
               price={149}
               image="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=80"
               badge="TRENDING"
-              rating="4.9 · 128 reviews"
               dark={backdrop === "dark"}
               imageRatio={cardProps.imageRatio}
               borderRadius={cardProps.borderRadius}
               typography={cardProps.typography}
               showBadge={cardProps.showBadge}
-              showRating={cardProps.showRating}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
               priceColor={cardProps.priceColor}
@@ -2546,13 +2520,11 @@ function ProductCardStudio({ device }: { device: Device }) {
               price={129}
               image="https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&w=800&q=80"
               badge="NEW"
-              rating="4.8 · 96 reviews"
               dark={backdrop === "dark"}
               imageRatio={cardProps.imageRatio}
               borderRadius={cardProps.borderRadius}
               typography={cardProps.typography}
               showBadge={cardProps.showBadge}
-              showRating={cardProps.showRating}
               showPrice={cardProps.showPrice}
               showButton={cardProps.showButton}
               priceColor={cardProps.priceColor}

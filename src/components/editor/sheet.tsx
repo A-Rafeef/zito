@@ -1847,31 +1847,6 @@ function ProductCardDetailsSheet() {
             </button>
           </div>
 
-          {/* Rating toggle */}
-          <div className="flex items-center justify-between p-3.5">
-            <div>
-              <div className="text-sm font-medium">Rating & Reviews</div>
-              <div className="text-xs text-muted">Show customer stars & reviews count</div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={showRating}
-              onClick={() => useEditor.getState().patchSelected({ showRating: !showRating })}
-              className={cn(
-                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
-                showRating ? "bg-accent" : "bg-slate-200"
-              )}
-            >
-              <span
-                className={cn(
-                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
-                  showRating ? "translate-x-5" : "translate-x-0"
-                )}
-              />
-            </button>
-          </div>
-
           {/* Price toggle */}
           <div className="flex items-center justify-between p-3.5">
             <div>
@@ -2116,31 +2091,6 @@ function ProductCardBadges() {
                 className={cn(
                   "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
                   showBadge ? "translate-x-5" : "translate-x-0"
-                )}
-              />
-            </button>
-          </div>
-
-          {/* Rating toggle */}
-          <div className="flex items-center justify-between p-3.5">
-            <div>
-              <div className="text-sm font-medium">Rating & Reviews</div>
-              <div className="text-xs text-muted">Show customer stars and review count</div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={showRating}
-              onClick={() => useEditor.getState().patchSelected({ showRating: !showRating })}
-              className={cn(
-                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
-                showRating ? "bg-accent" : "bg-slate-200"
-              )}
-            >
-              <span
-                className={cn(
-                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
-                  showRating ? "translate-x-5" : "translate-x-0"
                 )}
               />
             </button>

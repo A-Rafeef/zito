@@ -199,7 +199,7 @@ export function createFeaturedSection(id = `featured-${Date.now()}`): FeaturedSe
     detailsLayout: "outer",
     textAlign: "left",
     showBadge: true,
-    showRating: true,
+    showRating: false,
     showPrice: true,
     showButton: true,
     whatsappNumber: "919876543210",
@@ -372,7 +372,7 @@ export function createCatalogSection(id = `catalog-${Date.now()}`): CatalogSecti
     detailsLayout: "outer",
     textAlign: "left",
     showBadge: true,
-    showRating: true,
+    showRating: false,
     showPrice: true,
     showButton: true,
     whatsappNumber: "919876543210",
@@ -403,7 +403,7 @@ export function createProductSection(id = `product-view-${Date.now()}`): Product
     imageRatio: "1:1",
     typography: "base",
     showBadge: true,
-    showRating: true,
+    showRating: false,
     whatsappNumber: "919876543210",
   };
 }
