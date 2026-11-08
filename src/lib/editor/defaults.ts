@@ -555,6 +555,23 @@ export function createCatalogSection(id = `catalog-${Date.now()}`): CatalogSecti
     whatsappNumber: "919876543210",
     priceColor: "#059669",
     buttonColor: "#25D366",
+    sortConfig: {
+      enabled: true,
+      defaultSort: "featured",
+      allowedSorts: ["featured", "price_asc", "price_desc", "discount_desc", "newest", "name_asc"],
+    },
+    filterConfig: {
+      showCategories: true,
+      showBrands: true,
+      showPrice: true,
+      showStock: true,
+      autoHideOutOfStock: false,
+    },
+    layoutConfig: {
+      style: "hybrid",
+      sticky: true,
+      showItemCount: true,
+    },
     products,
   };
 }

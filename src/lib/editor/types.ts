@@ -290,6 +290,39 @@ export interface AboutSection {
   template: "split" | "story" | "cards";
 }
 
+export type CatalogSortOption =
+  | "featured"
+  | "price_asc"
+  | "price_desc"
+  | "discount_desc"
+  | "newest"
+  | "name_asc";
+
+export type CatalogFilterStyle = "hybrid" | "minimal" | "pills_only";
+
+export interface CatalogSortConfig {
+  enabled: boolean;
+  defaultSort: CatalogSortOption;
+  allowedSorts: CatalogSortOption[];
+}
+
+export interface CatalogFilterConfig {
+  showCategories: boolean;
+  showBrands: boolean;
+  showPrice: boolean;
+  showStock: boolean;
+  showSizes?: boolean;
+  showColors?: boolean;
+  autoHideOutOfStock?: boolean;
+  customCategories?: string[];
+}
+
+export interface CatalogLayoutConfig {
+  style: CatalogFilterStyle;
+  sticky: boolean;
+  showItemCount: boolean;
+}
+
 export interface CatalogSection {
   id: string;
   type: "catalog";
@@ -324,6 +357,9 @@ export interface CatalogSection {
   currency?: string;
   priceColor?: string;
   buttonColor?: string;
+  sortConfig?: CatalogSortConfig;
+  filterConfig?: CatalogFilterConfig;
+  layoutConfig?: CatalogLayoutConfig;
 }
 
 export interface ProductSection {
@@ -488,6 +524,7 @@ export type SheetKind =
   | "section-color"
   | "intro-template"
   | "catalog-template"
+  | "catalog-filter-sort"
   | "product-template"
   | "product-gallery"
   | "product-elements"

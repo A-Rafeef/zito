@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
+  ArrowUpDown,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -12,6 +13,7 @@ import {
   Plus,
   Search,
   ShoppingBag,
+  SlidersHorizontal,
   Square,
   Trash2,
   X,
@@ -20,6 +22,10 @@ import { isDark, money, QUOTES, PHOTOS } from "@/lib/editor/defaults";
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import type {
   CatalogFilter,
+  CatalogFilterConfig,
+  CatalogLayoutConfig,
+  CatalogSortConfig,
+  CatalogSortOption,
   Device,
   NavbarLink,
   NavbarSection,
@@ -1338,6 +1344,312 @@ function StoreProductCard({
   );
 }
 
+const SORT_DETAILS: { id: CatalogSortOption; label: string; desc: string }[] = [
+  { id: "featured", label: "Featured (Curated)", desc: "Storefront order as defined in catalog" },
+  { id: "price_asc", label: "Price: Low to High", desc: "Cheapest products first" },
+  { id: "price_desc", label: "Price: High to Low", desc: "Premium products first" },
+  { id: "discount_desc", label: "Biggest Discount (% OFF)", desc: "Highest percentage savings first" },
+  { id: "newest", label: "Newest Drops First", desc: "Recently added items or marked NEW" },
+  { id: "name_asc", label: "Alphabetical (A to Z)", desc: "Sort product names alphabetically" },
+];
+
+function CatalogSortDrawer({
+  isOpen,
+  onClose,
+  allowedSorts,
+  activeSort,
+  onSelectSort,
+  dark,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  allowedSorts: CatalogSortOption[];
+  activeSort: CatalogSortOption;
+  onSelectSort: (sort: CatalogSortOption) => void;
+  dark: boolean;
+}) {
+  if (!isOpen) return null;
+
+  const visibleOptions = SORT_DETAILS.filter((opt) => allowedSorts.includes(opt.id));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
+      <button
+        type="button"
+        aria-label="Close"
+        className="animate-fade-in pointer-events-auto absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+      />
+      <div className="animate-slide-up pointer-events-auto relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border-t border-line-soft bg-surface shadow-2xl">
+        <div className="flex justify-center pt-3">
+          <div className="h-1.5 w-10 rounded-full bg-line" />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-line-soft">
+          <div>
+            <h3 className="text-base font-bold text-ink">Sort By</h3>
+            <p className="text-xs text-muted">Choose how products are ordered</p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="flex size-8 items-center justify-center rounded-full bg-fill text-muted hover:text-ink cursor-pointer"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+        <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
+          {visibleOptions.map((opt) => {
+            const isSelected = activeSort === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => {
+                  onSelectSort(opt.id);
+                  onClose();
+                }}
+                className={cn(
+                  "tap-smooth w-full flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all cursor-pointer",
+                  isSelected
+                    ? "border-purple-600 bg-purple-50/70 dark:bg-purple-950/40 ring-1 ring-purple-600/30"
+                    : "border-line-soft bg-surface hover:bg-fill/60"
+                )}
+              >
+                <div>
+                  <div className={cn("text-xs font-bold", isSelected ? "text-purple-700 dark:text-purple-300" : "text-ink")}>
+                    {opt.label}
+                  </div>
+                  <div className="text-[11px] text-muted">{opt.desc}</div>
+                </div>
+                <div
+                  className={cn(
+                    "size-5 rounded-full border flex items-center justify-center shrink-0 transition-colors",
+                    isSelected
+                      ? "border-purple-600 bg-purple-600 text-white"
+                      : "border-slate-300 dark:border-zinc-700"
+                  )}
+                >
+                  {isSelected && <Check className="size-3 stroke-[3]" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CatalogFilterDrawer({
+  isOpen,
+  onClose,
+  filterConfig,
+  categories,
+  activeCategory,
+  onSelectCategory,
+  brands,
+  selectedBrands,
+  onToggleBrand,
+  priceBracket,
+  onSelectPriceBracket,
+  inStockOnly,
+  onToggleInStockOnly,
+  onResetAll,
+  filteredCount,
+  dark,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  filterConfig: CatalogFilterConfig;
+  categories: string[];
+  activeCategory: string;
+  onSelectCategory: (cat: string) => void;
+  brands: string[];
+  selectedBrands: string[];
+  onToggleBrand: (brand: string) => void;
+  priceBracket: "all" | "under_100" | "100_150" | "above_150";
+  onSelectPriceBracket: (bracket: "all" | "under_100" | "100_150" | "above_150") => void;
+  inStockOnly: boolean;
+  onToggleInStockOnly: () => void;
+  onResetAll: () => void;
+  filteredCount: number;
+  dark: boolean;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
+      <button
+        type="button"
+        aria-label="Close"
+        className="animate-fade-in pointer-events-auto absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+      />
+      <div className="animate-slide-up pointer-events-auto relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border-t border-line-soft bg-surface shadow-2xl max-h-[85vh]">
+        <div className="flex justify-center pt-3">
+          <div className="h-1.5 w-10 rounded-full bg-line" />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-line-soft">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="size-4 text-purple-600" />
+            <h3 className="text-base font-bold text-ink">Filters</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onResetAll}
+              className="text-xs font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40 cursor-pointer"
+            >
+              Reset All
+            </button>
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={onClose}
+              className="flex size-8 items-center justify-center rounded-full bg-fill text-muted hover:text-ink cursor-pointer"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-6 overflow-y-auto flex-1 min-h-0">
+          {/* Categories */}
+          {filterConfig.showCategories && categories.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted mb-2.5">Category</p>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => {
+                  const isSelected = activeCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      data-filter-category={cat}
+                      onClick={() => onSelectCategory(cat)}
+                      className={cn(
+                        "tap-smooth px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-purple-600 text-white shadow-xs"
+                          : "border border-line-soft bg-surface text-ink hover:bg-fill"
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Brands */}
+          {filterConfig.showBrands && brands.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted mb-2.5">Brand</p>
+              <div className="flex flex-wrap gap-2">
+                {brands.map((brand) => {
+                  const isSelected = selectedBrands.includes(brand);
+                  return (
+                    <button
+                      key={brand}
+                      type="button"
+                      data-filter-brand={brand}
+                      onClick={() => onToggleBrand(brand)}
+                      className={cn(
+                        "tap-smooth inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer",
+                        isSelected
+                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 ring-1 ring-purple-600/30"
+                          : "border-line-soft bg-surface text-ink hover:bg-fill"
+                      )}
+                    >
+                      <span>{brand}</span>
+                      {isSelected && <Check className="size-3 text-purple-600" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Price Range */}
+          {filterConfig.showPrice && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted mb-2.5">Price Range</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "all", label: "All Prices" },
+                  { id: "under_100", label: "Under $100" },
+                  { id: "100_150", label: "$100 - $150" },
+                  { id: "above_150", label: "Over $150" },
+                ].map((bracket) => {
+                  const isSelected = priceBracket === bracket.id;
+                  return (
+                    <button
+                      key={bracket.id}
+                      type="button"
+                      data-filter-price={bracket.id}
+                      onClick={() => onSelectPriceBracket(bracket.id as typeof priceBracket)}
+                      className={cn(
+                        "tap-smooth py-2 px-3 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer",
+                        isSelected
+                          ? "border-purple-600 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 ring-1 ring-purple-600/30"
+                          : "border-line-soft bg-surface text-ink hover:bg-fill"
+                      )}
+                    >
+                      {bracket.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* In Stock Only */}
+          {filterConfig.showStock && (
+            <div className="flex items-center justify-between p-3.5 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+              <div>
+                <div className="text-xs font-bold text-ink">In Stock Only</div>
+                <div className="text-[11px] text-muted">Exclude sold out products</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={inStockOnly}
+                data-testid="instock-switch"
+                onClick={onToggleInStockOnly}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  inStockOnly ? "bg-purple-600" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                    inStockOnly ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer CTA */}
+        <div className="p-4 border-t border-line-soft bg-surface shrink-0">
+          <button
+            type="button"
+            data-testid="filter-submit-btn"
+            onClick={onClose}
+            className="tap-smooth w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer text-center"
+          >
+            Show {filteredCount} {filteredCount === 1 ? "Product" : "Products"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CatalogView({
   sec,
   device,
@@ -1347,7 +1659,6 @@ function CatalogView({
 }) {
   const dark = isDark(sec.background);
   const preview = useEditor((s) => s.preview);
-  const items = sec.products.filter((item) => sec.filter === "All" || item.category === sec.filter);
   const isList = sec.template === "list";
   const cols = isList
     ? "grid-cols-1 max-w-xl mx-auto"
@@ -1355,7 +1666,136 @@ function CatalogView({
       ? "grid-cols-3"
       : "grid-cols-2";
 
-  const openItem = (item: (typeof items)[number]) => {
+  const sortConfig = sec.sortConfig || {
+    enabled: true,
+    defaultSort: "featured",
+    allowedSorts: ["featured", "price_asc", "price_desc", "discount_desc", "newest", "name_asc"],
+  };
+
+  const filterConfig = sec.filterConfig || {
+    showCategories: true,
+    showBrands: true,
+    showPrice: true,
+    showStock: true,
+    autoHideOutOfStock: false,
+  };
+
+  const layoutConfig = sec.layoutConfig || {
+    style: "hybrid",
+    sticky: true,
+    showItemCount: true,
+  };
+
+  const [activeSort, setActiveSort] = useState<CatalogSortOption>(sortConfig.defaultSort || "featured");
+  const [activeCategory, setActiveCategory] = useState<string>(sec.filter || "All");
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [priceBracket, setPriceBracket] = useState<"all" | "under_100" | "100_150" | "above_150">("all");
+  const [inStockOnly, setInStockOnly] = useState<boolean>(false);
+  const [isSortDrawerOpen, setIsSortDrawerOpen] = useState<boolean>(false);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (sec.filter && sec.filter !== activeCategory) {
+      setActiveCategory(sec.filter);
+    }
+  }, [sec.filter]);
+
+  // Dynamic lists from products
+  const availableBrands = Array.from(new Set(sec.products.map((p) => p.brand).filter(Boolean))) as string[];
+  const dynamicCategories = ["All", ...Array.from(new Set(sec.products.map((p) => p.category).filter(Boolean))) as string[]];
+
+  // Filtering
+  let filtered = sec.products;
+
+  if (filterConfig.autoHideOutOfStock) {
+    filtered = filtered.filter((p) => (p.stock ?? 1) > 0);
+  }
+
+  if (activeCategory !== "All") {
+    filtered = filtered.filter((p) => p.category === activeCategory);
+  }
+
+  if (filterConfig.showBrands && selectedBrands.length > 0) {
+    filtered = filtered.filter((p) => p.brand && selectedBrands.includes(p.brand));
+  }
+
+  const getEffPrice = (p: (typeof filtered)[number]) => {
+    if (typeof p.salePrice === "number" && p.salePrice > 0) return p.salePrice;
+    if (typeof p.price === "number") return p.price;
+    return typeof p.price === "string" ? priceNumber(p.price) : 0;
+  };
+
+  if (filterConfig.showPrice && priceBracket !== "all") {
+    filtered = filtered.filter((p) => {
+      const price = getEffPrice(p);
+      if (priceBracket === "under_100") return price < 100;
+      if (priceBracket === "100_150") return price >= 100 && price <= 150;
+      if (priceBracket === "above_150") return price > 150;
+      return true;
+    });
+  }
+
+  if (filterConfig.showStock && inStockOnly) {
+    filtered = filtered.filter((p) => (p.stock ?? 1) > 0);
+  }
+
+  // Sorting
+  const sorted = [...filtered].sort((a, b) => {
+    const priceA = getEffPrice(a);
+    const priceB = getEffPrice(b);
+    const discA = a.discountPercentage ?? 0;
+    const discB = b.discountPercentage ?? 0;
+
+    switch (activeSort) {
+      case "price_asc":
+        return priceA - priceB;
+      case "price_desc":
+        return priceB - priceA;
+      case "discount_desc":
+        return discB - discA;
+      case "newest": {
+        const isNewA = a.badge === "NEW" ? 1 : 0;
+        const isNewB = b.badge === "NEW" ? 1 : 0;
+        if (isNewA !== isNewB) return isNewB - isNewA;
+        return (b.id || "").localeCompare(a.id || "");
+      }
+      case "name_asc":
+        return (a.name || "").localeCompare(b.name || "");
+      case "featured":
+      default:
+        return 0;
+    }
+  });
+
+  const activeFilterCount =
+    (activeCategory !== "All" && layoutConfig.style === "minimal" ? 1 : 0) +
+    selectedBrands.length +
+    (priceBracket !== "all" ? 1 : 0) +
+    (inStockOnly ? 1 : 0);
+
+  const resetAllFilters = () => {
+    setActiveCategory("All");
+    setSelectedBrands([]);
+    setPriceBracket("all");
+    setInStockOnly(false);
+  };
+
+  const toggleBrand = (brand: string) => {
+    setSelectedBrands((prev) =>
+      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
+    );
+  };
+
+  const sortLabels: Record<CatalogSortOption, string> = {
+    featured: "Featured",
+    price_asc: "Price: Low to High",
+    price_desc: "Price: High to Low",
+    discount_desc: "Biggest Discount",
+    newest: "Newest Drops",
+    name_asc: "Name: A to Z",
+  };
+
+  const openItem = (item: (typeof sorted)[number]) => {
     if (preview) {
       useEditor.getState().openProduct({
         id: item.id,
@@ -1378,7 +1818,7 @@ function CatalogView({
     }
   };
 
-  const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof items)[number]) => {
+  const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof sorted)[number]) => {
     if (!preview) {
       useEditor.getState().select("product-card");
       return;
@@ -1402,23 +1842,160 @@ function CatalogView({
         <p className={cn("mt-2 max-w-lg text-sm leading-relaxed", dark ? "text-on-ink/70" : "text-muted")}>
           {sec.subtitle}
         </p>
-        <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto">
-          {FILTERS.map((filter) => (
+
+        {/* Tier 1: Category Pills */}
+        {filterConfig.showCategories && layoutConfig.style !== "minimal" && (
+          <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto">
+            {dynamicCategories.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setActiveCategory(filter);
+                  useEditor.getState().setCatalogFilter(filter as CatalogFilter);
+                }}
+                className={cn("tap-smooth shrink-0 transition-all duration-200 cursor-pointer", filter === activeCategory ? solid(dark) : quiet(dark))}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Tier 2: Utility Bar (Sort & Filters) */}
+        {layoutConfig.style !== "pills_only" && (
+          <div
+            className={cn(
+              "mt-5 flex items-center justify-between gap-3 py-2.5 transition-all",
+              layoutConfig.sticky
+                ? "sticky top-14 z-20 backdrop-blur-md bg-surface/90 border-y border-line-soft/60 px-1 -mx-1"
+                : ""
+            )}
+          >
+            {/* Product Count */}
+            <div>
+              {layoutConfig.showItemCount && (
+                <span className="text-xs font-semibold text-muted tracking-tight">
+                  {sorted.length} {sorted.length === 1 ? "Product" : "Products"}
+                </span>
+              )}
+            </div>
+
+            {/* Actions: Sort By & Filter Drawers */}
+            <div className="flex items-center gap-2">
+              {sortConfig.enabled && (
+                <button
+                  type="button"
+                  onClick={() => setIsSortDrawerOpen(true)}
+                  className="tap-smooth inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line-soft bg-surface text-xs font-semibold text-ink shadow-2xs hover:bg-fill transition-colors cursor-pointer"
+                >
+                  <ArrowUpDown className="size-3.5 text-muted" />
+                  <span className="text-muted font-normal">Sort:</span>
+                  <span>{sortLabels[activeSort] || "Featured"}</span>
+                  <ChevronDown className="size-3 text-muted ml-0.5" />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsFilterDrawerOpen(true)}
+                className={cn(
+                  "tap-smooth inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-colors cursor-pointer",
+                  activeFilterCount > 0
+                    ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold ring-1 ring-purple-600/30"
+                    : "border-line-soft bg-surface text-ink hover:bg-fill"
+                )}
+              >
+                <SlidersHorizontal className="size-3.5" />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="flex items-center justify-center size-4 rounded-full bg-purple-600 text-[10px] text-white font-extrabold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Active Filter Chips Bar */}
+        {(selectedBrands.length > 0 || priceBracket !== "all" || inStockOnly || (activeCategory !== "All" && layoutConfig.style === "minimal")) && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {activeCategory !== "All" && layoutConfig.style === "minimal" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
+                <span>{activeCategory}</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory("All")}
+                  className="text-muted hover:text-ink cursor-pointer"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+
+            {selectedBrands.map((brand) => (
+              <span
+                key={brand}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink"
+              >
+                <span>{brand}</span>
+                <button
+                  type="button"
+                  onClick={() => toggleBrand(brand)}
+                  className="text-muted hover:text-ink cursor-pointer"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+
+            {priceBracket !== "all" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
+                <span>
+                  {priceBracket === "under_100"
+                    ? "Under $100"
+                    : priceBracket === "100_150"
+                      ? "$100 - $150"
+                      : "Over $150"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPriceBracket("all")}
+                  className="text-muted hover:text-ink cursor-pointer"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+
+            {inStockOnly && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
+                <span>In Stock Only</span>
+                <button
+                  type="button"
+                  onClick={() => setInStockOnly(false)}
+                  className="text-muted hover:text-ink cursor-pointer"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+
             <button
-              key={filter}
               type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                useEditor.getState().setCatalogFilter(filter);
-              }}
-              className={cn("tap-smooth shrink-0 transition-all duration-200", filter === sec.filter ? solid(dark) : quiet(dark))}
+              onClick={resetAllFilters}
+              className="text-xs font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 ml-1 cursor-pointer"
             >
-              {filter}
+              Clear All
             </button>
-          ))}
-        </div>
-        <div key={sec.filter} className={cn("animate-page-enter mt-6 grid gap-x-4", isList ? "gap-y-3" : "gap-y-8", cols)}>
-          {items.map((item) => (
+          </div>
+        )}
+
+        {/* Product Grid */}
+        <div key={`${sec.filter}-${activeSort}-${activeCategory}`} className={cn("animate-page-enter mt-6 grid gap-x-4", isList ? "gap-y-3" : "gap-y-8", cols)}>
+          {sorted.map((item) => (
             <StoreProductCard
               key={item.id}
               id={item.id}
@@ -1461,15 +2038,59 @@ function CatalogView({
           ))}
         </div>
 
-        {items.length === 0 && (
-          <p className={cn("py-12 text-center text-sm", dark ? "text-on-ink/70" : "text-muted")}>
-            Nothing in this category.
-          </p>
+        {/* Empty State */}
+        {sorted.length === 0 && (
+          <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+            <div className="size-12 rounded-2xl bg-fill flex items-center justify-center text-muted">
+              <SlidersHorizontal className="size-6" />
+            </div>
+            <p className="text-sm font-semibold text-ink">No matching products found</p>
+            <p className="text-xs text-muted max-w-xs">
+              Try adjusting your filters or clearing them to browse all available items.
+            </p>
+            <button
+              type="button"
+              onClick={resetAllFilters}
+              className="mt-2 inline-flex items-center px-4 py-2 rounded-xl bg-ink text-on-ink text-xs font-semibold cursor-pointer shadow-xs hover:opacity-90"
+            >
+              Reset All Filters
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Tier 3: Mobile Drawers */}
+      <CatalogSortDrawer
+        isOpen={isSortDrawerOpen}
+        onClose={() => setIsSortDrawerOpen(false)}
+        allowedSorts={sortConfig.allowedSorts || ["featured", "price_asc", "price_desc", "discount_desc", "newest", "name_asc"]}
+        activeSort={activeSort}
+        onSelectSort={(s) => setActiveSort(s)}
+        dark={dark}
+      />
+
+      <CatalogFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        filterConfig={filterConfig}
+        categories={dynamicCategories}
+        activeCategory={activeCategory}
+        onSelectCategory={(c) => setActiveCategory(c)}
+        brands={availableBrands}
+        selectedBrands={selectedBrands}
+        onToggleBrand={toggleBrand}
+        priceBracket={priceBracket}
+        onSelectPriceBracket={(b) => setPriceBracket(b)}
+        inStockOnly={inStockOnly}
+        onToggleInStockOnly={() => setInStockOnly((v) => !v)}
+        onResetAll={resetAllFilters}
+        filteredCount={sorted.length}
+        dark={dark}
+      />
     </SectionShell>
   );
 }
+
 
 function ProductView({
   sec,

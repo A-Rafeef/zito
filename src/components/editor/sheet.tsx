@@ -27,6 +27,12 @@ import { HERO_PHOTOS, PAGE_COLORS, TEXT_COLORS, isDark } from "@/lib/editor/defa
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import { cn } from "@/lib/cn";
 import type {
+  CatalogFilterConfig,
+  CatalogFilterStyle,
+  CatalogLayoutConfig,
+  CatalogSection,
+  CatalogSortConfig,
+  CatalogSortOption,
   HeroAnimation,
   HeroPadding,
   HeroRatio,
@@ -79,6 +85,7 @@ const TITLES: Record<SheetKind, { title: string; subtitle: string }> = {
   "grid-layout": { title: "Template", subtitle: "" },
   "grid-items": { title: "Items", subtitle: "" },
   "catalog-template": { title: "Template", subtitle: "" },
+  "catalog-filter-sort": { title: "Filter & Sort", subtitle: "Configure customer sorting & filter controls." },
   "catalog-text": { title: "Catalog", subtitle: "" },
   "product-template": { title: "Product Layout", subtitle: "Stacked, split or editorial grid." },
   "product-gallery": { title: "Gallery & Ratio", subtitle: "Aspect ratio, radius & thumbnails." },
@@ -206,6 +213,8 @@ function SheetBody({ kind }: { kind: SheetKind }) {
       return section?.type === "grid" ? <GridLayouts current={section.template} /> : null;
     case "catalog-template":
       return section?.type === "catalog" ? <CatalogTemplate current={section.template} /> : null;
+    case "catalog-filter-sort":
+      return section?.type === "catalog" ? <CatalogFilterSortSheet sec={section} /> : null;
     case "product-template":
       return section?.type === "product" ? <ProductTemplate current={section.template} /> : null;
     case "product-gallery":
@@ -963,6 +972,438 @@ function CatalogTemplate({ current }: { current?: "grid" | "list" }) {
           </div>
         </div>
       </TemplateCard>
+    </div>
+  );
+}
+
+function CatalogFilterSortSheet({ sec }: { sec: CatalogSection }) {
+  const [tab, setTab] = useState<"sort" | "filter" | "layout">("sort");
+
+  const sortConfig = sec.sortConfig || {
+    enabled: true,
+    defaultSort: "featured",
+    allowedSorts: ["featured", "price_asc", "price_desc", "discount_desc", "newest", "name_asc"],
+  };
+
+  const filterConfig = sec.filterConfig || {
+    showCategories: true,
+    showBrands: true,
+    showPrice: true,
+    showStock: true,
+    autoHideOutOfStock: false,
+  };
+
+  const layoutConfig = sec.layoutConfig || {
+    style: "hybrid",
+    sticky: true,
+    showItemCount: true,
+  };
+
+  const sortOptions: { id: CatalogSortOption; label: string; desc: string }[] = [
+    { id: "featured", label: "Featured (Curated)", desc: "Storefront order as defined in catalog" },
+    { id: "price_asc", label: "Price: Low to High", desc: "Cheapest products first" },
+    { id: "price_desc", label: "Price: High to Low", desc: "Premium products first" },
+    { id: "discount_desc", label: "Biggest Discount (% OFF)", desc: "Highest percentage savings first" },
+    { id: "newest", label: "Newest Drops First", desc: "Recently added items or marked NEW" },
+    { id: "name_asc", label: "Alphabetical (A to Z)", desc: "Sort product names alphabetically" },
+  ];
+
+  const patchSort = (patch: Partial<CatalogSortConfig>) => {
+    useEditor.getState().patchSelected({
+      sortConfig: { ...sortConfig, ...patch },
+    });
+  };
+
+  const patchFilter = (patch: Partial<CatalogFilterConfig>) => {
+    useEditor.getState().patchSelected({
+      filterConfig: { ...filterConfig, ...patch },
+    });
+  };
+
+  const patchLayout = (patch: Partial<CatalogLayoutConfig>) => {
+    useEditor.getState().patchSelected({
+      layoutConfig: { ...layoutConfig, ...patch },
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Tab Switcher */}
+      <div className="flex rounded-xl bg-slate-100 dark:bg-zinc-800 p-1">
+        <button
+          type="button"
+          onClick={() => setTab("sort")}
+          className={cn(
+            "flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
+            tab === "sort"
+              ? "bg-white dark:bg-zinc-900 text-ink shadow-2xs"
+              : "text-muted hover:text-ink"
+          )}
+        >
+          Sort By
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("filter")}
+          className={cn(
+            "flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
+            tab === "filter"
+              ? "bg-white dark:bg-zinc-900 text-ink shadow-2xs"
+              : "text-muted hover:text-ink"
+          )}
+        >
+          Filters
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("layout")}
+          className={cn(
+            "flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
+            tab === "layout"
+              ? "bg-white dark:bg-zinc-900 text-ink shadow-2xs"
+              : "text-muted hover:text-ink"
+          )}
+        >
+          Layout & Style
+        </button>
+      </div>
+
+      {tab === "sort" && (
+        <div className="flex flex-col gap-4">
+          {/* Enable Sorting Master Switch */}
+          <div className="flex items-center justify-between p-3.5 rounded-2xl border border-line-soft bg-surface shadow-2xs">
+            <div>
+              <div className="text-sm font-semibold text-ink">Enable Customer Sorting</div>
+              <div className="text-xs text-muted">Show Sort By button on storefront</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={sortConfig.enabled}
+              onClick={() => patchSort({ enabled: !sortConfig.enabled })}
+              className={cn(
+                "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                sortConfig.enabled ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                  sortConfig.enabled ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {sortConfig.enabled && (
+            <>
+              {/* Default Sort Order */}
+              <div>
+                <p className="mb-2 text-xs font-semibold tracking-wider text-muted uppercase">Default Sort Order</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {sortOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => patchSort({ defaultSort: opt.id })}
+                      className={cn(
+                        "tap-smooth flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer",
+                        sortConfig.defaultSort === opt.id
+                          ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/40 ring-1 ring-purple-600/30"
+                          : "border-line-soft bg-surface hover:bg-fill/70"
+                      )}
+                    >
+                      <div>
+                        <div className="text-xs font-semibold text-ink">{opt.label}</div>
+                        <div className="text-[11px] text-muted">{opt.desc}</div>
+                      </div>
+                      <div
+                        className={cn(
+                          "size-4 rounded-full border flex items-center justify-center shrink-0",
+                          sortConfig.defaultSort === opt.id
+                            ? "border-purple-600 bg-purple-600 text-white"
+                            : "border-slate-300 dark:border-zinc-700"
+                        )}
+                      >
+                        {sortConfig.defaultSort === opt.id && <div className="size-1.5 rounded-full bg-white" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Allowed Sort Options for Buyers */}
+              <div>
+                <p className="mb-2 text-xs font-semibold tracking-wider text-muted uppercase">Allowed Sort Options For Buyers</p>
+                <div className="divide-y divide-line-soft rounded-2xl border border-line-soft bg-surface overflow-hidden shadow-2xs">
+                  {sortOptions.map((opt) => {
+                    const isChecked = sortConfig.allowedSorts.includes(opt.id);
+                    return (
+                      <label
+                        key={opt.id}
+                        className="flex items-center justify-between p-3 cursor-pointer hover:bg-fill/50 transition-colors"
+                      >
+                        <div>
+                          <div className="text-xs font-medium text-ink">{opt.label}</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const next = isChecked
+                              ? sortConfig.allowedSorts.filter((s) => s !== opt.id)
+                              : [...sortConfig.allowedSorts, opt.id];
+                            if (next.length > 0) patchSort({ allowedSorts: next });
+                          }}
+                          className="size-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {tab === "filter" && (
+        <div className="flex flex-col gap-4">
+          <p className="text-xs font-semibold tracking-wider text-muted uppercase">Filter Facets Visibility</p>
+          <div className="divide-y divide-line-soft overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+            {/* Category tabs */}
+            <div className="flex items-center justify-between p-3.5">
+              <div>
+                <div className="text-sm font-medium">Category Pill Tabs</div>
+                <div className="text-xs text-muted">Show category tabs at top of store</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={filterConfig.showCategories}
+                onClick={() => patchFilter({ showCategories: !filterConfig.showCategories })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  filterConfig.showCategories ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                    filterConfig.showCategories ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Brand filter */}
+            <div className="flex items-center justify-between p-3.5">
+              <div>
+                <div className="text-sm font-medium">Brand Filter</div>
+                <div className="text-xs text-muted">Allow buyers to filter by brand (Nike, Adidas...)</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={filterConfig.showBrands}
+                onClick={() => patchFilter({ showBrands: !filterConfig.showBrands })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  filterConfig.showBrands ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                    filterConfig.showBrands ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Price filter */}
+            <div className="flex items-center justify-between p-3.5">
+              <div>
+                <div className="text-sm font-medium">Price Range Filter</div>
+                <div className="text-xs text-muted">Filter by price brackets (Under $100, $100-$150...)</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={filterConfig.showPrice}
+                onClick={() => patchFilter({ showPrice: !filterConfig.showPrice })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  filterConfig.showPrice ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                    filterConfig.showPrice ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* In-Stock filter */}
+            <div className="flex items-center justify-between p-3.5">
+              <div>
+                <div className="text-sm font-medium">In-Stock Only Filter</div>
+                <div className="text-xs text-muted">Allow buyers to hide out-of-stock items</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={filterConfig.showStock}
+                onClick={() => patchFilter({ showStock: !filterConfig.showStock })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  filterConfig.showStock ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                    filterConfig.showStock ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Auto-Hide Sold Out */}
+            <div className="flex items-center justify-between p-3.5">
+              <div>
+                <div className="text-sm font-medium">Auto-Hide Sold Out Products</div>
+                <div className="text-xs text-muted">Always hide sold out items from store</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={filterConfig.autoHideOutOfStock}
+                onClick={() => patchFilter({ autoHideOutOfStock: !filterConfig.autoHideOutOfStock })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  filterConfig.autoHideOutOfStock ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                    filterConfig.autoHideOutOfStock ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "layout" && (
+        <div className="flex flex-col gap-5">
+          {/* Presets */}
+          <div>
+            <p className="mb-2 text-xs font-semibold tracking-wider text-muted uppercase">Filter Presentation Style</p>
+            <div className="grid grid-cols-1 gap-2.5">
+              <button
+                type="button"
+                onClick={() => patchLayout({ style: "hybrid" })}
+                className={cn(
+                  "tap-smooth p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1.5",
+                  layoutConfig.style === "hybrid"
+                    ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/40 ring-1 ring-purple-600/30"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-ink">Hybrid (Pills + Utility Bar)</span>
+                  <span className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-bold">Recommended</span>
+                </div>
+                <p className="text-[11px] text-muted">Category pills on top for 1-tap switching, plus compact Sort & Filter utility bar above product grid.</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => patchLayout({ style: "minimal" })}
+                className={cn(
+                  "tap-smooth p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1.5",
+                  layoutConfig.style === "minimal"
+                    ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/40 ring-1 ring-purple-600/30"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <span className="text-xs font-bold text-ink">Minimal (Utility Bar Only)</span>
+                <p className="text-[11px] text-muted">Hides horizontal category pills. All category, brand and price filters open from the Filter drawer.</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => patchLayout({ style: "pills_only" })}
+                className={cn(
+                  "tap-smooth p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1.5",
+                  layoutConfig.style === "pills_only"
+                    ? "border-purple-600 bg-purple-50/60 dark:bg-purple-950/40 ring-1 ring-purple-600/30"
+                    : "border-line-soft bg-surface hover:bg-fill/70"
+                )}
+              >
+                <span className="text-xs font-bold text-ink">Pills Only</span>
+                <p className="text-[11px] text-muted">Clean single row of category tabs. Disables the multi-facet filter & sort bar.</p>
+              </button>
+            </div>
+          </div>
+
+          {/* Sticky Bar & Count Toggles */}
+          <div className="divide-y divide-line-soft overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-2xs">
+            <div className="flex items-center justify-between p-3.5">
+              <div>
+                <div className="text-sm font-medium">Sticky Filter Bar</div>
+                <div className="text-xs text-muted">Keep Sort & Filter bar fixed at top while scrolling</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={layoutConfig.sticky}
+                onClick={() => patchLayout({ sticky: !layoutConfig.sticky })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  layoutConfig.sticky ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                    layoutConfig.sticky ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-3.5">
+              <div>
+                <div className="text-sm font-medium">Product Count Counter</div>
+                <div className="text-xs text-muted">Display number of matching products (e.g. '8 Products')</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={layoutConfig.showItemCount}
+                onClick={() => patchLayout({ showItemCount: !layoutConfig.showItemCount })}
+                className={cn(
+                  "tap-smooth relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  layoutConfig.showItemCount ? "bg-accent" : "bg-slate-200 dark:bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                    layoutConfig.showItemCount ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

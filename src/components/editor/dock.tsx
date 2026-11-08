@@ -125,6 +125,7 @@ export function Dock() {
       case "catalog":
         return [
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("catalog-template") },
+          { id: "filtersort", label: "Filter & Sort", icon: SlidersHorizontal, action: open("catalog-filter-sort") },
           { id: "style", label: "Style", icon: SlidersHorizontal, action: open("product-card-style") },
           { id: "badges", label: "Badges", icon: Tag, action: open("product-card-badges") },
           { id: "color", label: "Color", icon: Palette, action: open("section-color") },
