@@ -932,7 +932,7 @@ export const useEditor = create<EditorState>((set, get) => {
 
     hydrate: (saved) => {
       const allowedTypes: Record<PageId, Section["type"][]> = {
-        home: ["navbar", "hero", "categories", "featured", "banner", "brands", "about", "block", "footer"],
+        home: ["navbar", "hero", "categories", "featured", "brands", "footer"],
         shop: ["navbar", "filter-sort", "catalog", "footer"],
         product: ["navbar", "product", "featured", "about", "footer"],
       };
@@ -944,6 +944,13 @@ export const useEditor = create<EditorState>((set, get) => {
           cleanPages[pId].sections = cleanPages[pId].sections.filter((s) => allowed.includes(s.type));
         }
       });
+
+      // Strictly ensure home page has no promo banner, no about us, no reviews, no newsletter
+      if (cleanPages.home && Array.isArray(cleanPages.home.sections)) {
+        cleanPages.home.sections = cleanPages.home.sections.filter(
+          (s) => s.type !== "banner" && s.type !== "about" && s.type !== "block"
+        );
+      }
 
       // Strictly ensure shop page has only filter-sort & catalog grid (+ navbar & footer)
       if (cleanPages.shop && Array.isArray(cleanPages.shop.sections)) {

@@ -649,11 +649,7 @@ function AddList() {
     { kind: "hero", title: "Hero Banner", desc: "High-impact visual banner with photo & headline." },
     { kind: "categories", title: "Categories", desc: "Visual navigation tiles for product categories." },
     { kind: "featured", title: "Featured Products", desc: "Curated drops with direct WhatsApp checkout.", badge: "POPULAR" },
-    { kind: "banner", title: "Promo Banner", desc: "Promotional sale callout with WhatsApp action." },
     { kind: "brands", title: "Brands", desc: "Authorized partner brands and logos." },
-    { kind: "about", title: "About Us", desc: "Brand philosophy and authentic trust guarantees." },
-    { kind: "reviews", title: "Customer Reviews", desc: "Three quotes of social proof from happy buyers." },
-    { kind: "newsletter", title: "Newsletter", desc: "Email capture box for new drops." },
   ];
 
   const shopItems: AddItem[] = [
