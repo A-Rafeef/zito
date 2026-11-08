@@ -864,25 +864,33 @@ function GridView({
         : "grid-cols-2";
 
   const openItem = (item: (typeof sec.items)[number]) => {
-    useEditor.getState().openProduct({
-      id: item.id,
-      name: item.title,
-      price: item.salePrice || priceNumber(item.price),
-      regularPrice: item.regularPrice || priceNumber(item.price),
-      salePrice: item.salePrice,
-      discountPercentage: item.discountPercentage,
-      stock: item.stock ?? 10,
-      brand: item.brand,
-      category: item.category || item.tag,
-      description: item.description,
-      gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.image],
-      img: item.image,
-      variants: item.variants,
-      badge: item.badge,
-    });
+    if (preview) {
+      useEditor.getState().openProduct({
+        id: item.id,
+        name: item.title,
+        price: item.salePrice || priceNumber(item.price),
+        regularPrice: item.regularPrice || priceNumber(item.price),
+        salePrice: item.salePrice,
+        discountPercentage: item.discountPercentage,
+        stock: item.stock ?? 10,
+        brand: item.brand,
+        category: item.category || item.tag,
+        description: item.description,
+        gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.image],
+        img: item.image,
+        variants: item.variants,
+        badge: item.badge,
+      });
+    } else {
+      useEditor.getState().select(sec.id);
+    }
   };
 
   const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof sec.items)[number]) => {
+    if (!preview) {
+      useEditor.getState().select(sec.id);
+      return;
+    }
     event.stopPropagation();
     const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
     const productUrl = `${origin}/product?name=${encodeURIComponent(item.title)}`;
@@ -1954,25 +1962,33 @@ function CatalogView({
   const sorted = applyCatalogFilters(sec.products, filterState, sec.filterConfig?.autoHideOutOfStock);
 
   const openItem = (item: (typeof sorted)[number]) => {
-    useEditor.getState().openProduct({
-      id: item.id,
-      name: item.name,
-      price: item.salePrice || item.price,
-      regularPrice: item.regularPrice || item.price,
-      salePrice: item.salePrice,
-      discountPercentage: item.discountPercentage,
-      stock: item.stock ?? 10,
-      brand: item.brand,
-      category: item.category,
-      description: item.description,
-      gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.img],
-      img: item.img,
-      variants: item.variants,
-      badge: item.badge,
-    });
+    if (preview) {
+      useEditor.getState().openProduct({
+        id: item.id,
+        name: item.name,
+        price: item.salePrice || item.price,
+        regularPrice: item.regularPrice || item.price,
+        salePrice: item.salePrice,
+        discountPercentage: item.discountPercentage,
+        stock: item.stock ?? 10,
+        brand: item.brand,
+        category: item.category,
+        description: item.description,
+        gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.img],
+        img: item.img,
+        variants: item.variants,
+        badge: item.badge,
+      });
+    } else {
+      useEditor.getState().select(sec.id);
+    }
   };
 
   const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof sorted)[number]) => {
+    if (!preview) {
+      useEditor.getState().select(sec.id);
+      return;
+    }
     event.stopPropagation();
     const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
     const productUrl = `${origin}/product?name=${encodeURIComponent(item.name)}`;
@@ -1980,7 +1996,7 @@ function CatalogView({
     const message =
       `Hi! I'd like to order from Ziteo:\n\n` +
       `📦 *Product:* ${item.name}\n` +
-      `💰 *Price:* ${money(item.price, sec.currency || "$")}\n` +
+      `💰 *Price:* ${money(item.salePrice || item.price, sec.currency || "$")}\n` +
       `🔗 *Link:* ${productUrl}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
@@ -2842,25 +2858,33 @@ function FeaturedView({
   const openItem = (item: (typeof sec.items)[number]) => {
     const num = Number(item.price.replace(/[^0-9.]/g, ""));
     const price = Number.isFinite(num) && num > 0 ? num : 149;
-    useEditor.getState().openProduct({
-      id: item.id,
-      name: item.title,
-      price: item.salePrice || price,
-      regularPrice: item.regularPrice || price,
-      salePrice: item.salePrice,
-      discountPercentage: item.discountPercentage,
-      stock: item.stock ?? 10,
-      brand: item.brand,
-      category: item.category || item.tag,
-      description: item.description,
-      gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.image],
-      img: item.image,
-      variants: item.variants,
-      badge: item.badge,
-    });
+    if (preview) {
+      useEditor.getState().openProduct({
+        id: item.id,
+        name: item.title,
+        price: item.salePrice || price,
+        regularPrice: item.regularPrice || price,
+        salePrice: item.salePrice,
+        discountPercentage: item.discountPercentage,
+        stock: item.stock ?? 10,
+        brand: item.brand,
+        category: item.category || item.tag,
+        description: item.description,
+        gallery: item.gallery && item.gallery.length > 0 ? item.gallery : [item.image],
+        img: item.image,
+        variants: item.variants,
+        badge: item.badge,
+      });
+    } else {
+      useEditor.getState().select(sec.id);
+    }
   };
 
   const buyDirectOnWhatsApp = (event: React.MouseEvent, item: (typeof sec.items)[number]) => {
+    if (!preview) {
+      useEditor.getState().select(sec.id);
+      return;
+    }
     event.stopPropagation();
     const origin = typeof window !== "undefined" ? window.location.origin : "https://ziteo.site";
     const productUrl = `${origin}/product?name=${encodeURIComponent(item.title)}`;
