@@ -7,6 +7,7 @@ import {
   createCatalogSection,
   createCategoriesSection,
   createFeaturedSection,
+  createFilterSortSection,
   createHeroSection,
   createPages,
   createProductSection,
@@ -19,6 +20,8 @@ import type {
   BlockSection,
   CartItem,
   CatalogFilter,
+  CatalogFilterState,
+  CatalogSortOption,
   Device,
   GridItem,
   PageId,
@@ -29,7 +32,7 @@ import type {
   Snapshot,
 } from "@/lib/editor/types";
 
-const STORAGE_KEY = "ziteo-editor-v3";
+const STORAGE_KEY = "ziteo-editor-v4";
 
 export interface SavedEditor {
   pages: Pages;
@@ -92,6 +95,13 @@ interface EditorState extends SavedEditor {
   setPageColor: (background: string) => void;
   setHeroSlide: (index: number) => void;
   setCatalogFilter: (filter: CatalogFilter) => void;
+  catalogFilterState: CatalogFilterState;
+  setCatalogSort: (sort: CatalogSortOption) => void;
+  setCatalogCategory: (cat: string) => void;
+  toggleCatalogBrand: (brand: string) => void;
+  setCatalogPriceBracket: (bracket: "all" | "under_100" | "100_150" | "above_150") => void;
+  toggleCatalogInStockOnly: () => void;
+  resetCatalogFilters: () => void;
   setProductField: (patch: Partial<Extract<Section, { type: "product" }>>) => void;
   openProduct: (product: Partial<Product> & { name: string; price: number; img: string }) => void;
   addToCart: (item: { name: string; price: number; img: string }) => void;
@@ -180,6 +190,13 @@ export const useEditor = create<EditorState>((set, get) => {
     toast: null,
     past: [],
     future: [],
+    catalogFilterState: {
+      activeSort: "featured",
+      activeCategory: "All",
+      selectedBrands: [],
+      priceBracket: "all",
+      inStockOnly: false,
+    },
 
     select: (id) => set({ selectedId: id, sheet: null }),
     deselect: () => set({ selectedId: null, sheet: null }),
@@ -684,6 +701,58 @@ export const useEditor = create<EditorState>((set, get) => {
         const catalog = pages.shop.sections.find((sec) => sec.type === "catalog");
         if (catalog && catalog.type === "catalog") catalog.filter = filter;
       });
+      set((state) => ({
+        catalogFilterState: { ...state.catalogFilterState, activeCategory: filter },
+      }));
+    },
+
+    setCatalogSort: (sort) => {
+      set((state) => ({
+        catalogFilterState: { ...state.catalogFilterState, activeSort: sort },
+      }));
+    },
+
+    setCatalogCategory: (cat) => {
+      set((state) => ({
+        catalogFilterState: { ...state.catalogFilterState, activeCategory: cat },
+      }));
+    },
+
+    toggleCatalogBrand: (brand) => {
+      set((state) => {
+        const brands = state.catalogFilterState.selectedBrands;
+        const next = brands.includes(brand) ? brands.filter((b) => b !== brand) : [...brands, brand];
+        return {
+          catalogFilterState: { ...state.catalogFilterState, selectedBrands: next },
+        };
+      });
+    },
+
+    setCatalogPriceBracket: (bracket) => {
+      set((state) => ({
+        catalogFilterState: { ...state.catalogFilterState, priceBracket: bracket },
+      }));
+    },
+
+    toggleCatalogInStockOnly: () => {
+      set((state) => ({
+        catalogFilterState: {
+          ...state.catalogFilterState,
+          inStockOnly: !state.catalogFilterState.inStockOnly,
+        },
+      }));
+    },
+
+    resetCatalogFilters: () => {
+      set({
+        catalogFilterState: {
+          activeSort: "featured",
+          activeCategory: "All",
+          selectedBrands: [],
+          priceBracket: "all",
+          inStockOnly: false,
+        },
+      });
     },
 
     setProductField: (patch) => {
@@ -864,7 +933,7 @@ export const useEditor = create<EditorState>((set, get) => {
     hydrate: (saved) => {
       const allowedTypes: Record<PageId, Section["type"][]> = {
         home: ["navbar", "hero", "categories", "featured", "banner", "brands", "about", "block", "footer"],
-        shop: ["navbar", "catalog", "footer"],
+        shop: ["navbar", "filter-sort", "catalog", "footer"],
         product: ["navbar", "product", "featured", "about", "footer"],
       };
 
@@ -876,11 +945,23 @@ export const useEditor = create<EditorState>((set, get) => {
         }
       });
 
-      // Strictly ensure shop page has only catalog grid (+ navbar & footer)
+      // Strictly ensure shop page has only filter-sort & catalog grid (+ navbar & footer)
       if (cleanPages.shop && Array.isArray(cleanPages.shop.sections)) {
         cleanPages.shop.sections = cleanPages.shop.sections.filter(
-          (s) => s.type === "navbar" || s.type === "catalog" || s.type === "footer"
+          (s) => s.type === "navbar" || s.type === "filter-sort" || s.type === "catalog" || s.type === "footer"
         );
+        const hasFilterSort = cleanPages.shop.sections.some((s) => s.type === "filter-sort");
+        if (!hasFilterSort) {
+          const catIdx = cleanPages.shop.sections.findIndex((s) => s.type === "catalog");
+          const insertIdx = catIdx !== -1 ? catIdx : 1;
+          cleanPages.shop.sections.splice(insertIdx, 0, createFilterSortSection("shop-filter-sort"));
+        }
+        const cat = cleanPages.shop.sections.find((s) => s.type === "catalog");
+        if (cat && cat.type === "catalog") {
+          cat.title = "";
+          cat.subtitle = "";
+          cat.name = "Catalog Grid";
+        }
       }
 
       // Strictly ensure product page has no reviews, no promo banner, no newsletter

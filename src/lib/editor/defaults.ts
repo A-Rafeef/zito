@@ -6,6 +6,7 @@ import type {
   CatalogSection,
   CategoriesSection,
   FeaturedSection,
+  FilterSortSection,
   FooterSection,
   HeroSection,
   NavbarSection,
@@ -529,9 +530,9 @@ export function createCatalogSection(id = `catalog-${Date.now()}`): CatalogSecti
   return {
     id,
     type: "catalog",
-    name: "Catalog",
-    title: "All essentials",
-    subtitle: "Footwear, apparel, and the few things you carry.",
+    name: "Catalog Grid",
+    title: "",
+    subtitle: "",
     filter: "All",
     background: "#ffffff",
     template: "grid",
@@ -573,6 +574,32 @@ export function createCatalogSection(id = `catalog-${Date.now()}`): CatalogSecti
       showItemCount: true,
     },
     products,
+  };
+}
+
+export function createFilterSortSection(id = `filter-sort-${Date.now()}`): FilterSortSection {
+  return {
+    id,
+    type: "filter-sort",
+    name: "Filter & Sort Grid",
+    background: "#ffffff",
+    sortConfig: {
+      enabled: true,
+      defaultSort: "featured",
+      allowedSorts: ["featured", "price_asc", "price_desc", "discount_desc", "newest", "name_asc"],
+    },
+    filterConfig: {
+      showCategories: true,
+      showBrands: true,
+      showPrice: true,
+      showStock: true,
+      autoHideOutOfStock: false,
+    },
+    layoutConfig: {
+      style: "hybrid",
+      sticky: true,
+      showItemCount: true,
+    },
   };
 }
 
@@ -655,6 +682,7 @@ export function createPages(): Pages {
       tone: "light",
       sections: [
         navbar(),
+        createFilterSortSection("shop-filter-sort"),
         createCatalogSection("catalog"),
         footer(),
       ],
@@ -749,6 +777,7 @@ export function paintTheme(page: PageModel, theme: "light" | "ink"): PageModel {
       case "categories":
       case "brands":
       case "catalog":
+      case "filter-sort":
       case "product":
         return { ...sec, background: bg };
       case "banner":

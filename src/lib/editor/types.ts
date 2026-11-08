@@ -461,6 +461,24 @@ export interface ProductCardSection {
   buttonColor?: string;
 }
 
+export interface FilterSortSection {
+  id: string;
+  type: "filter-sort";
+  name: string;
+  background: string;
+  sortConfig?: CatalogSortConfig;
+  filterConfig?: CatalogFilterConfig;
+  layoutConfig?: CatalogLayoutConfig;
+}
+
+export interface CatalogFilterState {
+  activeSort: CatalogSortOption;
+  activeCategory: string;
+  selectedBrands: string[];
+  priceBracket: "all" | "under_100" | "100_150" | "above_150";
+  inStockOnly: boolean;
+}
+
 export type Section =
   | NavbarSection
   | HeroSection
@@ -472,6 +490,7 @@ export type Section =
   | BannerSection
   | AboutSection
   | CatalogSection
+  | FilterSortSection
   | ProductSection
   | FooterSection
   | BlockSection

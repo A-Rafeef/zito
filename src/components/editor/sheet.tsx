@@ -17,6 +17,7 @@ import {
   Shield,
   ShoppingBag,
   Sliders,
+  SlidersHorizontal,
   Sparkles,
   Tag,
   Trash2,
@@ -31,6 +32,7 @@ import type {
   CatalogFilterStyle,
   CatalogLayoutConfig,
   CatalogSection,
+  FilterSortSection,
   CatalogSortConfig,
   CatalogSortOption,
   HeroAnimation,
@@ -214,7 +216,9 @@ function SheetBody({ kind }: { kind: SheetKind }) {
     case "catalog-template":
       return section?.type === "catalog" ? <CatalogTemplate current={section.template} /> : null;
     case "catalog-filter-sort":
-      return section?.type === "catalog" ? <CatalogFilterSortSheet sec={section} /> : null;
+      return section?.type === "filter-sort" || section?.type === "catalog"
+        ? <CatalogFilterSortSheet sec={section as FilterSortSection | CatalogSection} />
+        : null;
     case "product-template":
       return section?.type === "product" ? <ProductTemplate current={section.template} /> : null;
     case "product-gallery":
@@ -322,8 +326,10 @@ function ArrangeSectionsSheet() {
         return { label: "Hero Banner", desc: "Main hero showcase & slides", icon: Image };
       case "grid":
         return { label: "Product Grid", desc: "Mosaic or editorial product layout", icon: LayoutGrid };
+      case "filter-sort":
+        return { label: "Filter & Sort Grid", desc: "Customer sorting & faceted filters", icon: SlidersHorizontal };
       case "catalog":
-        return { label: "Product Catalog", desc: "Full catalog with filter & search", icon: ShoppingBag };
+        return { label: "Catalog Grid", desc: "Product catalog grid", icon: ShoppingBag };
       case "featured":
         return { label: sec.title || "Featured Products", desc: "Curated product recommendations", icon: Sparkles };
       case "categories":
@@ -976,7 +982,7 @@ function CatalogTemplate({ current }: { current?: "grid" | "list" }) {
   );
 }
 
-function CatalogFilterSortSheet({ sec }: { sec: CatalogSection }) {
+function CatalogFilterSortSheet({ sec }: { sec: FilterSortSection | CatalogSection }) {
   const [tab, setTab] = useState<"sort" | "filter" | "layout">("sort");
 
   const sortConfig = sec.sortConfig || {

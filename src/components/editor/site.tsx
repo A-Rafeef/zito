@@ -25,7 +25,11 @@ import type {
   CatalogFilterConfig,
   CatalogLayoutConfig,
   CatalogSortConfig,
+  CatalogFilterState,
+  Product,
+  CatalogSection,
   CatalogSortOption,
+  FilterSortSection,
   Device,
   NavbarLink,
   NavbarSection,
@@ -1650,21 +1654,86 @@ function CatalogFilterDrawer({
   );
 }
 
-function CatalogView({
+function getEffectivePrice(p: Product) {
+  if (typeof p.salePrice === "number" && p.salePrice > 0) return p.salePrice;
+  if (typeof p.price === "number") return p.price;
+  return typeof p.price === "string" ? priceNumber(p.price) : 0;
+}
+
+function applyCatalogFilters(
+  products: Product[],
+  filterState: CatalogFilterState,
+  autoHideOutOfStock?: boolean
+) {
+  let filtered = products;
+
+  if (autoHideOutOfStock) {
+    filtered = filtered.filter((p) => (p.stock ?? 1) > 0);
+  }
+
+  if (filterState.activeCategory && filterState.activeCategory !== "All") {
+    filtered = filtered.filter((p) => p.category === filterState.activeCategory);
+  }
+
+  if (filterState.selectedBrands && filterState.selectedBrands.length > 0) {
+    filtered = filtered.filter((p) => p.brand && filterState.selectedBrands.includes(p.brand));
+  }
+
+  if (filterState.priceBracket && filterState.priceBracket !== "all") {
+    filtered = filtered.filter((p) => {
+      const price = getEffectivePrice(p);
+      if (filterState.priceBracket === "under_100") return price < 100;
+      if (filterState.priceBracket === "100_150") return price >= 100 && price <= 150;
+      if (filterState.priceBracket === "above_150") return price > 150;
+      return true;
+    });
+  }
+
+  if (filterState.inStockOnly) {
+    filtered = filtered.filter((p) => (p.stock ?? 1) > 0);
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    const priceA = getEffectivePrice(a);
+    const priceB = getEffectivePrice(b);
+    const discA = a.discountPercentage ?? 0;
+    const discB = b.discountPercentage ?? 0;
+
+    switch (filterState.activeSort) {
+      case "price_asc":
+        return priceA - priceB;
+      case "price_desc":
+        return priceB - priceA;
+      case "discount_desc":
+        return discB - discA;
+      case "newest": {
+        const isNewA = a.badge === "NEW" ? 1 : 0;
+        const isNewB = b.badge === "NEW" ? 1 : 0;
+        if (isNewA !== isNewB) return isNewB - isNewA;
+        return (b.id || "").localeCompare(a.id || "");
+      }
+      case "name_asc":
+        return (a.name || "").localeCompare(b.name || "");
+      case "featured":
+      default:
+        return 0;
+    }
+  });
+
+  return sorted;
+}
+
+function FilterSortView({
   sec,
   device,
 }: {
-  sec: Extract<Section, { type: "catalog" }>;
+  sec: FilterSortSection;
   device: Device;
 }) {
   const dark = isDark(sec.background);
-  const preview = useEditor((s) => s.preview);
-  const isList = sec.template === "list";
-  const cols = isList
-    ? "grid-cols-1 max-w-xl mx-auto"
-    : device === "desktop"
-      ? "grid-cols-3"
-      : "grid-cols-2";
+  const filterState = useEditor((s) => s.catalogFilterState);
+  const shopCatalog = useEditor((s) => s.pages.shop.sections.find((x) => x.type === "catalog") as CatalogSection | undefined);
+  const products = shopCatalog?.products || [];
 
   const sortConfig = sec.sortConfig || {
     enabled: true,
@@ -1686,105 +1755,19 @@ function CatalogView({
     showItemCount: true,
   };
 
-  const [activeSort, setActiveSort] = useState<CatalogSortOption>(sortConfig.defaultSort || "featured");
-  const [activeCategory, setActiveCategory] = useState<string>(sec.filter || "All");
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [priceBracket, setPriceBracket] = useState<"all" | "under_100" | "100_150" | "above_150">("all");
-  const [inStockOnly, setInStockOnly] = useState<boolean>(false);
-  const [isSortDrawerOpen, setIsSortDrawerOpen] = useState<boolean>(false);
-  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
+  const [isSortDrawerOpen, setIsSortDrawerOpen] = useState(false);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    if (sec.filter && sec.filter !== activeCategory) {
-      setActiveCategory(sec.filter);
-    }
-  }, [sec.filter]);
+  const availableBrands = Array.from(new Set(products.map((p) => p.brand).filter(Boolean))) as string[];
+  const dynamicCategories = ["All", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean))) as string[]];
 
-  // Dynamic lists from products
-  const availableBrands = Array.from(new Set(sec.products.map((p) => p.brand).filter(Boolean))) as string[];
-  const dynamicCategories = ["All", ...Array.from(new Set(sec.products.map((p) => p.category).filter(Boolean))) as string[]];
-
-  // Filtering
-  let filtered = sec.products;
-
-  if (filterConfig.autoHideOutOfStock) {
-    filtered = filtered.filter((p) => (p.stock ?? 1) > 0);
-  }
-
-  if (activeCategory !== "All") {
-    filtered = filtered.filter((p) => p.category === activeCategory);
-  }
-
-  if (filterConfig.showBrands && selectedBrands.length > 0) {
-    filtered = filtered.filter((p) => p.brand && selectedBrands.includes(p.brand));
-  }
-
-  const getEffPrice = (p: (typeof filtered)[number]) => {
-    if (typeof p.salePrice === "number" && p.salePrice > 0) return p.salePrice;
-    if (typeof p.price === "number") return p.price;
-    return typeof p.price === "string" ? priceNumber(p.price) : 0;
-  };
-
-  if (filterConfig.showPrice && priceBracket !== "all") {
-    filtered = filtered.filter((p) => {
-      const price = getEffPrice(p);
-      if (priceBracket === "under_100") return price < 100;
-      if (priceBracket === "100_150") return price >= 100 && price <= 150;
-      if (priceBracket === "above_150") return price > 150;
-      return true;
-    });
-  }
-
-  if (filterConfig.showStock && inStockOnly) {
-    filtered = filtered.filter((p) => (p.stock ?? 1) > 0);
-  }
-
-  // Sorting
-  const sorted = [...filtered].sort((a, b) => {
-    const priceA = getEffPrice(a);
-    const priceB = getEffPrice(b);
-    const discA = a.discountPercentage ?? 0;
-    const discB = b.discountPercentage ?? 0;
-
-    switch (activeSort) {
-      case "price_asc":
-        return priceA - priceB;
-      case "price_desc":
-        return priceB - priceA;
-      case "discount_desc":
-        return discB - discA;
-      case "newest": {
-        const isNewA = a.badge === "NEW" ? 1 : 0;
-        const isNewB = b.badge === "NEW" ? 1 : 0;
-        if (isNewA !== isNewB) return isNewB - isNewA;
-        return (b.id || "").localeCompare(a.id || "");
-      }
-      case "name_asc":
-        return (a.name || "").localeCompare(b.name || "");
-      case "featured":
-      default:
-        return 0;
-    }
-  });
+  const sorted = applyCatalogFilters(products, filterState, filterConfig.autoHideOutOfStock);
 
   const activeFilterCount =
-    (activeCategory !== "All" && layoutConfig.style === "minimal" ? 1 : 0) +
-    selectedBrands.length +
-    (priceBracket !== "all" ? 1 : 0) +
-    (inStockOnly ? 1 : 0);
-
-  const resetAllFilters = () => {
-    setActiveCategory("All");
-    setSelectedBrands([]);
-    setPriceBracket("all");
-    setInStockOnly(false);
-  };
-
-  const toggleBrand = (brand: string) => {
-    setSelectedBrands((prev) =>
-      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
-    );
-  };
+    (filterState.activeCategory !== "All" ? 1 : 0) +
+    filterState.selectedBrands.length +
+    (filterState.priceBracket !== "all" ? 1 : 0) +
+    (filterState.inStockOnly ? 1 : 0);
 
   const sortLabels: Record<CatalogSortOption, string> = {
     featured: "Featured",
@@ -1794,6 +1777,189 @@ function CatalogView({
     newest: "Newest Drops",
     name_asc: "Name: A to Z",
   };
+
+  return (
+    <SectionShell section={sec} background={sec.background} color={dark ? "#f5f5f7" : "#1d1d1f"}>
+      <div className={cn("pt-4 pb-2", gutter(device))}>
+        {/* Tier 2: Utility Bar (Sort & Filters) */}
+        <div
+          className={cn(
+            "flex items-center justify-between gap-3 py-2.5 transition-all",
+            layoutConfig.sticky
+              ? "sticky top-14 z-20 backdrop-blur-md bg-surface/90 border-y border-line-soft/60 px-1 -mx-1"
+              : ""
+          )}
+        >
+          {/* Product Count */}
+          <div>
+            {layoutConfig.showItemCount && (
+              <span className="text-xs font-semibold text-muted tracking-tight">
+                {sorted.length} {sorted.length === 1 ? "Product" : "Products"}
+              </span>
+            )}
+          </div>
+
+          {/* Actions: Sort By & Filter Drawers */}
+          <div className="flex items-center gap-2">
+            {sortConfig.enabled && (
+              <button
+                type="button"
+                onClick={() => setIsSortDrawerOpen(true)}
+                className="tap-smooth inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line-soft bg-surface text-xs font-semibold text-ink shadow-2xs hover:bg-fill transition-colors cursor-pointer"
+              >
+                <ArrowUpDown className="size-3.5 text-muted" />
+                <span className="text-muted font-normal">Sort:</span>
+                <span>{sortLabels[filterState.activeSort] || "Featured"}</span>
+                <ChevronDown className="size-3 text-muted ml-0.5" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className={cn(
+                "tap-smooth inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-colors cursor-pointer",
+                activeFilterCount > 0
+                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold ring-1 ring-purple-600/30"
+                  : "border-line-soft bg-surface text-ink hover:bg-fill"
+              )}
+            >
+              <SlidersHorizontal className="size-3.5" />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="flex items-center justify-center size-4 rounded-full bg-purple-600 text-[10px] text-white font-extrabold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Active Filter Chips Bar */}
+        {activeFilterCount > 0 && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            {filterState.activeCategory !== "All" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
+                <span>{filterState.activeCategory}</span>
+                <button
+                  type="button"
+                  onClick={() => useEditor.getState().setCatalogCategory("All")}
+                  className="text-muted hover:text-ink cursor-pointer"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+
+            {filterState.selectedBrands.map((brand) => (
+              <span
+                key={brand}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink"
+              >
+                <span>{brand}</span>
+                <button
+                  type="button"
+                  onClick={() => useEditor.getState().toggleCatalogBrand(brand)}
+                  className="text-muted hover:text-ink cursor-pointer"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+
+            {filterState.priceBracket !== "all" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
+                <span>
+                  {filterState.priceBracket === "under_100"
+                    ? "Under $100"
+                    : filterState.priceBracket === "100_150"
+                      ? "$100 - $150"
+                      : "Over $150"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => useEditor.getState().setCatalogPriceBracket("all")}
+                  className="text-muted hover:text-ink cursor-pointer"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+
+            {filterState.inStockOnly && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
+                <span>In Stock Only</span>
+                <button
+                  type="button"
+                  onClick={() => useEditor.getState().toggleCatalogInStockOnly()}
+                  className="text-muted hover:text-ink cursor-pointer"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => useEditor.getState().resetCatalogFilters()}
+              className="text-xs font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 ml-1 cursor-pointer"
+            >
+              Clear All
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Tier 3: Mobile Drawers */}
+      <CatalogSortDrawer
+        isOpen={isSortDrawerOpen}
+        onClose={() => setIsSortDrawerOpen(false)}
+        allowedSorts={sortConfig.allowedSorts || ["featured", "price_asc", "price_desc", "discount_desc", "newest", "name_asc"]}
+        activeSort={filterState.activeSort}
+        onSelectSort={(s) => useEditor.getState().setCatalogSort(s)}
+        dark={dark}
+      />
+
+      <CatalogFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        filterConfig={filterConfig}
+        categories={dynamicCategories}
+        activeCategory={filterState.activeCategory}
+        onSelectCategory={(c) => useEditor.getState().setCatalogCategory(c)}
+        brands={availableBrands}
+        selectedBrands={filterState.selectedBrands}
+        onToggleBrand={(b) => useEditor.getState().toggleCatalogBrand(b)}
+        priceBracket={filterState.priceBracket}
+        onSelectPriceBracket={(p) => useEditor.getState().setCatalogPriceBracket(p)}
+        inStockOnly={filterState.inStockOnly}
+        onToggleInStockOnly={() => useEditor.getState().toggleCatalogInStockOnly()}
+        onResetAll={() => useEditor.getState().resetCatalogFilters()}
+        filteredCount={sorted.length}
+        dark={dark}
+      />
+    </SectionShell>
+  );
+}
+
+function CatalogView({
+  sec,
+  device,
+}: {
+  sec: Extract<Section, { type: "catalog" }>;
+  device: Device;
+}) {
+  const dark = isDark(sec.background);
+  const preview = useEditor((s) => s.preview);
+  const filterState = useEditor((s) => s.catalogFilterState);
+  const isList = sec.template === "list";
+  const cols = isList
+    ? "grid-cols-1 max-w-xl mx-auto"
+    : device === "desktop"
+      ? "grid-cols-3"
+      : "grid-cols-2";
+
+  const sorted = applyCatalogFilters(sec.products, filterState, sec.filterConfig?.autoHideOutOfStock);
 
   const openItem = (item: (typeof sorted)[number]) => {
     if (preview) {
@@ -1837,164 +2003,9 @@ function CatalogView({
 
   return (
     <SectionShell section={sec} background={sec.background} color={dark ? "#f5f5f7" : "#1d1d1f"}>
-      <div className={cn("pt-8 pb-10", gutter(device))}>
-        <h2 className={cn("font-semibold tracking-tight", titleSize(device))}>{sec.title}</h2>
-        <p className={cn("mt-2 max-w-lg text-sm leading-relaxed", dark ? "text-on-ink/70" : "text-muted")}>
-          {sec.subtitle}
-        </p>
-
-        {/* Tier 1: Category Pills */}
-        {filterConfig.showCategories && layoutConfig.style !== "minimal" && (
-          <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto">
-            {dynamicCategories.map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setActiveCategory(filter);
-                  useEditor.getState().setCatalogFilter(filter as CatalogFilter);
-                }}
-                className={cn("tap-smooth shrink-0 transition-all duration-200 cursor-pointer", filter === activeCategory ? solid(dark) : quiet(dark))}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Tier 2: Utility Bar (Sort & Filters) */}
-        {layoutConfig.style !== "pills_only" && (
-          <div
-            className={cn(
-              "mt-5 flex items-center justify-between gap-3 py-2.5 transition-all",
-              layoutConfig.sticky
-                ? "sticky top-14 z-20 backdrop-blur-md bg-surface/90 border-y border-line-soft/60 px-1 -mx-1"
-                : ""
-            )}
-          >
-            {/* Product Count */}
-            <div>
-              {layoutConfig.showItemCount && (
-                <span className="text-xs font-semibold text-muted tracking-tight">
-                  {sorted.length} {sorted.length === 1 ? "Product" : "Products"}
-                </span>
-              )}
-            </div>
-
-            {/* Actions: Sort By & Filter Drawers */}
-            <div className="flex items-center gap-2">
-              {sortConfig.enabled && (
-                <button
-                  type="button"
-                  onClick={() => setIsSortDrawerOpen(true)}
-                  className="tap-smooth inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line-soft bg-surface text-xs font-semibold text-ink shadow-2xs hover:bg-fill transition-colors cursor-pointer"
-                >
-                  <ArrowUpDown className="size-3.5 text-muted" />
-                  <span className="text-muted font-normal">Sort:</span>
-                  <span>{sortLabels[activeSort] || "Featured"}</span>
-                  <ChevronDown className="size-3 text-muted ml-0.5" />
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setIsFilterDrawerOpen(true)}
-                className={cn(
-                  "tap-smooth inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-colors cursor-pointer",
-                  activeFilterCount > 0
-                    ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold ring-1 ring-purple-600/30"
-                    : "border-line-soft bg-surface text-ink hover:bg-fill"
-                )}
-              >
-                <SlidersHorizontal className="size-3.5" />
-                <span>Filters</span>
-                {activeFilterCount > 0 && (
-                  <span className="flex items-center justify-center size-4 rounded-full bg-purple-600 text-[10px] text-white font-extrabold">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Active Filter Chips Bar */}
-        {(selectedBrands.length > 0 || priceBracket !== "all" || inStockOnly || (activeCategory !== "All" && layoutConfig.style === "minimal")) && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            {activeCategory !== "All" && layoutConfig.style === "minimal" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
-                <span>{activeCategory}</span>
-                <button
-                  type="button"
-                  onClick={() => setActiveCategory("All")}
-                  className="text-muted hover:text-ink cursor-pointer"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            )}
-
-            {selectedBrands.map((brand) => (
-              <span
-                key={brand}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink"
-              >
-                <span>{brand}</span>
-                <button
-                  type="button"
-                  onClick={() => toggleBrand(brand)}
-                  className="text-muted hover:text-ink cursor-pointer"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            ))}
-
-            {priceBracket !== "all" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
-                <span>
-                  {priceBracket === "under_100"
-                    ? "Under $100"
-                    : priceBracket === "100_150"
-                      ? "$100 - $150"
-                      : "Over $150"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPriceBracket("all")}
-                  className="text-muted hover:text-ink cursor-pointer"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            )}
-
-            {inStockOnly && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fill border border-line-soft text-xs text-ink">
-                <span>In Stock Only</span>
-                <button
-                  type="button"
-                  onClick={() => setInStockOnly(false)}
-                  className="text-muted hover:text-ink cursor-pointer"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            )}
-
-            <button
-              type="button"
-              onClick={resetAllFilters}
-              className="text-xs font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 ml-1 cursor-pointer"
-            >
-              Clear All
-            </button>
-          </div>
-        )}
-
-        {/* Product Grid */}
-        <div key={`${sec.filter}-${activeSort}-${activeCategory}`} className={cn("animate-page-enter mt-6 grid gap-x-4", isList ? "gap-y-3" : "gap-y-8", cols)}>
+      <div className={cn("pt-2 pb-10", gutter(device))}>
+        {/* Pure Catalog Grid — NO All essentials title, NO Footwear/Apparel pills */}
+        <div key={`${filterState.activeSort}-${filterState.activeCategory}`} className={cn("animate-page-enter grid gap-x-4", isList ? "gap-y-3" : "gap-y-8", cols)}>
           {sorted.map((item) => (
             <StoreProductCard
               key={item.id}
@@ -2050,7 +2061,7 @@ function CatalogView({
             </p>
             <button
               type="button"
-              onClick={resetAllFilters}
+              onClick={() => useEditor.getState().resetCatalogFilters()}
               className="mt-2 inline-flex items-center px-4 py-2 rounded-xl bg-ink text-on-ink text-xs font-semibold cursor-pointer shadow-xs hover:opacity-90"
             >
               Reset All Filters
@@ -2058,35 +2069,6 @@ function CatalogView({
           </div>
         )}
       </div>
-
-      {/* Tier 3: Mobile Drawers */}
-      <CatalogSortDrawer
-        isOpen={isSortDrawerOpen}
-        onClose={() => setIsSortDrawerOpen(false)}
-        allowedSorts={sortConfig.allowedSorts || ["featured", "price_asc", "price_desc", "discount_desc", "newest", "name_asc"]}
-        activeSort={activeSort}
-        onSelectSort={(s) => setActiveSort(s)}
-        dark={dark}
-      />
-
-      <CatalogFilterDrawer
-        isOpen={isFilterDrawerOpen}
-        onClose={() => setIsFilterDrawerOpen(false)}
-        filterConfig={filterConfig}
-        categories={dynamicCategories}
-        activeCategory={activeCategory}
-        onSelectCategory={(c) => setActiveCategory(c)}
-        brands={availableBrands}
-        selectedBrands={selectedBrands}
-        onToggleBrand={toggleBrand}
-        priceBracket={priceBracket}
-        onSelectPriceBracket={(b) => setPriceBracket(b)}
-        inStockOnly={inStockOnly}
-        onToggleInStockOnly={() => setInStockOnly((v) => !v)}
-        onResetAll={resetAllFilters}
-        filteredCount={sorted.length}
-        dark={dark}
-      />
     </SectionShell>
   );
 }
@@ -3319,6 +3301,8 @@ function renderSection(sec: Section, device: Device) {
       return <BannerView key={sec.id} sec={sec} device={device} />;
     case "about":
       return <AboutView key={sec.id} sec={sec} device={device} />;
+    case "filter-sort":
+      return <FilterSortView key={sec.id} sec={sec} device={device} />;
     case "catalog":
       return <CatalogView key={sec.id} sec={sec} device={device} />;
     case "product":
