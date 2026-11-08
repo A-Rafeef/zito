@@ -205,7 +205,7 @@ export function TopBar() {
             className="tap-smooth-sm flex items-center gap-2 rounded-full border border-[#D5DEFF] bg-[#EEF2FF] px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold tracking-tight text-slate-800 shadow-2xs hover:bg-[#E0E7FF] transition-all active:scale-98"
           >
             <Layers className="size-4 text-[#53389E]" strokeWidth={2} />
-            <span className="truncate">{pages[pageId].title}</span>
+            <span className="truncate">{selectedId === "product-card" ? "Product card" : pages[pageId].title}</span>
             <ChevronDown
               className="size-3.5 text-slate-500 transition-transform duration-200"
               style={{ transform: pageOpen ? "rotate(180deg)" : "rotate(0deg)" }}
