@@ -30,6 +30,7 @@ export interface GridItem {
   tag: string;
   price: string;
   image: string;
+  hoverImage?: string;
   badge?: "NEW" | "SALE" | "HOT";
 }
 
@@ -49,6 +50,7 @@ export interface NavbarLink {
   id: string;
   label: string;
   url: string;
+  visible?: boolean;
 }
 
 export interface NavbarSection {
@@ -57,13 +59,17 @@ export interface NavbarSection {
   name: string;
   template: NavbarTemplate;
   background: string;
+  backgroundOpacity?: number;
   text: string;
+  linkColor?: string;
   iconColor?: string;
   logo: string;
   logoImage?: string;
   sticky?: boolean;
   showSearch?: boolean;
   showCart?: boolean;
+  showWhatsapp?: boolean;
+  whatsappNumber?: string;
   showMenu?: boolean;
   showLinks?: boolean;
   showLogo?: boolean;
@@ -159,14 +165,22 @@ export interface CategoriesSection {
   title: string;
   subtitle?: string;
   background: string;
-  template: "cards" | "pills" | "grid";
+  template: "cards" | "pills" | "grid" | "story";
   items: CategoryItem[];
 }
+
+export type BrandTemplate = "marquee" | "grid" | "editorial" | "story" | "row";
+export type BrandSpeed = "slow" | "normal" | "fast";
+export type BrandDirection = "left" | "right";
+export type BrandColorFilter = "monochrome" | "original" | "inverted";
 
 export interface BrandItem {
   id: string;
   name: string;
   tagline?: string;
+  logoUrl?: string;
+  image?: string;
+  buttonText?: string;
 }
 
 export interface BrandsSection {
@@ -175,8 +189,15 @@ export interface BrandsSection {
   name: string;
   title: string;
   subtitle?: string;
+  trustBadge?: string;
   background: string;
-  template: "row" | "grid";
+  template: BrandTemplate;
+  marqueeSpeed?: BrandSpeed;
+  marqueeDirection?: BrandDirection;
+  pauseOnHover?: boolean;
+  colorFilter?: BrandColorFilter;
+  edgeFade?: boolean;
+  columns?: 2 | 3 | 4 | 6;
   items: BrandItem[];
 }
 
@@ -310,16 +331,6 @@ export type SheetKind =
   | "themes"
   | "add"
   | "page-color"
-  | "navbar-style"
-  | "navbar-name"
-  | "navbar-color"
-  | "navbar-sticky"
-  | "navbar-elements"
-  | "navbar-layout"
-  | "navbar-effects"
-  | "navbar-typography"
-  | "navbar-links"
-  | "navbar-more"
   | "hero-layout"
   | "hero-width"
   | "hero-background"
@@ -347,6 +358,8 @@ export type SheetKind =
   | "product-card-badges"
   | "categories-template"
   | "brands-template"
+  | "brands-style"
+  | "brands-items"
   | "banner-template"
   | "about-template"
   | "featured-template";

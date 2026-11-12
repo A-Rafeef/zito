@@ -1,30 +1,28 @@
 import {
-  Compass,
-  Droplet,
   Eye,
   Film,
   Image,
-  Layers,
   LayoutTemplate,
-  Maximize2,
   MessageCircle,
   Palette,
   Pencil,
-  Pin,
   PlusCircle,
   RectangleHorizontal,
-  Settings2,
   SlidersHorizontal,
   Square,
   Tag,
-  Type,
 } from "lucide-react";
+import { HeaderEditor } from "@/components/editor/header-editor";
 import { selectedSection, useEditor } from "@/lib/editor/store";
 import { cn } from "@/lib/cn";
 import type { SheetKind } from "@/lib/editor/types";
 
 export function Dock() {
   const section = useEditor((s) => selectedSection(s));
+
+  if (section?.type === "navbar") {
+    return <HeaderEditor section={section} />;
+  }
 
   const items = (() => {
     const open = (sheet: SheetKind) => () => useEditor.getState().openSheet(sheet);
@@ -42,17 +40,6 @@ export function Dock() {
       ];
     }
     switch (section.type) {
-      case "navbar":
-        return [
-          { id: "template", label: "Template", icon: LayoutTemplate, action: open("navbar-style") },
-          { id: "colors", label: "Colors", icon: Palette, action: open("navbar-color") },
-          { id: "elements", label: "Elements", icon: SlidersHorizontal, action: open("navbar-elements") },
-          { id: "layout", label: "Layout", icon: Maximize2, action: open("navbar-layout") },
-          { id: "effects", label: "Effects", icon: Layers, action: open("navbar-effects") },
-          { id: "fonts", label: "Fonts", icon: Type, action: open("navbar-typography") },
-          { id: "links", label: "Links", icon: Compass, action: open("navbar-links") },
-          { id: "sticky", label: "Sticky", icon: Pin, action: open("navbar-sticky") },
-        ];
       case "hero":
         return [
           { id: "background", label: "Background", icon: Palette, action: open("hero-background") },
@@ -91,6 +78,8 @@ export function Dock() {
       case "brands":
         return [
           { id: "template", label: "Template", icon: LayoutTemplate, action: open("brands-template") },
+          { id: "style", label: "Style", icon: SlidersHorizontal, action: open("brands-style") },
+          { id: "items", label: "Brands", icon: Tag, action: open("brands-items") },
           { id: "color", label: "Color", icon: Palette, action: open("section-color") },
         ];
       case "banner":

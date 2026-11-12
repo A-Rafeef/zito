@@ -18,6 +18,7 @@ import type {
   CatalogFilter,
   Device,
   GridItem,
+  NavbarTemplate,
   PageId,
   Pages,
   Product,
@@ -66,6 +67,9 @@ interface EditorState extends SavedEditor {
   undo: () => void;
   redo: () => void;
   patchSelected: (patch: Record<string, unknown>) => void;
+  patchSelectedLive: (patch: Record<string, unknown>) => void;
+  commitLivePatch: () => void;
+  applyNavbarTemplate: (template: NavbarTemplate) => void;
   setLogo: (logo: string) => void;
   moveSection: (id: string, dir: -1 | 1) => void;
   deleteSection: (id: string) => void;
@@ -98,9 +102,259 @@ interface EditorState extends SavedEditor {
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
+let pendingPast: Snapshot | null = null;
 
 function snapshotOf(state: EditorState): Snapshot {
   return { pages: state.pages, pageId: state.pageId };
+}
+
+function syncStoreBrand(pages: Pages, prevName: string, nextName: string) {
+  (Object.keys(pages) as PageId[]).forEach((pId) => {
+    pages[pId].sections = pages[pId].sections.map((sec) => {
+      if (sec.type === "navbar") {
+        return { ...sec, logo: nextName };
+      }
+      if (sec.type === "footer") {
+        const prev = prevName.trim();
+        const copy =
+          prev && sec.copy.includes(prev) ? sec.copy.replaceAll(prev, nextName) : sec.copy;
+        return { ...sec, brand: nextName, copy };
+      }
+      return sec;
+    });
+  });
+}
+
+function syncStoreWhatsapp(pages: Pages, whatsappNumber: string) {
+  (Object.keys(pages) as PageId[]).forEach((pId) => {
+    pages[pId].sections = pages[pId].sections.map((sec) => {
+      if (
+        sec.type === "navbar" ||
+        sec.type === "featured" ||
+        sec.type === "catalog" ||
+        sec.type === "product"
+      ) {
+        return { ...sec, whatsappNumber } as Section;
+      }
+      return sec;
+    });
+  });
+}
+
+function applySectionPatch(
+  pages: Pages,
+  pageId: PageId,
+  id: string,
+  patch: Record<string, unknown>,
+) {
+  const curPage = pages[pageId];
+  const currentSec = curPage.sections.find((sec) => sec.id === id);
+  if (!currentSec) return;
+
+  // 1. GLOBAL HEADER
+  if (currentSec.type === "navbar") {
+    const nextPatch = { ...patch };
+    if (nextPatch.isFloating === false && currentSec.template === "float") {
+      nextPatch.template = "centered";
+      if (!("borderRadius" in nextPatch)) nextPatch.borderRadius = 0;
+    } else if (
+      nextPatch.isFloating === true &&
+      (currentSec.borderRadius === undefined || currentSec.borderRadius === 0) &&
+      !("borderRadius" in nextPatch)
+    ) {
+      nextPatch.borderRadius = 9999;
+    }
+    if (typeof nextPatch.logo === "string") {
+      const nextName = nextPatch.logo.trim() || "ZITEO";
+      syncStoreBrand(pages, currentSec.logo, nextName);
+    }
+    if (typeof nextPatch.whatsappNumber === "string") {
+      syncStoreWhatsapp(pages, nextPatch.whatsappNumber);
+    }
+    (Object.keys(pages) as PageId[]).forEach((pId) => {
+      pages[pId].sections = pages[pId].sections.map((sec) => {
+        if (sec.type === "navbar") {
+          return { ...sec, ...nextPatch } as Section;
+        }
+        return sec;
+      });
+    });
+    return;
+  }
+
+  // 2. GLOBAL FOOTER
+  if (currentSec.type === "footer") {
+    if (typeof patch.brand === "string") {
+      const nextName = patch.brand.trim() || "ZITEO";
+      syncStoreBrand(pages, currentSec.brand, nextName);
+    }
+    (Object.keys(pages) as PageId[]).forEach((pId) => {
+      pages[pId].sections = pages[pId].sections.map((sec) => {
+        if (sec.type === "footer") {
+          return { ...sec, ...patch } as Section;
+        }
+        return sec;
+      });
+    });
+    return;
+  }
+
+  // 3. GLOBAL PRODUCT CARD / PRODUCTS
+  if (currentSec.type === "catalog" || currentSec.type === "grid" || currentSec.type === "product") {
+    if (patch.template) {
+      const tmpl = patch.template as string;
+      const catalog = pages.shop.sections.find((s) => s.type === "catalog");
+      if (catalog && catalog.type === "catalog") {
+        catalog.template = tmpl === "editorial" || tmpl === "list" ? "list" : "grid";
+      }
+      const grid = pages.home.sections.find((s) => s.type === "grid");
+      if (grid && grid.type === "grid") {
+        grid.template = tmpl === "list" || tmpl === "editorial" ? "editorial" : "mosaic";
+      }
+    }
+
+    if (Array.isArray(patch.products)) {
+      const updatedProducts = patch.products as Product[];
+      const catalog = pages.shop.sections.find((s) => s.type === "catalog");
+      if (catalog && catalog.type === "catalog") {
+        catalog.products = updatedProducts;
+      }
+      const grid = pages.home.sections.find((s) => s.type === "grid");
+      if (grid && grid.type === "grid") {
+        grid.items = grid.items.map((it) => {
+          const match = updatedProducts.find((p) => p.id === it.id || p.name === it.title);
+          if (match) {
+            return {
+              ...it,
+              title: match.name,
+              price: `$${match.price}`,
+              image: match.img,
+              tag: match.category,
+            };
+          }
+          return it;
+        });
+      }
+      const prod = pages.product.sections.find((s) => s.type === "product");
+      if (prod && prod.type === "product") {
+        const match = updatedProducts.find((p) => p.name === prod.productName || p.img === prod.image);
+        if (match) {
+          prod.productName = match.name;
+          prod.price = match.price;
+          prod.image = match.img;
+        }
+      }
+    }
+
+    if (Array.isArray(patch.items)) {
+      const updatedItems = patch.items as GridItem[];
+      const grid = pages.home.sections.find((s) => s.type === "grid");
+      if (grid && grid.type === "grid") {
+        grid.items = updatedItems;
+      }
+      const catalog = pages.shop.sections.find((s) => s.type === "catalog");
+      if (catalog && catalog.type === "catalog") {
+        catalog.products = catalog.products.map((p) => {
+          const match = updatedItems.find((it) => it.id === p.id || it.title === p.name);
+          if (match) {
+            const num = Number(match.price.replace(/[^0-9.]/g, ""));
+            return {
+              ...p,
+              name: match.title,
+              price: Number.isFinite(num) && num > 0 ? num : p.price,
+              img: match.image,
+            };
+          }
+          return p;
+        });
+      }
+      const prod = pages.product.sections.find((s) => s.type === "product");
+      if (prod && prod.type === "product") {
+        const match = updatedItems.find((it) => it.title === prod.productName || it.image === prod.image);
+        if (match) {
+          const num = Number(match.price.replace(/[^0-9.]/g, ""));
+          prod.productName = match.title;
+          if (Number.isFinite(num) && num > 0) prod.price = num;
+          prod.image = match.image;
+        }
+      }
+    }
+
+    if (patch.productName !== undefined || patch.price !== undefined || patch.image !== undefined) {
+      const prevName = currentSec.type === "product" ? currentSec.productName : "";
+      const prevImage = currentSec.type === "product" ? currentSec.image : "";
+      const newName = (patch.productName as string | undefined) ?? prevName;
+      const newPrice = patch.price !== undefined ? Number(patch.price) : undefined;
+      const newImg = (patch.image as string | undefined) ?? prevImage;
+
+      const catalog = pages.shop.sections.find((s) => s.type === "catalog");
+      if (catalog && catalog.type === "catalog") {
+        catalog.products = catalog.products.map((p) => {
+          if (p.name === prevName || (prevImage && p.img === prevImage)) {
+            return {
+              ...p,
+              name: newName || p.name,
+              price: newPrice !== undefined && Number.isFinite(newPrice) ? newPrice : p.price,
+              img: newImg || p.img,
+            };
+          }
+          return p;
+        });
+      }
+      const grid = pages.home.sections.find((s) => s.type === "grid");
+      if (grid && grid.type === "grid") {
+        grid.items = grid.items.map((it) => {
+          if (it.title === prevName || (prevImage && it.image === prevImage)) {
+            return {
+              ...it,
+              title: newName || it.title,
+              price: newPrice !== undefined && Number.isFinite(newPrice) ? `$${newPrice}` : it.price,
+              image: newImg || it.image,
+            };
+          }
+          return it;
+        });
+      }
+    }
+
+    const styleKeys = [
+      "imageRatio",
+      "typography",
+      "showBadge",
+      "showRating",
+      "showPrice",
+      "whatsappNumber",
+    ] as const;
+    const hasStylePatch = styleKeys.some((k) => k in patch);
+    if (hasStylePatch) {
+      const stylePatch: Record<string, unknown> = {};
+      styleKeys.forEach((k) => {
+        if (k in patch) stylePatch[k] = patch[k];
+      });
+      (Object.keys(pages) as PageId[]).forEach((pId) => {
+        pages[pId].sections = pages[pId].sections.map((sec) => {
+          if (sec.type === "catalog" || sec.type === "grid" || sec.type === "featured" || sec.type === "product") {
+            return { ...sec, ...stylePatch } as Section;
+          }
+          if (sec.type === "navbar" && typeof stylePatch.whatsappNumber === "string") {
+            return { ...sec, whatsappNumber: stylePatch.whatsappNumber };
+          }
+          return sec;
+        });
+      });
+      return;
+    }
+
+    curPage.sections = curPage.sections.map((sec) =>
+      sec.id === id ? ({ ...sec, ...patch } as Section) : sec,
+    );
+    return;
+  }
+
+  // Normal section patch (hero, intro, block, etc.)
+  curPage.sections = curPage.sections.map((sec) =>
+    sec.id === id ? ({ ...sec, ...patch } as Section) : sec,
+  );
 }
 
 function freshCart(): CartItem[] {
@@ -174,25 +428,35 @@ export const useEditor = create<EditorState>((set, get) => {
     past: [],
     future: [],
 
-    select: (id) => set({ selectedId: id, sheet: null }),
-    deselect: () => set({ selectedId: null, sheet: null }),
+    select: (id) => {
+      pendingPast = null;
+      set({ selectedId: id, sheet: null });
+    },
+    deselect: () => {
+      pendingPast = null;
+      set({ selectedId: null, sheet: null });
+    },
     setDevice: (device) => set({ device }),
     nudgeZoom: (delta) => set({ zoom: Math.min(130, Math.max(70, get().zoom + delta)) }),
     resetZoom: () => set({ zoom: 100 }),
-    togglePreview: (force) =>
+    togglePreview: (force) => {
+      pendingPast = null;
       set({
         preview: typeof force === "boolean" ? force : !get().preview,
         selectedId: null,
         sheet: null,
-      }),
-    switchPage: (pageId) =>
+      });
+    },
+    switchPage: (pageId) => {
+      pendingPast = null;
       set({
         pageId,
         selectedId: null,
         sheet: null,
         menuOpen: false,
         searchOpen: false,
-      }),
+      });
+    },
     openSheet: (sheet) => set({ sheet, cartOpen: false, searchOpen: false, publishOpen: false }),
     closeSheet: () => set({ sheet: null }),
     setMenuOpen: (menuOpen) => set({ menuOpen }),
@@ -204,6 +468,7 @@ export const useEditor = create<EditorState>((set, get) => {
     closePublish: () => set({ publishOpen: false }),
 
     undo: () => {
+      pendingPast = null;
       const current = get();
       const prev = current.past.at(-1);
       if (!prev) return;
@@ -217,6 +482,7 @@ export const useEditor = create<EditorState>((set, get) => {
       });
     },
     redo: () => {
+      pendingPast = null;
       const current = get();
       const next = current.future.at(-1);
       if (!next) return;
@@ -233,218 +499,58 @@ export const useEditor = create<EditorState>((set, get) => {
     patchSelected: (patch) => {
       const id = get().selectedId;
       if (!id) return;
+      pendingPast = null;
       commit(({ pages, pageId }) => {
-        const curPage = pages[pageId];
-        const currentSec = curPage.sections.find((sec) => sec.id === id);
-        if (!currentSec) return;
+        applySectionPatch(pages, pageId, id, patch);
+      });
+    },
 
-        // 1. GLOBAL HEADER
-        if (currentSec.type === "navbar") {
-          (Object.keys(pages) as PageId[]).forEach((pId) => {
-            pages[pId].sections = pages[pId].sections.map((sec) => {
-              if (sec.type === "navbar") {
-                return { ...sec, ...patch } as Section;
-              }
-              return sec;
-            });
-          });
-          return;
+    patchSelectedLive: (patch) => {
+      const id = get().selectedId;
+      if (!id) return;
+      const current = get();
+      if (!pendingPast) pendingPast = snapshotOf(current);
+      mutate((pages) => {
+        applySectionPatch(pages, current.pageId, id, patch);
+      });
+    },
+
+    commitLivePatch: () => {
+      if (!pendingPast) return;
+      const prev = pendingPast;
+      pendingPast = null;
+      set((current) => ({
+        past: [...current.past, prev].slice(-30),
+        future: [],
+      }));
+    },
+
+    applyNavbarTemplate: (template) => {
+      const current = get();
+      const nav = current.pages[current.pageId].sections.find((sec) => sec.type === "navbar");
+      if (!nav || nav.type !== "navbar") return;
+      pendingPast = null;
+      commit(({ pages }) => {
+        const patch: Record<string, unknown> = { template };
+        if (template === "float") {
+          patch.isFloating = true;
+          patch.borderRadius = nav.borderRadius && nav.borderRadius > 0 ? nav.borderRadius : 9999;
+        } else if (nav.template === "float") {
+          patch.isFloating = false;
+          patch.borderRadius = 0;
         }
-
-        // 2. GLOBAL FOOTER
-        if (currentSec.type === "footer") {
-          (Object.keys(pages) as PageId[]).forEach((pId) => {
-            pages[pId].sections = pages[pId].sections.map((sec) => {
-              if (sec.type === "footer") {
-                return { ...sec, ...patch } as Section;
-              }
-              return sec;
-            });
-          });
-          return;
-        }
-
-        // 3. GLOBAL PRODUCT CARD / PRODUCTS
-        if (currentSec.type === "catalog" || currentSec.type === "grid" || currentSec.type === "product") {
-          // A) If template is being changed
-          if (patch.template) {
-            const tmpl = patch.template as string;
-            // Sync catalog template on shop
-            const catalog = pages.shop.sections.find((s) => s.type === "catalog");
-            if (catalog && catalog.type === "catalog") {
-              catalog.template = tmpl === "editorial" || tmpl === "list" ? "list" : "grid";
-            }
-            // Sync grid template on home
-            const grid = pages.home.sections.find((s) => s.type === "grid");
-            if (grid && grid.type === "grid") {
-              grid.template = tmpl === "list" || tmpl === "editorial" ? "editorial" : "mosaic";
-            }
-          }
-
-          // B) If products array was patched (from CatalogForm)
-          if (Array.isArray(patch.products)) {
-            const updatedProducts = patch.products as Product[];
-            const catalog = pages.shop.sections.find((s) => s.type === "catalog");
-            if (catalog && catalog.type === "catalog") {
-              catalog.products = updatedProducts;
-            }
-            // Sync to grid.items on home
-            const grid = pages.home.sections.find((s) => s.type === "grid");
-            if (grid && grid.type === "grid") {
-              grid.items = grid.items.map((it) => {
-                const match = updatedProducts.find((p) => p.id === it.id || p.name === it.title);
-                if (match) {
-                  return {
-                    ...it,
-                    title: match.name,
-                    price: `$${match.price}`,
-                    image: match.img,
-                    tag: match.category,
-                  };
-                }
-                return it;
-              });
-            }
-            // Sync to product-view on product page
-            const prod = pages.product.sections.find((s) => s.type === "product");
-            if (prod && prod.type === "product") {
-              const match = updatedProducts.find((p) => p.name === prod.productName || p.img === prod.image);
-              if (match) {
-                prod.productName = match.name;
-                prod.price = match.price;
-                prod.image = match.img;
-              }
-            }
-          }
-
-          // C) If grid items array was patched (from GridItems)
-          if (Array.isArray(patch.items)) {
-            const updatedItems = patch.items as GridItem[];
-            const grid = pages.home.sections.find((s) => s.type === "grid");
-            if (grid && grid.type === "grid") {
-              grid.items = updatedItems;
-            }
-            // Sync to catalog products on shop
-            const catalog = pages.shop.sections.find((s) => s.type === "catalog");
-            if (catalog && catalog.type === "catalog") {
-              catalog.products = catalog.products.map((p) => {
-                const match = updatedItems.find((it) => it.id === p.id || it.title === p.name);
-                if (match) {
-                  const num = Number(match.price.replace(/[^0-9.]/g, ""));
-                  return {
-                    ...p,
-                    name: match.title,
-                    price: Number.isFinite(num) && num > 0 ? num : p.price,
-                    img: match.image,
-                  };
-                }
-                return p;
-              });
-            }
-            // Sync to product-view
-            const prod = pages.product.sections.find((s) => s.type === "product");
-            if (prod && prod.type === "product") {
-              const match = updatedItems.find((it) => it.title === prod.productName || it.image === prod.image);
-              if (match) {
-                const num = Number(match.price.replace(/[^0-9.]/g, ""));
-                prod.productName = match.title;
-                if (Number.isFinite(num) && num > 0) prod.price = num;
-                prod.image = match.image;
-              }
-            }
-          }
-
-          // D) If single product fields were patched (from ProductForm)
-          if (patch.productName !== undefined || patch.price !== undefined || patch.image !== undefined) {
-            const prevName = currentSec.type === "product" ? currentSec.productName : "";
-            const prevImage = currentSec.type === "product" ? currentSec.image : "";
-            const newName = (patch.productName as string | undefined) ?? prevName;
-            const newPrice = patch.price !== undefined ? Number(patch.price) : undefined;
-            const newImg = (patch.image as string | undefined) ?? prevImage;
-
-            // Sync to catalog on shop
-            const catalog = pages.shop.sections.find((s) => s.type === "catalog");
-            if (catalog && catalog.type === "catalog") {
-              catalog.products = catalog.products.map((p) => {
-                if (p.name === prevName || (prevImage && p.img === prevImage)) {
-                  return {
-                    ...p,
-                    name: newName || p.name,
-                    price: newPrice !== undefined && Number.isFinite(newPrice) ? newPrice : p.price,
-                    img: newImg || p.img,
-                  };
-                }
-                return p;
-              });
-            }
-            // Sync to grid on home
-            const grid = pages.home.sections.find((s) => s.type === "grid");
-            if (grid && grid.type === "grid") {
-              grid.items = grid.items.map((it) => {
-                if (it.title === prevName || (prevImage && it.image === prevImage)) {
-                  return {
-                    ...it,
-                    title: newName || it.title,
-                    price: newPrice !== undefined && Number.isFinite(newPrice) ? `$${newPrice}` : it.price,
-                    image: newImg || it.image,
-                  };
-                }
-                return it;
-              });
-            }
-          }
-
-          // Apply visual presentation styling globally across catalog, grid, and product sections!
-          const styleKeys = [
-            "imageRatio",
-            "typography",
-            "showBadge",
-            "showRating",
-            "showPrice",
-            "whatsappNumber",
-          ] as const;
-          const hasStylePatch = styleKeys.some((k) => k in patch);
-          if (hasStylePatch) {
-            const stylePatch: Record<string, unknown> = {};
-            styleKeys.forEach((k) => {
-              if (k in patch) stylePatch[k] = patch[k];
-            });
-            (Object.keys(pages) as PageId[]).forEach((pId) => {
-              pages[pId].sections = pages[pId].sections.map((sec) => {
-                if (sec.type === "catalog" || sec.type === "grid" || sec.type === "featured" || sec.type === "product") {
-                  return { ...sec, ...stylePatch } as Section;
-                }
-                return sec;
-              });
-            });
-            return;
-          }
-
-          // Apply patch to the current section
-          curPage.sections = curPage.sections.map((sec) =>
-            sec.id === id ? ({ ...sec, ...patch } as Section) : sec,
-          );
-          return;
-        }
-
-        // Normal section patch (hero, intro, block, etc.)
-        curPage.sections = curPage.sections.map((sec) =>
-          sec.id === id ? ({ ...sec, ...patch } as Section) : sec,
-        );
+        applySectionPatch(pages, current.pageId, nav.id, patch);
       });
     },
 
     setLogo: (logo) => {
       const name = logo.trim() || "ZITEO";
+      pendingPast = null;
       commit(
-        ({ pages }) => {
-          (Object.keys(pages) as PageId[]).forEach((id) => {
-            pages[id].sections = pages[id].sections.map((sec) => {
-              if (sec.type === "navbar") return { ...sec, logo: name };
-              if (sec.type === "footer") return { ...sec, brand: name };
-              return sec;
-            });
-          });
+        ({ pages, pageId }) => {
+          const nav = pages[pageId].sections.find((s) => s.type === "navbar");
+          const prevName = nav && nav.type === "navbar" ? nav.logo : "ZITEO";
+          syncStoreBrand(pages, prevName, name);
         },
         { sheet: null },
       );
@@ -539,10 +645,19 @@ export const useEditor = create<EditorState>((set, get) => {
           const curFoot = pages[pageId].sections.find((s) => s.type === "footer");
           (Object.keys(pages) as PageId[]).forEach((pId) => {
             if (pId === pageId) return;
-            if (curNav) {
+            if (curNav && curNav.type === "navbar") {
               pages[pId].sections = pages[pId].sections.map((s) =>
                 s.type === "navbar"
-                  ? ({ ...s, template: curNav.template, background: curNav.background, text: curNav.text } as Section)
+                  ? ({
+                      ...s,
+                      template: curNav.template,
+                      isFloating: curNav.isFloating,
+                      borderRadius: curNav.borderRadius,
+                      background: curNav.background,
+                      text: curNav.text,
+                      linkColor: curNav.linkColor,
+                      iconColor: curNav.iconColor,
+                    } as Section)
                   : s,
               );
             }
